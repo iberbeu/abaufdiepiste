@@ -1,56 +1,64 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ab auf die Piste</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ab auf die Piste</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
 
-    <div class="nav-overlay" id="navOverlay"></div>
-    <nav class="nav-popup" id="navPopup">
-      <button class="nav-close" id="navClose">&times;</button>
+    <!-- Nav Overlay -->
+    <div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
+
+    <!-- Nav Popup -->
+    <nav class="nav-popup" id="navPopup" role="dialog" aria-modal="true" aria-label="Hauptnavigation">
+      <button class="nav-close" id="navClose" aria-label="Navigation schliessen">&times;</button>
       <ul class="nav-list">
-        <li><a href="index.html" class="nav-link">Pistenplaene</a></li>
-        <li><a href="https://play.google.com/store" class="nav-link" target="_blank">App runterladen</a></li>
+        <li><a href="index.html" class="nav-link" aria-current="page">Pistenplaene</a></li>
+        <li><a href="https://play.google.com/store" class="nav-link" target="_blank" rel="noopener">App runterladen</a></li>
         <li><a href="ueber-uns.html" class="nav-link">Ueber uns</a></li>
         <li><a href="kontakt.html" class="nav-link">Kontakt</a></li>
       </ul>
     </nav>
 
-    <div id="app">
-      <header class="header">
-        <button class="hamburger-menu" id="menuBtn" aria-label="Menue oeffnen">
-          <span class="hamburger-icon">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-          <span class="menu-label">Menu</span>
-        </button>
-      </header>
+    <!-- Header -->
+    <header class="header">
+      <button class="hamburger-menu" id="menuBtn" aria-label="Navigation oeffnen" aria-expanded="false" aria-controls="navPopup">
+        <span class="hamburger-icon" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <span class="menu-label">Menu</span>
+      </button>
+    </header>
 
+    <!-- Main Content -->
+    <main>
       <section class="title-section">
         <h1 class="main-title">Ab auf die Piste</h1>
       </section>
 
-      <section class="card-section">
-        <div class="download-card">
+      <section class="card-section" aria-label="Downloads">
+        <a href="assets/pistenkarte.svg" class="download-card" download aria-label="Pistenkarte herunterladen">
           <div class="card-image-wrapper">
-            <img src="assets/pistenkarte.svg" alt="Pistenkarte" class="card-image" />
+            <img src="assets/pistenkarte.svg" alt="Pistenkarte Vorschau" class="card-image" />
           </div>
-          <p class="card-label">Karten runterladen</p>
-        </div>
-        <div class="download-card">
+          <span class="card-label">Karten runterladen</span>
+        </a>
+        <a href="https://play.google.com/store" class="download-card" target="_blank" rel="noopener" aria-label="App im Google Play Store herunterladen">
           <div class="card-image-wrapper">
             <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play Store" class="card-image" />
           </div>
-          <p class="card-label">App runterladen</p>
-        </div>
+          <span class="card-label">App runterladen</span>
+        </a>
       </section>
-    </div>
+    </main>
 
-    <script src="app.js"></script>
-  </body>
+  </div>
+
+  <script src="app.js"></script>
+</body>
 </html>
