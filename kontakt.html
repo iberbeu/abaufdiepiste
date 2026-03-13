@@ -1,117 +1,127 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kontakt - Ab auf die Piste</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kontakt - Ab auf die Piste</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
 
-    <div class="nav-overlay" id="navOverlay"></div>
-    <nav class="nav-popup" id="navPopup">
-      <button class="nav-close" id="navClose">&times;</button>
-      <ul class="nav-list">
-        <li><a href="index.html" class="nav-link">Pistenplaene</a></li>
-        <li><a href="https://play.google.com/store" class="nav-link" target="_blank">App runterladen</a></li>
-        <li><a href="ueber-uns.html" class="nav-link">Ueber uns</a></li>
-        <li><a href="kontakt.html" class="nav-link">Kontakt</a></li>
-      </ul>
-    </nav>
+  <!-- Nav Overlay -->
+  <div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
 
-    <header class="page-header">
-      <button class="hamburger-menu" id="menuBtn" aria-label="Menue oeffnen">
-        <span class="hamburger-icon">
-          <span></span><span></span><span></span>
-        </span>
-        <span class="menu-label">Menu</span>
-      </button>
-      <a href="index.html" class="back-link">&#8592; Startseite</a>
-    </header>
+  <!-- Nav Popup -->
+  <nav class="nav-popup" id="navPopup" role="dialog" aria-modal="true" aria-label="Hauptnavigation">
+    <button class="nav-close" id="navClose" aria-label="Navigation schliessen">&times;</button>
+    <ul class="nav-list">
+      <li><a href="index.html" class="nav-link">Pistenplaene</a></li>
+      <li><a href="https://play.google.com/store" class="nav-link" target="_blank" rel="noopener">App runterladen</a></li>
+      <li><a href="ueber-uns.html" class="nav-link">Ueber uns</a></li>
+      <li><a href="kontakt.html" class="nav-link" aria-current="page">Kontakt</a></li>
+    </ul>
+  </nav>
 
-    <main class="page-wrapper">
-      <h1 class="page-title">Kontakt</h1>
-      <p class="page-subtitle">
-        Hast du Fragen, Feedback oder moechtest du mit uns zusammenarbeiten?
-        Wir freuen uns von dir zu hoeren. Schreib uns einfach - wir antworten
-        in der Regel innerhalb von 24 Stunden.
-      </p>
+  <!-- Page Header -->
+  <header class="page-header">
+    <button class="hamburger-menu" id="menuBtn" aria-label="Navigation oeffnen" aria-expanded="false" aria-controls="navPopup">
+      <span class="hamburger-icon" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <span class="menu-label">Menu</span>
+    </button>
+    <a href="index.html" class="back-link" aria-label="Zurueck zur Startseite">&#8592; Startseite</a>
+  </header>
 
-      <div class="section-block">
-        <h2>Nachricht senden</h2>
-        <form class="contact-form" id="contactForm">
-          <div class="form-group">
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" placeholder="Dein vollstaendiger Name" required />
-          </div>
-          <div class="form-group">
-            <label for="email">E-Mail</label>
-            <input type="email" id="email" name="email" placeholder="deine@email.com" required />
-          </div>
-          <div class="form-group">
-            <label for="subject">Betreff</label>
-            <input type="text" id="subject" name="subject" placeholder="Worum geht es?" />
-          </div>
-          <div class="form-group">
-            <label for="message">Nachricht</label>
-            <textarea id="message" name="message" rows="6" placeholder="Deine Nachricht..." required></textarea>
-          </div>
-          <button type="submit" class="btn-submit">Nachricht senden</button>
-        </form>
-      </div>
+  <!-- Main Content -->
+  <main class="page-wrapper">
+    <h1 class="page-title">Kontakt</h1>
+    <p class="page-subtitle">
+      Hast du Fragen, Feedback oder moechtest du mit uns zusammenarbeiten? Wir freuen uns von dir zu hoeren.
+      Schreib uns einfach - wir antworten in der Regel innerhalb von 24 Stunden.
+    </p>
 
-      <div class="section-block">
-        <h2>Direkt erreichen</h2>
-        <div class="contact-info">
-          <div class="contact-info-item"><strong>E-Mail:</strong> hallo@abaufdiepiste.ch</div>
-          <div class="contact-info-item"><strong>Telefon:</strong> +41 44 123 45 67</div>
-          <div class="contact-info-item"><strong>Geschaeftszeiten:</strong> Montag - Freitag, 09:00 - 17:00 Uhr</div>
+    <section class="section-block">
+      <h2>Nachricht senden</h2>
+      <form class="contact-form" id="contactForm" novalidate>
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" placeholder="Dein Name" required autocomplete="name" />
         </div>
-      </div>
-
-      <div class="section-block">
-        <h2>Adresse</h2>
-        <div class="contact-info">
-          <div class="contact-info-item">
-            Ab auf die Piste GmbH<br />
-            Bahnhofstrasse 42<br />
-            8001 Zuerich<br />
-            Schweiz
-          </div>
+        <div class="form-group">
+          <label for="email">E-Mail</label>
+          <input type="email" id="email" name="email" placeholder="deine@email.ch" required autocomplete="email" />
         </div>
-      </div>
+        <div class="form-group">
+          <label for="subject">Betreff</label>
+          <input type="text" id="subject" name="subject" placeholder="Worum geht es?" required />
+        </div>
+        <div class="form-group">
+          <label for="message">Nachricht</label>
+          <textarea id="message" name="message" rows="6" placeholder="Deine Nachricht..." required></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Nachricht senden</button>
+      </form>
+    </section>
 
-      <div class="section-block">
-        <h2>Haeufige Anliegen</h2>
-        <p>
-          <strong>Fehler in einer Pistenkarte melden:</strong> Bitte gib im Betreff den Namen
-          des Skigebiets und eine kurze Beschreibung des Fehlers an.<br /><br />
-          <strong>Partnerschaft / Skigebiete:</strong> Wir freuen uns ueber neue Partnerschaften
-          mit Skigebieten und Tourismusorganisationen. Schreib uns unter dem Betreff "Partnerschaft".<br /><br />
-          <strong>Presse &amp; Medien:</strong> Fuer Presseanfragen stehen wir gerne zur Verfuegung
-          unter presse@abaufdiepiste.ch.
+    <section class="section-block">
+      <h2>Direkt erreichen</h2>
+      <address class="contact-info">
+        <p class="contact-info-item"><strong>E-Mail:</strong> <a href="mailto:hallo@abaufdiepiste.ch">hallo@abaufdiepiste.ch</a></p>
+        <p class="contact-info-item"><strong>Telefon:</strong> <a href="tel:+41441234567">+41 44 123 45 67</a></p>
+        <p class="contact-info-item"><strong>Geschaeftszeiten:</strong> Montag - Freitag, 09:00 - 17:00 Uhr</p>
+      </address>
+    </section>
+
+    <section class="section-block">
+      <h2>Adresse</h2>
+      <address class="contact-info">
+        <p class="contact-info-item">
+          Ab auf die Piste GmbH<br />
+          Bahnhofstrasse 42<br />
+          8001 Zuerich<br />
+          Schweiz
         </p>
-      </div>
-    </main>
+      </address>
+    </section>
 
-    <script src="app.js"></script>
-    <script>
-      var form = document.getElementById('contactForm');
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          e.preventDefault();
-          var btn = form.querySelector('.btn-submit');
-          btn.textContent = 'Gesendet!';
-          btn.style.backgroundColor = '#2e7d32';
-          btn.disabled = true;
-          setTimeout(function() {
-            form.reset();
-            btn.textContent = 'Nachricht senden';
-            btn.style.backgroundColor = '';
-            btn.disabled = false;
-          }, 3000);
-        });
-      }
-    </script>
-  </body>
+    <section class="section-block">
+      <h2>Haeufige Anliegen</h2>
+      <p class="contact-info-item">
+        <strong>Fehler in einer Pistenkarte melden:</strong> Bitte gib im Betreff den Namen des Skigebiets
+        und eine kurze Beschreibung des Fehlers an.
+      </p>
+      <p class="contact-info-item">
+        <strong>Partnerschaft / Skigebiete:</strong> Wir freuen uns ueber neue Partnerschaften mit Skigebieten
+        und Tourismusorganisationen. Schreib uns unter dem Betreff "Partnerschaft".
+      </p>
+      <p class="contact-info-item">
+        <strong>Presse &amp; Medien:</strong> Fuer Presseanfragen stehen wir gerne zur Verfuegung unter
+        <a href="mailto:presse@abaufdiepiste.ch">presse@abaufdiepiste.ch</a>.
+      </p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    var form = document.getElementById('contactForm');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = form.querySelector('.btn-submit');
+        btn.textContent = 'Gesendet!';
+        btn.style.backgroundColor = '#2e7d32';
+        btn.disabled = true;
+        setTimeout(function() {
+          form.reset();
+          btn.textContent = 'Nachricht senden';
+          btn.style.backgroundColor = '';
+          btn.disabled = false;
+        }, 3000);
+      });
+    }
+  </script>
+</body>
 </html>
