@@ -1,113 +1,118 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ueber uns - Ab auf die Piste</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ueber uns - Ab auf die Piste</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
 
-    <div class="nav-overlay" id="navOverlay"></div>
-    <nav class="nav-popup" id="navPopup">
-      <button class="nav-close" id="navClose">&times;</button>
-      <ul class="nav-list">
-        <li><a href="index.html" class="nav-link">Pistenplaene</a></li>
-        <li><a href="https://play.google.com/store" class="nav-link" target="_blank">App runterladen</a></li>
-        <li><a href="ueber-uns.html" class="nav-link">Ueber uns</a></li>
-        <li><a href="kontakt.html" class="nav-link">Kontakt</a></li>
-      </ul>
-    </nav>
+  <!-- Nav Overlay -->
+  <div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
 
-    <header class="page-header">
-      <button class="hamburger-menu" id="menuBtn" aria-label="Menue oeffnen">
-        <span class="hamburger-icon">
-          <span></span><span></span><span></span>
-        </span>
-        <span class="menu-label">Menu</span>
-      </button>
-      <a href="index.html" class="back-link">&#8592; Startseite</a>
-    </header>
+  <!-- Nav Popup -->
+  <nav class="nav-popup" id="navPopup" role="dialog" aria-modal="true" aria-label="Hauptnavigation">
+    <button class="nav-close" id="navClose" aria-label="Navigation schliessen">&times;</button>
+    <ul class="nav-list">
+      <li><a href="index.html" class="nav-link">Pistenplaene</a></li>
+      <li><a href="https://play.google.com/store" class="nav-link" target="_blank" rel="noopener">App runterladen</a></li>
+      <li><a href="ueber-uns.html" class="nav-link" aria-current="page">Ueber uns</a></li>
+      <li><a href="kontakt.html" class="nav-link">Kontakt</a></li>
+    </ul>
+  </nav>
 
-    <main class="page-wrapper">
-      <h1 class="page-title">Ueber uns</h1>
-      <p class="page-subtitle">
-        Wir sind leidenschaftliche Wintersportler und Technologiebegeisterte,
-        die es sich zur Aufgabe gemacht haben, das Pistenerlebnis einfacher,
-        sicherer und spassiger zu gestalten.
+  <!-- Page Header -->
+  <header class="page-header">
+    <button class="hamburger-menu" id="menuBtn" aria-label="Navigation oeffnen" aria-expanded="false" aria-controls="navPopup">
+      <span class="hamburger-icon" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <span class="menu-label">Menu</span>
+    </button>
+    <a href="index.html" class="back-link" aria-label="Zurueck zur Startseite">&#8592; Startseite</a>
+  </header>
+
+  <!-- Main Content -->
+  <main class="page-wrapper">
+    <h1 class="page-title">Ueber uns</h1>
+    <p class="page-subtitle">
+      Wir sind leidenschaftliche Wintersportler und Technologiebegeisterte, die es sich zur Aufgabe gemacht haben,
+      das Pistenerlebnis einfacher, sicherer und spassiger zu gestalten.
+    </p>
+
+    <section class="section-block">
+      <h2>Unsere Geschichte</h2>
+      <p>
+        Ab auf die Piste entstand 2021 aus einer einfachen Idee: Skifahrer und Snowboarder sollen immer und ueberall
+        die aktuellsten Pistenkarten zur Hand haben - ohne langes Suchen, ohne schlechte Druckqualitaet, ohne
+        Internet-Ausfall auf der Piste. Was als kleines Nebenprojekt begann, ist heute eine wachsende Plattform
+        fuer Wintersportbegeisterte in der gesamten Alpenregion.
       </p>
+    </section>
 
-      <div class="section-block">
-        <h2>Unsere Geschichte</h2>
-        <p>
-          Ab auf die Piste entstand 2021 aus einer einfachen Idee: Skifahrer und
-          Snowboarder sollen immer und ueberall die aktuellsten Pistenkarten zur
-          Hand haben - ohne langes Suchen, ohne schlechte Druckqualitaet, ohne
-          Internet-Ausfall auf der Piste. Was als kleines Nebenprojekt begann,
-          ist heute eine wachsende Plattform fuer Wintersportbegeisterte in der
-          gesamten Alpenregion.
-        </p>
-      </div>
+    <section class="section-block">
+      <h2>Unsere Mission</h2>
+      <p>
+        Wir glauben, dass gute Orientierung auf der Piste nicht nur den Spass erhoeht, sondern auch die Sicherheit
+        verbessert. Unsere Mission ist es, digitale Pistenkarten bereitzustellen, die intuitiv, aktuell und
+        zuverlaessig sind - auch offline und bei jedem Wetter.
+      </p>
+    </section>
 
-      <div class="section-block">
-        <h2>Unsere Mission</h2>
-        <p>
-          Wir glauben, dass gute Orientierung auf der Piste nicht nur den Spass
-          erhoeht, sondern auch die Sicherheit verbessert. Unsere Mission ist es,
-          digitale Pistenkarten bereitzustellen, die intuitiv, aktuell und
-          zuverlaessig sind - auch offline und bei jedem Wetter.
-        </p>
-      </div>
+    <section class="section-block">
+      <h2>Was uns antreibt</h2>
+      <p>
+        Jede Saison verbringen wir selbst so viele Tage wie moeglich auf der Piste. Das gibt uns den direkten Blick
+        auf das, was Skifahrer wirklich brauchen. Wir testen unsere App unter realen Bedingungen - bei -15 Grad,
+        mit Handschuhen und auf dem Weg zur naechsten Abfahrt.
+      </p>
+    </section>
 
-      <div class="section-block">
-        <h2>Was uns antreibt</h2>
-        <p>
-          Jede Saison verbringen wir selbst so viele Tage wie moeglich auf der
-          Piste. Das gibt uns den direkten Blick auf das, was Skifahrer wirklich
-          brauchen. Wir testen unsere App unter realen Bedingungen - bei -15 Grad,
-          mit Handschuhen und auf dem Weg zur naechsten Abfahrt.
-        </p>
-      </div>
-
-      <div class="section-block">
-        <h2>Unser Team</h2>
-        <div class="team-grid">
-          <div class="team-card">
-            <div class="team-avatar">LM</div>
-            <div class="team-name">Lukas Mayer</div>
-            <div class="team-role">Gruender &amp; CEO</div>
-          </div>
-          <div class="team-card">
-            <div class="team-avatar">SR</div>
-            <div class="team-name">Sofia Roth</div>
-            <div class="team-role">Produktdesign</div>
-          </div>
-          <div class="team-card">
-            <div class="team-avatar">TK</div>
-            <div class="team-name">Thomas Keller</div>
-            <div class="team-role">Entwicklung</div>
-          </div>
-          <div class="team-card">
-            <div class="team-avatar">AV</div>
-            <div class="team-name">Anna Vogel</div>
-            <div class="team-role">Partnerschaften</div>
-          </div>
+    <section class="section-block">
+      <h2>Unser Team</h2>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar" aria-hidden="true">LM</div>
+          <div class="team-name">Lukas Mayer</div>
+          <div class="team-role">Gruender &amp; CEO</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar" aria-hidden="true">SR</div>
+          <div class="team-name">Sofia Roth</div>
+          <div class="team-role">Produktdesign</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar" aria-hidden="true">TK</div>
+          <div class="team-name">Thomas Keller</div>
+          <div class="team-role">Entwicklung</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar" aria-hidden="true">AV</div>
+          <div class="team-name">Anna Vogel</div>
+          <div class="team-role">Partnerschaften</div>
         </div>
       </div>
+    </section>
 
-      <div class="section-block">
-        <h2>Unsere Werte</h2>
-        <p>
-          <strong>Einfachheit</strong> - Kompliziertes einfach machen ist schwieriger als es klingt.
-          Wir arbeiten hart daran, dass unsere Produkte sich selbst erklaeren.<br /><br />
-          <strong>Zuverlaessigkeit</strong> - Auf der Piste zaehlt jede Sekunde. Unsere App
-          muss funktionieren - immer.<br /><br />
-          <strong>Gemeinschaft</strong> - Wintersport verbindet. Wir bauen Produkte, die
-          dieses Gemeinschaftsgefuehl unterstuetzen und staerken.
-        </p>
-      </div>
-    </main>
+    <section class="section-block">
+      <h2>Unsere Werte</h2>
+      <p>
+        <strong>Einfachheit</strong> - Kompliziertes einfach machen ist schwieriger als es klingt.
+        Wir arbeiten hart daran, dass unsere Produkte sich selbst erklaeren.
+      </p>
+      <p>
+        <strong>Zuverlaessigkeit</strong> - Auf der Piste zaehlt jede Sekunde. Unsere App muss funktionieren - immer.
+      </p>
+      <p>
+        <strong>Gemeinschaft</strong> - Wintersport verbindet. Wir bauen Produkte, die dieses Gemeinschaftsgefuehl
+        unterstuetzen und staerken.
+      </p>
+    </section>
+  </main>
 
-    <script src="app.js"></script>
-  </body>
+  <script src="app.js"></script>
+</body>
 </html>
