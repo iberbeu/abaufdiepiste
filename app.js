@@ -1,18 +1,36 @@
-// app.js -- Erweiterungspunkt fuer kuenftige Interaktionen
+// app.js
 
-// Hamburger-Menu (Navigation folgt in spaeteren Ticket)
-const hamburgerBtn = document.querySelector('.hamburger-menu');
+// ===== Popup Navigation =====
+var menuBtn    = document.getElementById('menuBtn');
+var navPopup   = document.getElementById('navPopup');
+var navOverlay = document.getElementById('navOverlay');
+var navClose   = document.getElementById('navClose');
 
-hamburgerBtn.addEventListener('click', function() {
-  console.log('Menu geklickt -- Navigation folgt in spaeteren Ticket.');
+function openMenu() {
+  navPopup.classList.add('active');
+  navOverlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMenu() {
+  navPopup.classList.remove('active');
+  navOverlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+if (menuBtn)    menuBtn.addEventListener('click', openMenu);
+if (navClose)   navClose.addEventListener('click', closeMenu);
+if (navOverlay) navOverlay.addEventListener('click', closeMenu);
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeMenu();
 });
 
-// Download-Karten (Aktionen folgen in spaeteren Ticket)
-const downloadCards = document.querySelectorAll('.download-card');
-
+// ===== Download Cards =====
+var downloadCards = document.querySelectorAll('.download-card');
 downloadCards.forEach(function(card) {
   card.addEventListener('click', function() {
-    const label = card.querySelector('.card-label').textContent;
+    var label = card.querySelector('.card-label').textContent;
     console.log('Karte geklickt: ' + label);
   });
 });
