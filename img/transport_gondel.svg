@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f0fe"/>
+      <stop offset="100%" style="stop-color:#c5d8f8"/>
+    </linearGradient>
+  </defs>
+  <rect width="80" height="80" rx="12" fill="url(#bg)"/>
+  <!-- Cable line -->
+  <line x1="8" y1="12" x2="72" y2="12" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Carrier wheel -->
+  <circle cx="40" cy="12" r="5" fill="#1a3a5c"/>
+  <!-- Hanger rod -->
+  <line x1="40" y1="17" x2="40" y2="24" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Large gondola body -->
+  <rect x="18" y="24" width="44" height="34" rx="7" fill="#2e6da4"/>
+  <!-- Roof -->
+  <rect x="18" y="24" width="44" height="10" rx="7" fill="#1a3a5c"/>
+  <!-- Door in center -->
+  <rect x="35" y="40" width="10" height="18" rx="2" fill="#1a3a5c"/>
+  <!-- Windows row -->
+  <rect x="21" y="30" width="10" height="8" rx="2" fill="#cfe4ff"/>
+  <rect x="34" y="30" width="12" height="8" rx="2" fill="#cfe4ff"/>
+  <rect x="49" y="30" width="10" height="8" rx="2" fill="#cfe4ff"/>
+  <!-- Side windows lower -->
+  <rect x="21" y="41" width="10" height="8" rx="2" fill="#cfe4ff"/>
+  <rect x="49" y="41" width="10" height="8" rx="2" fill="#cfe4ff"/>
+  <!-- Bottom flat edge -->
+  <rect x="18" y="56" width="44" height="2" rx="1" fill="#1a3a5c"/>
+  <!-- Label -->
+  <text x="40" y="75" text-anchor="middle" font-size="8" font-family="sans-serif" font-weight="700" fill="#1a3a5c" letter-spacing="0.5">GONDEL</text>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff9c4"/>
+      <stop offset="100%" style="stop-color:#ffe082"/>
+    </linearGradient>
+  </defs>
+  <rect width="80" height="80" rx="12" fill="url(#bg)"/>
+  <!-- Warning triangle -->
+  <polygon points="40,10 72,66 8,66" fill="#e05252" stroke="#c62828" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="40,18 66,62 14,62" fill="#ffcdd2"/>
+  <!-- Exclamation mark -->
+  <rect x="36.5" y="28" width="7" height="22" rx="3" fill="#c62828"/>
+  <circle cx="40" cy="56" r="4" fill="#c62828"/>
+  <!-- Crash symbol (X) overlay at bottom corner -->
+  <g stroke="#5d4037" stroke-width="2" stroke-linecap="round" opacity="0.7">
+    <line x1="6" y1="70" x2="14" y2="78"/>
+    <line x1="14" y1="70" x2="6" y2="78"/>
+    <line x1="66" y1="70" x2="74" y2="78"/>
+    <line x1="74" y1="70" x2="66" y2="78"/>
+  </g>
+  <!-- Label -->
+  <text x="40" y="77" text-anchor="middle" font-size="9" font-family="sans-serif" font-weight="700" fill="#c62828" letter-spacing="0.5">UNFALL</text>
+</svg>

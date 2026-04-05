@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff9c4"/>
+      <stop offset="100%" style="stop-color:#ffe082"/>
+    </linearGradient>
+  </defs>
+  <rect width="80" height="80" rx="12" fill="url(#bg)"/>
+  <!-- Storm cloud -->
+  <g fill="#607d8b">
+    <circle cx="28" cy="34" r="12"/>
+    <circle cx="42" cy="28" r="14"/>
+    <circle cx="56" cy="34" r="11"/>
+    <rect x="16" y="34" width="52" height="12" rx="0"/>
+  </g>
+  <!-- Cloud lighter overlay -->
+  <ellipse cx="42" cy="30" rx="22" ry="14" fill="#78909c"/>
+  <!-- Snowflake 1 -->
+  <g stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+    <line x1="22" y1="52" x2="22" y2="64"/>
+    <line x1="16" y1="58" x2="28" y2="58"/>
+    <line x1="17" y1="53" x2="27" y2="63"/>
+    <line x1="27" y1="53" x2="17" y2="63"/>
+  </g>
+  <!-- Snowflake 2 -->
+  <g stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+    <line x1="40" y1="54" x2="40" y2="66"/>
+    <line x1="34" y1="60" x2="46" y2="60"/>
+    <line x1="35" y1="55" x2="45" y2="65"/>
+    <line x1="45" y1="55" x2="35" y2="65"/>
+  </g>
+  <!-- Snowflake 3 -->
+  <g stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+    <line x1="58" y1="52" x2="58" y2="64"/>
+    <line x1="52" y1="58" x2="64" y2="58"/>
+    <line x1="53" y1="53" x2="63" y2="63"/>
+    <line x1="63" y1="53" x2="53" y2="63"/>
+  </g>
+  <!-- Wind lines -->
+  <path d="M10 46 Q18 42 26 46" stroke="#b0bec5" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M54 48 Q62 44 70 48" stroke="#b0bec5" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- ½ label -->
+  <text x="40" y="77" text-anchor="middle" font-size="7.5" font-family="sans-serif" font-weight="700" fill="#5d4037" letter-spacing="0.3">SCHNEESTURM ½</text>
+</svg>
