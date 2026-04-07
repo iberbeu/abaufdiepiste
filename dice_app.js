@@ -48,8 +48,11 @@ let state = {
   eventRolled: false,
   eventIndex: -1,
   descentPtsAccumulated: 0,
+  jokerUsedOnEvent: false,
   history: [],
   gameStarted: false,    // true once a game is actively running
+  playedThisRound: [],   // indices of players who have already played in the current round
+  diceRolled: false,     // true once any dice have been rolled this turn — locks action switching and fresh re-rolls
 };
 
 // ═══════════════════════════════════════
@@ -89,6 +92,8 @@ function startGame() {
   state.currentPlayerIndex = 0;
   state.history = [];
   state.gameStarted = true;
+  state.playedThisRound = [];
+  state.diceRolled = false;
   resetTransportState();
   saveState();
   updateAll();
@@ -107,6 +112,9 @@ function showTab(id) {
   document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
   if (id === 'tab-scores') updateScoreboard();
   if (id === 'tab-special') updateSpecialTab();
+  // Show sticky footer only on the Zug tab
+  const footer = document.getElementById('stickyFooter');
+  if (footer) footer.style.display = (id === 'tab-turn') ? '' : 'none';
 }
 
 // ═══════════════════════════════════════
@@ -152,32 +160,53 @@ function updateAll() {
   document.getElementById('gameClock').textContent = t;
   document.getElementById('roundLabel').textContent = `Runde ${state.round} von ${state.totalRounds}`;
   document.getElementById('currentPlayerHeader').textContent = p ? p.name : '—';
-
-  // Turn tab
-  if (p) {
-    document.getElementById('currentPlayerName').textContent = p.name;
-    document.getElementById('currentPlayerDot').style.background = p.color;
-    document.getElementById('currentPlayerPoints').textContent = p.points;
-    const badge = document.getElementById('levelBadge');
-    badge.textContent = levelLabel(lvl);
-    badge.className = 'level-badge ' + levelBadgeClass(lvl);
-  }
+  document.getElementById('currentPlayerDot').style.background = p ? p.color : '';
+  document.getElementById('currentPlayerPoints').textContent = p ? p.points : 0;
+  const badge = document.getElementById('levelBadge');
+  badge.textContent = levelLabel(lvl);
+  badge.className = 'level-badge ' + levelBadgeClass(lvl);
 
   // Player strip
   const strip = document.getElementById('playerStrip');
   strip.innerHTML = '';
   state.players.forEach((pl, i) => {
+    const isCurrent = i === state.currentPlayerIndex;
+    const isDone = (state.playedThisRound || []).includes(i);
     const chip = document.createElement('button');
-    chip.className = 'player-chip' + (i === state.currentPlayerIndex ? ' active' : '');
-    chip.innerHTML = `${pl.name} <span class="chip-pts">${pl.points} Pkt</span>`;
-    chip.style.borderColor = pl.color;
-    if (i === state.currentPlayerIndex) chip.style.background = pl.color;
-    chip.onclick = () => { state.currentPlayerIndex = i; updateAll(); };
+    let cls = 'player-chip';
+    if (isCurrent) cls += ' active';
+    if (isDone && !isCurrent) cls += ' done';
+    chip.className = cls;
+    chip.setAttribute('aria-label', `${pl.name}: ${pl.points} Punkte${isDone && !isCurrent ? ' – Zug gespielt' : ''}`);
+    if (isDone && !isCurrent) {
+      chip.setAttribute('aria-disabled', 'true');
+      chip.innerHTML = `<span class="chip-done-mark" aria-hidden="true">✓</span>${pl.name} <span class="chip-pts">${pl.points} Pkt</span>`;
+      chip.onclick = null;
+    } else {
+      chip.innerHTML = `${pl.name} <span class="chip-pts">${pl.points} Pkt</span>`;
+      chip.style.borderColor = pl.color;
+      if (isCurrent) chip.style.background = pl.color;
+      // Chips are display-only — current player is managed by endTurn() only.
+      // Clicking a non-done, non-current chip is disabled to prevent players from
+      // jumping the queue or re-activating themselves after their turn (BUG-6).
+      chip.onclick = null;
+    }
     strip.appendChild(chip);
   });
 
   updateCoinsDisplay();
   updateHistory();
+
+  // Re-apply dice-roll lock on every UI refresh so it survives any re-render
+  if (state.diceRolled) lockActionButtons();
+
+  // Sync sticky footer visibility
+  const footer = document.getElementById('stickyFooter');
+  if (footer) {
+    const onZugTab = document.getElementById('tab-turn')?.classList.contains('active');
+    footer.style.display = (onZugTab && state.gameStarted) ? '' : 'none';
+  }
+  updatePrimaryActionButton();
 
   // Scores tab (if visible)
   if (document.getElementById('tab-scores').classList.contains('active')) updateScoreboard();
@@ -189,11 +218,14 @@ function updateAll() {
 // ═══════════════════════════════════════
 function setAction(a) {
   state.action = a;
+
+  // Once dice have been rolled, the player cannot switch actions
+  const locked = state.diceRolled;
+
   ['bergauf','bergab','pause'].forEach(x => {
-    const btn = document.getElementById('actionB'+x.charAt(0).toUpperCase()+x.slice(1));
+    const btn = document.getElementById('action'+x.charAt(0).toUpperCase()+x.slice(1));
     if (!btn) return;
     if (a === null) {
-      // No action chosen yet — all buttons look normal
       btn.classList.remove('btn-action-selected', 'btn-action-unselected');
     } else if (x === a) {
       btn.classList.add('btn-action-selected');
@@ -202,25 +234,157 @@ function setAction(a) {
       btn.classList.add('btn-action-unselected');
       btn.classList.remove('btn-action-selected');
     }
+    // Disable all action buttons once a roll has happened
+    btn.disabled = locked;
   });
+
   document.getElementById('sectionBergauf').style.display      = a==='bergauf' ? '' : 'none';
   document.getElementById('sectionBergabShort').style.display  = a==='bergab'  ? '' : 'none';
   document.getElementById('sectionPause').style.display        = a==='pause'   ? '' : 'none';
+  document.getElementById('cardExtraaktivitaet').style.display = a==='bergab'  ? '' : 'none';
 
-  // Enable/disable "Zug beenden" based on whether an action was chosen
-  const btnEnd = document.getElementById('btnEndTurn');
-  if (btnEnd) btnEnd.disabled = (a === null);
+  updatePrimaryActionButton();
 
   if (a === 'bergauf') resetTransportDice();
   if (a === 'bergab')  resetDescentDice();
   if (a === 'pause') {
+    const p = currentPlayer();
     document.getElementById('pauseCurrentTime').textContent = gameTime();
     const h = gameTimeHour();
-    const inWindow = h >= 11 && h < 12.5;
-    document.getElementById('pauseTimeWarning').style.display = inWindow ? 'none' : '';
+    const inWindow = h >= 11 && h <= 12.5;
+    const alreadyDone = p ? p.pauseDone : false;
+
+    document.getElementById('pauseTimeWarning').style.display = (!inWindow && !alreadyDone) ? '' : 'none';
+    document.getElementById('pauseDoneWarning').style.display = alreadyDone ? '' : 'none';
+
+    const disabled = !inWindow || alreadyDone;
+    document.getElementById('btnPauseRestaurant').disabled = disabled;
+    document.getElementById('btnPauseBar').disabled        = disabled;
   }
 }
 
+
+// ═══════════════════════════════════════
+// PRIMARY ACTION BUTTON (sticky footer)
+// ═══════════════════════════════════════
+
+// Computes the correct label, style, and enabled state for the sticky footer button.
+// Called from setAction(), updateConfirmButtonLabel(), rollBothDice(), confirmDescentPoints(),
+// takePause(), and updateAll().
+//
+// Button states:
+//   - No action:                         "Aktion wählen …"   [disabled, neutral]
+//   - Bergauf: not yet rolled:           "Zug beenden →"     [disabled, neutral hint]
+//   - Bergauf: rolled:                   "Zug beenden →"     [enabled, green]
+//   - Bergab: not yet rolled:            "Erst würfeln …"    [disabled, neutral]
+//   - Bergab: rolled, Unfall/Helikopter: "Bestätigen & weiter →" [enabled, orange]
+//   - Bergab: rolled, OhneBefugnis pending: "Erst Rot/Grün würfeln" [disabled, warn]
+//   - Bergab: rolled, crossings chosen:  "X Punkte & weiter →" [enabled, green]
+//   - Bergab: rolled, no slope chosen:   "Weiter (0 Punkte) →" [enabled, muted-green]
+//   - Pause: selected, not confirmed:    "Pause wählen…"     [disabled]
+//   - Pause: confirmed (pauseDone):      "Zug beenden →"     [enabled, green]
+function updatePrimaryActionButton() {
+  const btn = document.getElementById('btnPrimaryAction');
+  if (!btn) return;
+
+  const a = state.action;
+
+  // Helper to set button appearance
+  function set(label, enabled, style) {
+    btn.textContent = label;
+    btn.disabled = !enabled;
+    btn.className = 'btn btn-full ' + (style || 'btn-success');
+  }
+
+  if (!a) {
+    set('Aktion wählen …', false, 'btn-neutral');
+    return;
+  }
+
+  if (a === 'bergauf') {
+    if (!state.diceRolled) {
+      set('Zug beenden →', false, 'btn-neutral');
+    } else {
+      set('Zug beenden → Nächster Spieler', true, 'btn-success');
+    }
+    return;
+  }
+
+  if (a === 'pause') {
+    const p = currentPlayer();
+    if (p && p.pauseDone) {
+      set('Zug beenden → Nächster Spieler', true, 'btn-success');
+    } else {
+      set('Pause wählen …', false, 'btn-neutral');
+    }
+    return;
+  }
+
+  if (a === 'bergab') {
+    if (!state.diceRolled) {
+      set('Erst würfeln …', false, 'btn-neutral');
+      return;
+    }
+    const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
+    const isBlockedEvent = (ev?.sym === 'unfall' || ev?.sym === 'helikopter') && !state.jokerUsedOnEvent;
+    if (isBlockedEvent) {
+      const label = ev.sym === 'unfall' ? 'Unfall bestätigen & weiter →' : 'Helikopter bestätigen & weiter →';
+      set(label, true, 'btn-warn');
+      return;
+    }
+    // Check if Ohne-Befugnis roll is still required
+    const confirmBtn = document.getElementById('btnConfirmDescent');
+    if (confirmBtn && confirmBtn.disabled && confirmBtn.textContent.startsWith('⚠')) {
+      set('Erst Rot/Grün würfeln', false, 'btn-warn');
+      return;
+    }
+    // Compute point total
+    const { total, parts } = calcDescentTotal();
+    if (parts.length === 0) {
+      set('Weiter (0 Punkte) →', true, 'btn-success');
+    } else if (total < 0) {
+      set(`${Math.abs(total)} Punkte entfernen & weiter →`, true, 'btn-warn');
+    } else {
+      set(`${total} Punkte eintragen & weiter →`, true, 'btn-success');
+    }
+    return;
+  }
+}
+
+// Single handler for the sticky footer button.
+// For Bergab it calls confirmDescentPoints() first, then endTurn() after a brief flash.
+// For all other actions it calls endTurn() directly.
+function handlePrimaryAction() {
+  const a = state.action;
+  const btn = document.getElementById('btnPrimaryAction');
+
+  if (a === 'bergab' && state.diceRolled) {
+    // Run the confirm logic first
+    confirmDescentPoints();
+
+    // Flash feedback then advance turn
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '✓ Eingetragen …';
+    }
+    setTimeout(() => {
+      endTurn();
+    }, 900);
+    return;
+  }
+
+  // Bergauf, Pause, or fallback
+  endTurn();
+}
+
+// Disables the three action-choice buttons (Bergauf / Bergab / Pause) so
+// the player cannot switch action mid-turn after rolling dice.
+function lockActionButtons() {
+  ['Bergauf','Bergab','Pause'].forEach(name => {
+    const btn = document.getElementById('action' + name);
+    if (btn) btn.disabled = true;
+  });
+}
 
 // ═══════════════════════════════════════
 // TRANSPORT DICE
@@ -241,12 +405,22 @@ function resetTransportDice() {
 
 function rollTransportDice() {
   if (state.transportRolls >= 2) return;
-  state.transportDice.forEach((d, i) => {
+  state.transportDice.forEach(d => {
     if (!d.held) {
       d.sym = TRANSPORT_SYMBOLS[Math.floor(Math.random() * 6)];
     }
   });
   state.transportRolls++;
+
+  // Lock action switching after the first roll
+  if (!state.diceRolled) {
+    state.diceRolled = true;
+    lockActionButtons();
+    // Disable the Reset button — player cannot undo a roll to switch actions
+    const btnReset = document.getElementById('btnResetTransport');
+    if (btnReset) btnReset.disabled = true;
+  }
+
   renderTransportDice(true);
   updateRollDots();
   document.getElementById('rollCountLabel').textContent =
@@ -255,6 +429,7 @@ function rollTransportDice() {
     document.getElementById('btnRollTransport').disabled = true;
   }
   analyzeTransport();
+  updatePrimaryActionButton();
 }
 
 function renderTransportDice(animate) {
@@ -294,13 +469,13 @@ function analyzeTransport() {
     resultBox.textContent = '🚁 6 gleiche – Helikopterflug! Du kannst beliebig weit fliegen!';
     return;
   }
-  // 3 same → Sonder-Transport (Zug/Bus etc.)
+  // 3 same (and no other pair) → Sonder-Transport
   const triplets = Object.entries(counts).filter(([,c])=>c>=3);
-  if (triplets.length > 0 && !Object.values(counts).some(c=>c>=2 && c<3)) {
+  if (triplets.length > 0 && !Object.values(counts).some(c=>c===2)) {
     const key3 = triplets[0][0];
     const name3 = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key3)];
     resultBox.className = 'result-box info';
-    resultBox.textContent = `🚂 3× ${name3} – Sonder-Transport (Zug, Bus, Zahnradbahn) erlaubt!`;
+    resultBox.textContent = `🚂 3× ${name3} – Sonder-Transport erlaubt (Transportmittel ohne eigenes Symbol)!`;
     return;
   }
   // Pairs (2 same)
@@ -357,13 +532,27 @@ function resetDescentDice() {
   state.descentValue = 0;
   state.eventIndex = -1;
   state.descentPtsAccumulated = 0;
+  state.jokerUsedOnEvent = false;
   clearSlopeSelection();
+  resetRGAccordions();
+  const rollBtn = document.getElementById('btnRollBothDice');
+  if (rollBtn) rollBtn.disabled = false;
 }
 
 function rollBothDice() {
+  // Prevent rolling more than once per turn
+  if (state.diceRolled) return;
+
   const p = currentPlayer();
   const lvl = getLevel(p.points);
   const dd = DESCENT_DICE[lvl];
+
+  // Lock action switching immediately
+  state.diceRolled = true;
+  lockActionButtons();
+  // Disable the Bergab roll button so it cannot be pressed again
+  const rollBtn = document.getElementById('btnRollBothDice');
+  if (rollBtn) rollBtn.disabled = true;
 
   // Roll descent die
   const val = dd.faces[Math.floor(Math.random() * dd.faces.length)];
@@ -386,11 +575,15 @@ function rollBothDice() {
   eventEl.innerHTML = dieImg(ev.img, ev.label);
   eventEl.addEventListener('animationend', () => eventEl.classList.remove('rolling'), {once:true});
 
-  // Show descent result
+  // Show descent result — suppress for events where no descent happens
   const descentRes = document.getElementById('descentResult');
-  descentRes.style.display = '';
-  descentRes.className = 'result-box info';
-  descentRes.textContent = `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val>1?'en':''} passieren.`;
+  if (ev.sym === 'helikopter' || ev.sym === 'unfall') {
+    descentRes.style.display = 'none';
+  } else {
+    descentRes.style.display = '';
+    descentRes.className = 'result-box info';
+    descentRes.textContent = `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val>1?'en':''} passieren.`;
+  }
 
   // Show event result
   const eventRes = document.getElementById('eventResult');
@@ -398,41 +591,82 @@ function rollBothDice() {
   eventRes.className = `result-box ${ev.cls}`;
   eventRes.innerHTML = `<div class="event-icon"><img src="${ev.img}" alt="${ev.label}" style="width:48px;height:48px;object-fit:contain;"></div><b>${ev.label}</b><br>${ev.text}`;
 
-  // Handle automatic coin/bonus effects
-  if (ev.label === 'Sonne') {
+  // Handle automatic coin/bonus effects — use ev.sym for all programmatic checks
+  if (ev.sym === 'sonne') {
     p.joker++;
-    updateCoinsDisplay();
     addHistory(`${p.name}: Sonne → +1 Joker (${p.joker} total)`);
-  } else if (ev.label === '+1 Fahrt') {
+    checkCoinLimit(p);
+    updateCoinsDisplay();
+  } else if (ev.sym === 'fahrt') {
     p.gratis++;
     checkCoinLimit(p);
     updateCoinsDisplay();
     addHistory(`${p.name}: +1 Fahrt → +1 Gratisfahrt-Münze (${p.gratis} total)`);
-  } else if (ev.label === 'Pulverschnee') {
-    state.descentPtsAccumulated += 5;
   }
+  // Pulverschnee bonus is applied at confirmation time via ev.sym check
 
   // Show points card
-  if (ev.label === 'Unfall') {
+  if (ev.sym === 'unfall' || ev.sym === 'helikopter') {
+    const jokerBtn = p && p.joker > 0
+      ? `<button class="btn btn-warning" style="margin-top:8px;" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
+      : '';
+    const bannerText = ev.sym === 'unfall'
+      ? `🤕 <b>Unfall</b> – Zug aussetzen, keine Abfahrt.`
+      : `🚁 <b>Helikopter</b> – Transport ins nächste Tal, keine Abfahrt.`;
     document.getElementById('descentPointsCard').style.display = '';
     document.getElementById('descentEventBanner').innerHTML =
-      '<div class="result-box danger" style="margin:0;">🤕 <b>Unfall</b> – Zug aussetzen, keine Abfahrt. Joker kann eingesetzt werden.</div>';
+      `<div class="result-box danger" style="margin:0;">${bannerText}${jokerBtn}</div>`;
     document.getElementById('slopeSelector').style.display = 'none';
     document.getElementById('descentPointsPreview').style.display = 'none';
-  } else if (ev.label !== 'Helikopter') {
+  } else {
     document.getElementById('descentPointsCard').style.display = '';
     renderDescentEventBanner();
     filterSlopesByLevel();
     initSlopeBoxes();
     updateDescentPreview();
+    updateOhneBefugnisUI();
   }
+  updatePrimaryActionButton();
+}
+
+function useJokerOnEvent() {
+  const p = currentPlayer();
+  if (!p || p.joker < 1) return;
+  const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
+  p.joker--;
+  state.jokerUsedOnEvent = true;
+  const eventName = ev ? ev.label : 'Ereignis';
+  addHistory(`${p.name}: Joker eingesetzt – ${eventName} abgewendet`);
+  checkCoinLimit(p);
+  updateCoinsDisplay();
+  // Show the descent result text now that the event is averted
+  const descentRes = document.getElementById('descentResult');
+  descentRes.style.display = '';
+  descentRes.className = 'result-box info';
+  const val = state.descentValue;
+  descentRes.textContent = `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val>1?'en':''} passieren.`;
+  // Reveal slope selector (re-render banner without the negative effect)
+  renderDescentEventBanner();
+  filterSlopesByLevel();
+  initSlopeBoxes();
+  updateDescentPreview();
+  updateOhneBefugnisUI();
+  updateAll();
 }
 
 function renderDescentEventBanner() {
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
   let html = '';
-  if (ev?.label === 'Schneesturm') html += '<div class="result-box warning" style="margin:0 0 8px;">⚠ Schneesturm aktiv – nur <b>halbe Punkte</b>!</div>';
-  if (ev?.label === 'Pulverschnee') html += '<div class="result-box success" style="margin:0 0 8px;">❄ Pulverschnee – +5 Bonuspunkte werden addiert!</div>';
+  if (ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent) {
+    const p = currentPlayer();
+    const jokerBtn = p && p.joker > 0
+      ? `<button class="btn btn-warning" style="margin-top:6px;font-size:0.8rem;" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
+      : '';
+    html += `<div class="result-box warning" style="margin:0 0 8px;">⚠ Schneesturm aktiv – nur <b>halbe Punkte</b>!${jokerBtn}</div>`;
+  } else if (ev?.sym === 'schneesturm' && state.jokerUsedOnEvent) {
+    html += '<div class="result-box success" style="margin:0 0 8px;">🃏 Schneesturm abgewendet – volle Punkte!</div>';
+  }
+  if (ev?.sym === 'pulverschnee') html += '<div class="result-box success" style="margin:0 0 8px;">❄ Pulverschnee – +5 Bonuspunkte werden addiert!</div>';
   document.getElementById('descentEventBanner').innerHTML = html;
   document.getElementById('slopeSelector').style.display = '';
   document.getElementById('descentPointsPreview').style.display = '';
@@ -453,43 +687,102 @@ function updateCrossingCounter() {
   else if (used === state.descentValue && used > 0) counter.classList.add('counter-full');
 }
 
-function filterSlopesByLevel() {
+// Returns the set of slope colours allowed for the current player's level
+function getAllowedSlopes() {
   const p = currentPlayer();
   const lvl = p ? getLevel(p.points) : 'anfaenger';
-  // Anfänger: blau + rot; Fortgeschritten: blau + rot + schwarz; Profi: alle
-  const allowed = {
+  return {
     anfaenger:      ['blue','red'],
     fortgeschritten:['blue','red','black'],
     profi:          ['blue','red','black','yellow']
   }[lvl];
+}
+
+function filterSlopesByLevel() {
+  const allowed = getAllowedSlopes();
   ['blue','red','black','yellow'].forEach(c => {
-    document.getElementById(`slopeRow-${c}`).style.display = allowed.includes(c) ? '' : 'none';
+    const row = document.getElementById(`slopeRow-${c}`);
+    const badge = document.getElementById(`forbiddenBadge-${c}`);
+    const isForbidden = !allowed.includes(c);
+    row.classList.toggle('slope-forbidden', isForbidden);
+    if (badge) badge.style.display = isForbidden ? '' : 'none';
   });
 }
 
 function initSlopeBoxes() {
   slopeSelection = { blue: 0, red: 0, black: 0, yellow: 0 };
+  ohneBefugnisResult = null;
+  const allowed = getAllowedSlopes();
+
   document.querySelectorAll('.kreuzung-boxes').forEach(group => {
     const color = group.dataset.color;
+    const isForbidden = !allowed.includes(color);
     group.querySelectorAll('.kbox').forEach(btn => {
-      btn.classList.remove('kbox-active', 'kbox-disabled');
+      btn.classList.remove('kbox-active', 'kbox-disabled', 'kbox-forbidden-active');
       btn.onclick = () => {
         const val = parseInt(btn.dataset.val);
         if (btn.classList.contains('kbox-disabled')) return;
         if (slopeSelection[color] === val) {
           slopeSelection[color] = 0;
-          btn.classList.remove('kbox-active');
+          btn.classList.remove('kbox-active', 'kbox-forbidden-active');
         } else {
           slopeSelection[color] = val;
-          group.querySelectorAll('.kbox').forEach(b => b.classList.remove('kbox-active'));
-          btn.classList.add('kbox-active');
+          group.querySelectorAll('.kbox').forEach(b => b.classList.remove('kbox-active', 'kbox-forbidden-active'));
+          if (isForbidden) {
+            btn.classList.add('kbox-forbidden-active');
+          } else {
+            btn.classList.add('kbox-active');
+          }
         }
         updateDescentPreview();
         updateKboxAvailability();
+        updateOhneBefugnisUI();
       };
     });
   });
   updateKboxAvailability();
+  updateOhneBefugnisUI();
+}
+
+// Shows/hides the inline Ohne-Befugnis roll area and toggles the confirm button
+function updateOhneBefugnisUI() {
+  const allowed = getAllowedSlopes();
+  const hasForbiddenSelection = ['blue','red','black','yellow'].some(c => {
+    return !allowed.includes(c) && slopeSelection[c] > 0;
+  });
+
+  const rollArea = document.getElementById('ohneBefugnisRollArea');
+  const confirmBtn = document.getElementById('btnConfirmDescent');
+  if (!rollArea || !confirmBtn) return;
+
+  if (hasForbiddenSelection) {
+    rollArea.style.display = '';
+    // If already rolled, keep confirm enabled; otherwise block it
+    if (ohneBefugnisResult === null) {
+      confirmBtn.disabled = true;
+      confirmBtn.className = 'btn btn-warn';
+      confirmBtn.textContent = '⚠ Erst Rot/Grün würfeln';
+    } else {
+      confirmBtn.disabled = false;
+      confirmBtn.className = 'btn btn-success';
+      updateConfirmButtonLabel();
+    }
+  } else {
+    rollArea.style.display = 'none';
+    // Reset the inline RG die when no forbidden slope is selected
+    const dieEl = document.getElementById('rgDieOhneBefugnisInline');
+    if (dieEl) {
+      dieEl.className = 'die die-rg-neutral';
+      dieEl.innerHTML = dieImg('img/die_unknown.svg', '?');
+    }
+    const resEl = document.getElementById('ohneBefugnisInlineResult');
+    if (resEl) resEl.style.display = 'none';
+    ohneBefugnisResult = null;
+    confirmBtn.disabled = false;
+    confirmBtn.className = 'btn btn-success';
+    updateConfirmButtonLabel();
+  }
+  updatePrimaryActionButton();
 }
 
 function updateKboxAvailability() {
@@ -510,7 +803,9 @@ function updateKboxAvailability() {
   updateCrossingCounter();
 }
 
-function updateDescentPreview() {
+// Returns { total, basePoints, parts, bonusText } for the current descent selection.
+// Single source of truth — used by both the preview label and the confirm button.
+function calcDescentTotal() {
   let basePoints = 0;
   const parts = [];
   ['blue','red','black','yellow'].forEach(c => {
@@ -526,8 +821,15 @@ function updateDescentPreview() {
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
   let total = basePoints;
   let bonusText = '';
-  if (ev?.label === 'Schneesturm') { total = Math.floor(total / 2); bonusText = ' (÷2 Schneesturm)'; }
-  if (ev?.label === 'Pulverschnee') { total += 5; bonusText = ' (+5 Pulverschnee)'; }
+  if (ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent) { total = Math.floor(total / 2); bonusText = ' (÷2 Schneesturm)'; }
+  if (ev?.sym === 'pulverschnee') { total += 5; bonusText = ' (+5 Pulverschnee)'; }
+  if (ohneBefugnisResult === false) { total = -total; bonusText += ' (Ohne Befugnis: negativ)'; }
+
+  return { total, basePoints, parts, bonusText };
+}
+
+function updateDescentPreview() {
+  const { total, parts, bonusText } = calcDescentTotal();
 
   const el = document.getElementById('descentPointsPreview');
   if (parts.length === 0) {
@@ -535,27 +837,94 @@ function updateDescentPreview() {
     el.style.color = 'var(--muted)';
   } else {
     el.innerHTML = `${parts.join(' + ')}${bonusText} → <b>${total} Punkte</b>`;
-    el.style.color = '#2e6da4';
+    el.style.color = ohneBefugnisResult === false ? 'var(--red)' : '#2e6da4';
   }
+  updateConfirmButtonLabel();
+}
+
+// Updates the confirm button text to reflect the current point total.
+// Positive: "✓ 6 Punkte eintragen"
+// Negative: "✓ 5 Punkte entfernen"
+// No selection: "✓ Punkte eintragen"
+function updateConfirmButtonLabel() {
+  const confirmBtn = document.getElementById('btnConfirmDescent');
+  if (!confirmBtn) return;
+  // Don't overwrite the warning state set by updateOhneBefugnisUI
+  if (confirmBtn.textContent.startsWith('⚠')) return;
+
+  const { total, parts } = calcDescentTotal();
+  if (parts.length === 0) {
+    confirmBtn.textContent = '✓ Punkte eintragen';
+  } else if (total < 0) {
+    confirmBtn.textContent = `✓ ${Math.abs(total)} Punkte entfernen`;
+  } else {
+    confirmBtn.textContent = `✓ ${total} Punkte eintragen`;
+  }
+  updatePrimaryActionButton();
 }
 
 function clearSlopeSelection() {
   slopeSelection = { blue: 0, red: 0, black: 0, yellow: 0 };
-  document.querySelectorAll('.kbox').forEach(b => b.classList.remove('kbox-active', 'kbox-disabled'));
+  document.querySelectorAll('.kbox').forEach(b => b.classList.remove('kbox-active', 'kbox-disabled', 'kbox-forbidden-active'));
+  ohneBefugnisResult = null;
+  // Reset inline roll area
+  const dieInline = document.getElementById('rgDieOhneBefugnisInline');
+  if (dieInline) {
+    dieInline.className = 'die die-rg-neutral';
+    dieInline.innerHTML = dieImg('img/die_unknown.svg', '?');
+  }
+  const resInline = document.getElementById('ohneBefugnisInlineResult');
+  if (resInline) resInline.style.display = 'none';
+  const rollBtn = document.getElementById('btnRollOhneBefugnis');
+  if (rollBtn) rollBtn.disabled = false;
   updateDescentPreview();
   updateKboxAvailability();
+  updateOhneBefugnisUI();
+}
+
+function rollOhneBefugnisInline() {
+  const p = currentPlayer();
+  const isGreen = Math.random() < 0.5;
+  ohneBefugnisResult = isGreen;
+
+  const dieEl = document.getElementById('rgDieOhneBefugnisInline');
+  dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'} rolling`;
+  dieEl.innerHTML = dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot');
+  dieEl.addEventListener('animationend', () => dieEl.classList.remove('rolling'), {once:true});
+
+  // Disable re-roll button after rolling
+  const rollBtn = document.getElementById('btnRollOhneBefugnis');
+  if (rollBtn) rollBtn.disabled = true;
+
+  const resEl = document.getElementById('ohneBefugnisInlineResult');
+  resEl.style.display = '';
+  if (isGreen) {
+    resEl.className = 'result-box success';
+    resEl.textContent = '✅ Grün – normale Punkte werden eingetragen.';
+  } else {
+    resEl.className = 'result-box danger';
+    resEl.textContent = '✗ Rot – Punkte werden als negative Werte eingetragen!';
+  }
+  addHistory(`${p.name}: Ohne Befugnis → ${isGreen ? 'GRÜN → normale Punkte' : 'ROT → negative Punkte'}`);
+
+  // Update preview and unlock confirm button
+  updateDescentPreview();
+  updateOhneBefugnisUI();
 }
 
 function confirmDescentPoints() {
   const p = currentPlayer();
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
 
-  // Unfall case: just close the card
-  if (ev?.label === 'Unfall') {
+  // Unfall / Helikopter (no Joker used): just log and close the card
+  if ((ev?.sym === 'unfall' || ev?.sym === 'helikopter') && !state.jokerUsedOnEvent) {
     document.getElementById('descentPointsCard').style.display = 'none';
     const cc = document.getElementById('crossingCounter');
     if (cc) cc.classList.remove('counter-full','counter-over');
-    addHistory(`${p.name}: Unfall – Zug ausgesetzt`);
+    const logMsg = ev.sym === 'unfall'
+      ? `${p.name}: Unfall – Zug ausgesetzt`
+      : `${p.name}: Helikopter – Transport ins nächste Tal`;
+    addHistory(logMsg);
     updateAll();
     return;
   }
@@ -573,12 +942,15 @@ function confirmDescentPoints() {
   });
 
   let total = basePoints;
-  if (ev?.label === 'Schneesturm') { total = Math.floor(total / 2); }
-  if (ev?.label === 'Pulverschnee') { total += 5; }
+  if (ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent) { total = Math.floor(total / 2); }
+  if (ev?.sym === 'pulverschnee') { total += 5; }
+  const ohneBefugnisRed = ohneBefugnisResult === false;
+  if (ohneBefugnisRed) { total = -total; }
 
   p.points += total;
+  const schneesturmActive = ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent;
   const histLine = parts.length > 0
-    ? `${p.name}: Abfahrt [${parts.join(', ')}]${ev?.label==='Schneesturm'?' (Schneesturm ÷2)':''}${ev?.label==='Pulverschnee'?' (+5 Pulverschnee)':''} → +${total} Punkte`
+    ? `${p.name}: Abfahrt [${parts.join(', ')}]${schneesturmActive?' (Schneesturm ÷2)':''}${state.jokerUsedOnEvent && ev?.sym==='schneesturm'?' (Joker: Schneesturm abgewendet)':''}${ev?.sym==='pulverschnee'?' (+5 Pulverschnee)':''}${ohneBefugnisRed?' (Ohne Befugnis: negativ)':''} → ${total >= 0 ? '+' : ''}${total} Punkte`
     : `${p.name}: Abfahrt ohne Pisten-Punkte bestätigt`;
   addHistory(histLine);
   saveState();
@@ -593,6 +965,81 @@ function confirmDescentPoints() {
 }
 
 // ═══════════════════════════════════════
+// ROT/GRÜN ACCORDION PANELS (Zug tab – Bergab)
+// ═══════════════════════════════════════
+
+// Tracks the result of the Ohne Befugnis roll for the current descent
+// null = not yet rolled, true = green (use positive pts), false = red (negate pts)
+let ohneBefugnisResult = null;
+
+function toggleAccordion(which) {
+  const body    = document.getElementById('body'    + which.charAt(0).toUpperCase() + which.slice(1));
+  const chevron = document.getElementById('chevron' + which.charAt(0).toUpperCase() + which.slice(1));
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if (chevron) chevron.textContent = open ? '▸' : '▾';
+}
+
+function resetRGAccordions() {
+  // Close Extraaktivität panel and reset its die + result
+  const bodyExtra = document.getElementById('bodyExtraaktivitaet');
+  if (bodyExtra) bodyExtra.style.display = 'none';
+  const chevronExtra = document.getElementById('chevronExtraaktivitaet');
+  if (chevronExtra) chevronExtra.textContent = '▸';
+  const rgDieExtra = document.getElementById('rgDieExtra');
+  if (rgDieExtra) {
+    rgDieExtra.className = 'die die-rg-neutral';
+    rgDieExtra.innerHTML = dieImg('img/die_unknown.svg', '?');
+  }
+  const rgResultExtra = document.getElementById('rgResultExtra');
+  if (rgResultExtra) rgResultExtra.style.display = 'none';
+
+  // Reset inline Ohne-Befugnis area
+  const dieInline = document.getElementById('rgDieOhneBefugnisInline');
+  if (dieInline) {
+    dieInline.className = 'die die-rg-neutral';
+    dieInline.innerHTML = dieImg('img/die_unknown.svg', '?');
+  }
+  const resInline = document.getElementById('ohneBefugnisInlineResult');
+  if (resInline) resInline.style.display = 'none';
+  const rollBtn = document.getElementById('btnRollOhneBefugnis');
+  if (rollBtn) rollBtn.disabled = false;
+  const rollArea = document.getElementById('ohneBefugnisRollArea');
+  if (rollArea) rollArea.style.display = 'none';
+
+  ohneBefugnisResult = null;
+}
+
+function rollRGInTurn(context) {
+  const p = currentPlayer();
+  const isGreen = Math.random() < 0.5;
+
+  if (context === 'extraaktivitaet') {
+    const dieEl = document.getElementById('rgDieExtra');
+    dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'} rolling`;
+    dieEl.innerHTML = dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot');
+    dieEl.addEventListener('animationend', () => dieEl.classList.remove('rolling'), {once:true});
+
+    const res = document.getElementById('rgResultExtra');
+    res.style.display = '';
+    if (isGreen) {
+      res.className = 'result-box success';
+      res.textContent = '✅ Erfolg! +12 Punkte werden eingetragen.';
+      p.points += 12;
+      saveState();
+      updateAll();
+      addHistory(`${p.name}: Extraaktivität → GRÜN → +12 Punkte`);
+    } else {
+      res.className = 'result-box danger';
+      res.textContent = '✗ Nicht gemeistert – 0 Punkte.';
+      addHistory(`${p.name}: Extraaktivität → ROT → 0 Punkte`);
+    }
+
+  }
+}
+
+// ═══════════════════════════════════════
 // SPECIAL TAB
 // ═══════════════════════════════════════
 function updateSpecialTab() {
@@ -604,9 +1051,6 @@ function updateSpecialTab() {
   checkCoinWarning(p);
 }
 
-function updateSpecialTabFull() {
-  updateSpecialTab();
-}
 
 function rollRGDie(context) {
   const isGreen = Math.random() < 0.5;
@@ -706,19 +1150,18 @@ function adjustCoins(type, delta) {
 
 function checkCoinLimit(p) {
   const total = p.joker + p.gratis;
-  if (total > 3) {
-    const excess = total - 3;
-    // Reduce gratis first, then joker
-    const reduceGratis = Math.min(excess, p.gratis);
-    p.gratis -= reduceGratis;
-    p.joker  -= (excess - reduceGratis);
-    addHistory(`${p.name}: Münzen-Limit (3) – ${excess} Münze(n) zurückgegeben`);
+  if (total >= 3) {
+    // Rule: as soon as a player has 3 coins simultaneously, all are returned
+    const returned = p.joker + p.gratis;
+    p.joker  = 0;
+    p.gratis = 0;
+    addHistory(`${p.name}: 3 Münzen erreicht – alle ${returned} Münze(n) zurückgegeben`);
   }
 }
 
 function checkCoinWarning(p) {
-  const total = (p?.joker||0) + (p?.gratis||0);
-  document.getElementById('coinWarning').style.display = total >= 3 ? '' : 'none';
+  // Warning is no longer needed — coins are auto-removed at 3
+  document.getElementById('coinWarning').style.display = 'none';
 }
 
 function updateCoinsDisplay() {
@@ -735,16 +1178,20 @@ function updateCoinsDisplay() {
 function takePause(type) {
   const p = currentPlayer();
   if (!p) return;
-  if (p.pauseDone) {
-    alert('Mittagspause wurde bereits eingelegt!');
-    return;
-  }
+  const h = gameTimeHour();
+  if (!(h >= 11 && h <= 12.5)) return; // buttons are disabled; guard against direct JS calls
+  if (p.pauseDone) return;
   const pts = type === 'restaurant' ? 15 : 7;
   p.points += pts;
   p.pauseDone = true;
   addHistory(`${p.name}: Mittagspause (${type==='restaurant'?'Restaurant':'Bar'}) → +${pts} Punkte, 1 Zug aussetzen`);
   saveState();
   updateAll();
+  // Lock buttons immediately — pauseDone is now true
+  document.getElementById('btnPauseRestaurant').disabled = true;
+  document.getElementById('btnPauseBar').disabled        = true;
+  document.getElementById('pauseDoneWarning').style.display = '';
+  document.getElementById('pauseTimeWarning').style.display = 'none';
   const sectionPause = document.getElementById('sectionPause');
   const msg = document.createElement('div');
   msg.className = 'result-box success';
@@ -752,6 +1199,7 @@ function takePause(type) {
   msg.style.marginTop = '8px';
   sectionPause.appendChild(msg);
   setTimeout(() => msg.remove(), 3000);
+  updatePrimaryActionButton();
 }
 
 // ═══════════════════════════════════════
@@ -760,10 +1208,18 @@ function takePause(type) {
 function endTurn() {
   const p = currentPlayer();
   addHistory(`── ${p?.name||'?'}: Zug beendet (${gameTime()})`);
+
+  // Mark this player as having played this round
+  if (!state.playedThisRound) state.playedThisRound = [];
+  if (!state.playedThisRound.includes(state.currentPlayerIndex)) {
+    state.playedThisRound.push(state.currentPlayerIndex);
+  }
+
   // Advance to next player; if all played → advance round
   state.currentPlayerIndex++;
   if (state.currentPlayerIndex >= state.players.length) {
     state.currentPlayerIndex = 0;
+    state.playedThisRound = []; // clear for the new round
     state.round++;
     if (state.round > state.totalRounds) {
       state.round = state.totalRounds;
@@ -772,7 +1228,16 @@ function endTurn() {
   }
   resetTransportState();
   renderTransportDice(false);
+  // Reset transient descent state so the next player starts clean
+  state.descentRolled = false;
+  state.eventRolled = false;
+  state.descentValue = 0;
+  state.eventIndex = -1;
+  state.descentPtsAccumulated = 0;
+  state.jokerUsedOnEvent = false;
   state.action = null;
+  state.diceRolled = false;  // unlock for the next player's turn
+  ohneBefugnisResult = null;
   saveState();
   setAction(null);
   updateAll();
@@ -851,6 +1316,8 @@ function resetGame() {
   state.currentPlayerIndex = 0;
   state.history = [];
   state.gameStarted = false;
+  state.playedThisRound = [];
+  state.diceRolled = false;
   resetTransportState();
   setAction(null);
   initDefaultPlayers();
@@ -873,6 +1340,8 @@ function saveState() {
       startHour:          state.startHour,
       history:            state.history,
       gameStarted:        state.gameStarted,
+      playedThisRound:    state.playedThisRound || [],
+      diceRolled:         state.diceRolled || false,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
@@ -888,6 +1357,9 @@ function loadState() {
     // Basic sanity check
     if (!saved.players || !Array.isArray(saved.players) || saved.players.length === 0) return false;
     Object.assign(state, saved);
+    // Backwards compatibility: fields may be missing in older saves
+    if (!Array.isArray(state.playedThisRound)) state.playedThisRound = [];
+    if (typeof state.diceRolled !== 'boolean') state.diceRolled = false;
     return true;
   } catch (e) {
     console.warn('Could not load state:', e);

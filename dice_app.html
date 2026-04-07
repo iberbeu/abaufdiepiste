@@ -12,11 +12,16 @@
 <header>
   <div>
     <h1>⛷ Ab auf die Piste</h1>
-    <div id="roundLabel" style="font-size:0.75rem;opacity:0.8;margin-top:2px;">Runde 1 von 20</div>
+    <div id="roundLabel" class="header-sub">Runde 1 von 20</div>
   </div>
-  <div style="text-align:right">
+  <div class="header-player-info">
     <div class="clock" id="gameClock">08:00</div>
-    <div class="round-info" id="currentPlayerHeader">—</div>
+    <div class="header-player-row">
+      <div id="currentPlayerDot" class="player-color-dot"></div>
+      <span id="currentPlayerHeader" class="header-player-name">—</span>
+      <span id="levelBadge" class="level-badge level-anfaenger">Anfänger</span>
+      <span id="currentPlayerPoints" class="header-player-points">0</span>
+    </div>
   </div>
 </header>
 
@@ -32,24 +37,6 @@
      TAB 1: CURRENT TURN (transport dice)
 ════════════════════════════════════════ -->
 <div id="tab-turn" class="panel active">
-
-  <!-- Current player -->
-  <div class="card" style="padding:12px 16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-      <div>
-        <div class="card-title" style="margin-bottom:4px;">Aktueller Spieler</div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div id="currentPlayerDot" class="player-color-dot"></div>
-          <span id="currentPlayerName" style="font-size:1.1rem;font-weight:700;">—</span>
-          <span id="levelBadge" class="level-badge level-anfaenger">Anfänger</span>
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div class="card-title" style="margin-bottom:2px;">Punkte</div>
-        <div id="currentPlayerPoints" style="font-size:1.5rem;font-weight:800;color:#2e6da4;">0</div>
-      </div>
-    </div>
-  </div>
 
   <!-- Player selector -->
   <div id="playerStrip" class="player-strip"></div>
@@ -81,23 +68,6 @@
       <div id="transportResult" class="result-box info" style="display:none;"></div>
     </div>
 
-    <div class="card">
-      <div class="card-title">Symbolübersicht</div>
-      <div class="symbol-grid">
-        <div class="symbol-cell"><img class="sym" src="img/transport_fussweg.svg" alt="Fußweg">Fußweg</div>
-        <div class="symbol-cell"><img class="sym" src="img/transport_kleingondel.svg" alt="Kleingondel">Kleingondel</div>
-        <div class="symbol-cell"><img class="sym" src="img/transport_skilift.svg" alt="Skilift">Skilift</div>
-        <div class="symbol-cell"><img class="sym" src="img/transport_sesselbahn.svg" alt="Sesselbahn">Sesselbahn</div>
-        <div class="symbol-cell"><img class="sym" src="img/transport_gondel.svg" alt="Gondel">Gondel</div>
-        <div class="symbol-cell"><img class="sym" src="img/transport_zug.svg" alt="Zug/Bus">Zug/Bus</div>
-      </div>
-      <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-top:6px;">
-        <b>2 gleiche</b> = gültige Beförderung &nbsp;|&nbsp;
-        <b>1 + 3 andere gleiche</b> = auch gültig &nbsp;|&nbsp;
-        <b>3 gleiche</b> = Sonder-Transport (Zug/Bus) &nbsp;|&nbsp;
-        <b>6 gleiche</b> = Helikopter (beliebig weit)
-      </div>
-    </div>
   </div>
 
   <!-- BERGAB: inline descent section -->
@@ -117,7 +87,7 @@
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-warn" onclick="rollBothDice()">🎿 Würfeln</button>
+        <button class="btn btn-warn" id="btnRollBothDice" onclick="rollBothDice()">🎿 Würfeln</button>
       </div>
       <div id="eventResult" class="result-box info" style="display:none;margin-top:8px;"></div>
 
@@ -134,7 +104,11 @@
         <div id="slopeSelector">
           <!-- Blue -->
           <div class="slope-row" id="slopeRow-blue">
-            <div class="slope-label"><span class="slope-badge slope-blue">🔵 Blau</span><span class="slope-pts-label">2 Pkt/Kreuzung</span></div>
+            <div class="slope-label">
+              <span class="slope-badge slope-blue">🔵 Blau</span>
+              <span class="slope-pts-label">2 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-blue" style="display:none;">⚠ Ohne Befugnis</span>
+            </div>
             <div class="kreuzung-boxes" data-color="blue">
               <button class="kbox" data-val="1">1</button>
               <button class="kbox" data-val="2">2</button>
@@ -146,7 +120,11 @@
           </div>
           <!-- Red -->
           <div class="slope-row" id="slopeRow-red">
-            <div class="slope-label"><span class="slope-badge slope-red">🔴 Rot</span><span class="slope-pts-label">4 Pkt/Kreuzung</span></div>
+            <div class="slope-label">
+              <span class="slope-badge slope-red">🔴 Rot</span>
+              <span class="slope-pts-label">4 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-red" style="display:none;">⚠ Ohne Befugnis</span>
+            </div>
             <div class="kreuzung-boxes" data-color="red">
               <button class="kbox" data-val="1">1</button>
               <button class="kbox" data-val="2">2</button>
@@ -158,7 +136,11 @@
           </div>
           <!-- Black -->
           <div class="slope-row" id="slopeRow-black">
-            <div class="slope-label"><span class="slope-badge slope-black">⚫ Schwarz</span><span class="slope-pts-label">6 Pkt/Kreuzung</span></div>
+            <div class="slope-label">
+              <span class="slope-badge slope-black">⚫ Schwarz</span>
+              <span class="slope-pts-label">6 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-black" style="display:none;">⚠ Ohne Befugnis</span>
+            </div>
             <div class="kreuzung-boxes" data-color="black">
               <button class="kbox" data-val="1">1</button>
               <button class="kbox" data-val="2">2</button>
@@ -170,7 +152,11 @@
           </div>
           <!-- Yellow -->
           <div class="slope-row" id="slopeRow-yellow">
-            <div class="slope-label"><span class="slope-badge slope-yellow">🟡 Gelb</span><span class="slope-pts-label">8 Pkt/Kreuzung</span></div>
+            <div class="slope-label">
+              <span class="slope-badge slope-yellow">🟡 Gelb</span>
+              <span class="slope-pts-label">8 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-yellow" style="display:none;">⚠ Ohne Befugnis</span>
+            </div>
             <div class="kreuzung-boxes" data-color="yellow">
               <button class="kbox" data-val="1">1</button>
               <button class="kbox" data-val="2">2</button>
@@ -183,9 +169,26 @@
         </div>
 
         <div id="descentPointsPreview" style="font-size:0.9rem;font-weight:700;color:#2e6da4;min-height:24px;margin:10px 0 4px;text-align:center;"></div>
+
+        <!-- Ohne Befugnis inline roll area — shown when forbidden slope is selected -->
+        <div id="ohneBefugnisRollArea" style="display:none;margin-bottom:8px;">
+          <div class="result-box warning" style="margin:0 0 8px;">
+            ⚠ Du hast eine nicht erlaubte Piste gewählt. Würfle den Rot/Grün-Würfel:
+            <br><span style="font-size:0.8rem;color:var(--muted);">Grün = normale Punkte · Rot = negative Punkte</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin:8px 0;">
+            <div class="die die-rg-neutral" id="rgDieOhneBefugnisInline" style="width:52px;height:52px;flex-shrink:0;">
+              <img src="img/die_unknown.svg" alt="?" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">
+            </div>
+            <button class="btn btn-warn" id="btnRollOhneBefugnis" onclick="rollOhneBefugnisInline()">🎲 Würfeln</button>
+          </div>
+          <div id="ohneBefugnisInlineResult" style="display:none;"></div>
+        </div>
+
+        <!-- btnConfirmDescent kept hidden — used only by updateOhneBefugnisUI() for state tracking -->
+        <button id="btnConfirmDescent" style="display:none;" onclick="confirmDescentPoints()">✓ Punkte eintragen</button>
         <div class="btn-row">
-          <button class="btn btn-neutral" onclick="clearSlopeSelection()">↺ Zurücksetzen</button>
-          <button class="btn btn-success" onclick="confirmDescentPoints()">✓ Punkte eintragen</button>
+          <button class="btn btn-neutral btn-full" onclick="clearSlopeSelection()">↺ Auswahl zurücksetzen</button>
         </div>
       </div><!-- /descentPointsCard -->
 
@@ -193,16 +196,25 @@
       <div id="descentResult" class="result-box info" style="display:none;margin-top:10px;"></div>
     </div>
 
-    <div class="card">
-      <div class="card-title">Würfel-Referenz</div>
-      <div class="stat-row"><span class="stat-label">🔴 Anfänger (0–20 Pkt)</span><span class="stat-value">1·1·2·2·3·3</span></div>
-      <div class="stat-row"><span class="stat-label">⚫ Fortgeschritten (21–70 Pkt)</span><span class="stat-value">2·2·3·3·4·4</span></div>
-      <div class="stat-row"><span class="stat-label">🟡 Profi (&gt;70 Pkt)</span><span class="stat-value">3·3·4·4·6·6</span></div>
-      <div class="stat-row"><span class="stat-label">🔵 Blau</span><span class="stat-value">2 Pkt/Strecke</span></div>
-      <div class="stat-row"><span class="stat-label">🔴 Rot</span><span class="stat-value">4 Pkt/Strecke</span></div>
-      <div class="stat-row"><span class="stat-label">⚫ Schwarz</span><span class="stat-value">6 Pkt/Strecke</span></div>
-      <div class="stat-row"><span class="stat-label">🟡 Gelb</span><span class="stat-value">8 Pkt/Strecke</span></div>
+    <!-- ── EXTRAAKTIVITÄT panel (accordion) ── -->
+    <div class="card accordion-card" id="cardExtraaktivitaet">
+      <button class="accordion-trigger" onclick="toggleAccordion('extraaktivitaet')" id="triggerExtraaktivitaet">
+        <span>🏂 Extraaktivität</span><span class="accordion-chevron" id="chevronExtraaktivitaet">▸</span>
+      </button>
+      <div class="accordion-body" id="bodyExtraaktivitaet" style="display:none;">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">
+          Nur für Fortgeschrittene &amp; Profis. Grün = +12 Punkte · Rot = 0 Punkte.
+        </p>
+        <div class="dice-row" style="justify-content:center;">
+          <div class="die die-rg-neutral" id="rgDieExtra"><img src="img/die_unknown.svg" alt="?" style="width:100%;height:100%;object-fit:contain;border-radius:8px;"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="rollRGInTurn('extraaktivitaet')">🎲 Würfeln</button>
+        </div>
+        <div id="rgResultExtra" class="result-box info" style="display:none;margin-top:8px;"></div>
+      </div>
     </div>
+
   </div>
 
   <!-- PAUSE -->
@@ -213,18 +225,37 @@
         Erlaubt zwischen 11:00 und 12:30 Uhr (aktuelle Zeit: <span id="pauseCurrentTime">—</span>).
         Nur in Restaurant oder Bar.
       </p>
-      <div id="pauseTimeWarning" class="result-box warning" style="display:none;">⚠ Außerhalb des Mittagspausen-Zeitfensters!</div>
+      <div id="pauseTimeWarning" class="result-box warning" style="display:none;">⚠ Außerhalb des Mittagspausen-Zeitfensters (11:00–12:30)!</div>
+      <div id="pauseDoneWarning" class="result-box warning" style="display:none;">✓ Mittagspause bereits eingelegt.</div>
       <div class="btn-row" style="margin-top:0;flex-direction:column;gap:8px;">
-        <button class="btn btn-success btn-full" onclick="takePause('restaurant')">🍽 Restaurant (+15 Punkte, 1 Zug aussetzen)</button>
-        <button class="btn btn-warn   btn-full" onclick="takePause('bar')">🍺 Bar (+7 Punkte, 1 Zug aussetzen)</button>
+        <button id="btnPauseRestaurant" class="btn btn-success btn-full" onclick="takePause('restaurant')">🍽 Restaurant (+15 Punkte, 1 Zug aussetzen)</button>
+        <button id="btnPauseBar"        class="btn btn-warn   btn-full" onclick="takePause('bar')">🍺 Bar (+7 Punkte, 1 Zug aussetzen)</button>
       </div>
     </div>
   </div>
 
-  <!-- Next turn button — disabled until an action is chosen -->
-  <div class="btn-row" style="margin-top:4px;">
-    <button class="btn btn-success btn-full" id="btnEndTurn" onclick="endTurn()" disabled
-      title="Erst eine Aktion wählen">✓ Zug beenden → Nächster Spieler</button>
+  <!-- Symbolübersicht accordion -->
+  <div class="card accordion-card" style="margin-top:8px;">
+    <button class="accordion-trigger" onclick="toggleAccordion('symboluebersicht')" id="triggerSymboluebersicht">
+      Symbolübersicht
+      <span class="accordion-chevron" id="chevronSymboluebersicht">▸</span>
+    </button>
+    <div class="accordion-body" id="bodySymboluebersicht" style="display:none">
+      <div class="symbol-grid">
+        <div class="symbol-cell"><img class="sym" src="img/transport_fussweg.svg" alt="Fußweg">Fußweg</div>
+        <div class="symbol-cell"><img class="sym" src="img/transport_kleingondel.svg" alt="Kleingondel">Kleingondel</div>
+        <div class="symbol-cell"><img class="sym" src="img/transport_skilift.svg" alt="Skilift">Skilift</div>
+        <div class="symbol-cell"><img class="sym" src="img/transport_sesselbahn.svg" alt="Sesselbahn">Sesselbahn</div>
+        <div class="symbol-cell"><img class="sym" src="img/transport_gondel.svg" alt="Gondel">Gondel</div>
+        <div class="symbol-cell"><img class="sym" src="img/transport_zug.svg" alt="Zug/Bus">Zug/Bus</div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-top:6px;">
+        <b>2 gleiche</b> = gültige Beförderung &nbsp;|&nbsp;
+        <b>1 + 3 andere gleiche</b> = auch gültig &nbsp;|&nbsp;
+        <b>3 gleiche</b> = Sonder-Transport (Zug/Bus) &nbsp;|&nbsp;
+        <b>6 gleiche</b> = Helikopter (beliebig weit)
+      </div>
+    </div>
   </div>
 
   <!-- Turn log -->
@@ -239,23 +270,6 @@
      TAB 3: SONDER (Special dice)
 ════════════════════════════════════════ -->
 <div id="tab-special" class="panel">
-
-  <!-- Red/Green die -->
-  <div class="card">
-    <div class="card-title">Rot/Grün-Würfel</div>
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">
-      Für: Fahren ohne Befugnis · Extraaktivitäten
-    </p>
-    <div class="dice-row">
-      <div class="die" id="rgDie" style="background:linear-gradient(135deg,#e0e0e0,#bdbdbd);"><img src="img/die_unknown.svg" alt="?" style="width:100%;height:100%;object-fit:contain;border-radius:8px;"></div>
-    </div>
-    <div id="rgResult" class="result-box info" style="display:none;margin-top:10px;"></div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="rollRGDie('normal')">🎲 Würfeln</button>
-      <button class="btn btn-neutral" onclick="rollRGDie('extraaktivitaet')">🏂 Extraaktivität</button>
-      <button class="btn btn-warn"   onclick="rollRGDie('ohne_befugnis')">⚠ Ohne Befugnis</button>
-    </div>
-  </div>
 
   <!-- Sehenswürdigkeiten -->
   <div class="card">
@@ -286,21 +300,21 @@
     <div class="stat-row">
       <span class="stat-label">🃏 Joker-Münzen</span>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-neutral" style="padding:4px 10px;font-size:1rem;" onclick="adjustCoins('joker',-1)">−</button>
+        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('joker',-1)">−</button>
         <span id="jokerCount" class="stat-value" style="font-size:1.2rem;">0</span>
-        <button class="btn btn-neutral" style="padding:4px 10px;font-size:1rem;" onclick="adjustCoins('joker',1)">+</button>
+        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('joker',1)">+</button>
       </div>
     </div>
     <div class="stat-row">
       <span class="stat-label">🎟 Gratisfahrt-Münzen</span>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-neutral" style="padding:4px 10px;font-size:1rem;" onclick="adjustCoins('gratis',-1)">−</button>
+        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('gratis',-1)">−</button>
         <span id="gratisCount" class="stat-value" style="font-size:1.2rem;">0</span>
-        <button class="btn btn-neutral" style="padding:4px 10px;font-size:1rem;" onclick="adjustCoins('gratis',1)">+</button>
+        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('gratis',1)">+</button>
       </div>
     </div>
     <div id="coinWarning" class="result-box warning" style="display:none;margin-top:8px;">
-      ⚠ Maximale Münzanzahl (3) erreicht – Münzen zurückgeben!
+      ⚠ 3 Münzen erreicht – alle Münzen wurden automatisch zurückgegeben!
     </div>
   </div>
 </div>
@@ -339,6 +353,17 @@
     <div class="stat-row"><span class="stat-label">Mittagspause</span><span class="stat-value">11:00–12:30</span></div>
   </div>
 
+  <div class="card">
+    <div class="card-title">Würfel-Referenz</div>
+    <div class="stat-row"><span class="stat-label">🔴 Anfänger (0–20 Pkt)</span><span class="stat-value">1·1·2·2·3·3</span></div>
+    <div class="stat-row"><span class="stat-label">⚫ Fortgeschritten (21–70 Pkt)</span><span class="stat-value">2·2·3·3·4·4</span></div>
+    <div class="stat-row"><span class="stat-label">🟡 Profi (&gt;70 Pkt)</span><span class="stat-value">3·3·4·4·6·6</span></div>
+    <div class="stat-row"><span class="stat-label">🔵 Blau</span><span class="stat-value">2 Pkt/Strecke</span></div>
+    <div class="stat-row"><span class="stat-label">🔴 Rot</span><span class="stat-value">4 Pkt/Strecke</span></div>
+    <div class="stat-row"><span class="stat-label">⚫ Schwarz</span><span class="stat-value">6 Pkt/Strecke</span></div>
+    <div class="stat-row"><span class="stat-label">🟡 Gelb</span><span class="stat-value">8 Pkt/Strecke</span></div>
+  </div>
+
   <div class="btn-row">
     <button class="btn btn-danger" onclick="confirmReset()">↺ Neues Spiel</button>
   </div>
@@ -365,8 +390,8 @@
     <div class="form-group">
       <label class="form-label">Startzeit (Ingame)</label>
       <select id="setupStartTime" class="form-input">
-        <option value="8:00">08:00</option>
-        <option value="9:00">09:00</option>
+        <option value="8">08:00</option>
+        <option value="9">09:00</option>
       </select>
     </div>
     <div style="font-size:0.8rem;color:var(--muted);">Standard: 20 Runden, 08:00–17:30 Uhr, je Runde 30 Min.</div>
@@ -399,6 +424,15 @@
       <button class="btn btn-danger"  onclick="resetGame()">Ja, zurücksetzen</button>
     </div>
   </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     STICKY PRIMARY ACTION FOOTER
+════════════════════════════════════════ -->
+<div class="sticky-footer" id="stickyFooter" style="display:none;">
+  <button class="btn btn-success btn-full" id="btnPrimaryAction" onclick="handlePrimaryAction()" disabled>
+    ✓ Zug beenden → Nächster Spieler
+  </button>
 </div>
 
 <script src="dice_app.js"></script>
