@@ -32,7 +32,7 @@ function dieImg(src, alt) {
 const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
 // Tracks selected Kreuzungen per slope colour: { blue: 0, red: 0, black: 0, yellow: 0 }
 let slopeSelection = { blue: 0, red: 0, black: 0, yellow: 0 };
-const PLAYER_COLORS = ['#2e6da4','#e05252','#4caf50','#ff9800','#9c27b0','#00bcd4'];
+const PLAYER_COLORS = ['#3A8A8C','#e05252','#4caf50','#ff9800','#9c27b0','#00bcd4'];
 
 let state = {
   players: [],
@@ -837,7 +837,7 @@ function updateDescentPreview() {
     el.style.color = 'var(--muted)';
   } else {
     el.innerHTML = `${parts.join(' + ')}${bonusText} → <b>${total} Punkte</b>`;
-    el.style.color = ohneBefugnisResult === false ? 'var(--red)' : '#2e6da4';
+    el.style.color = ohneBefugnisResult === false ? 'var(--piste-red)' : 'var(--glacier-teal)';
   }
   updateConfirmButtonLabel();
 }
@@ -1119,7 +1119,7 @@ function updateSightingsDisplay() {
   let html = '';
   for (let i=1; i<=p.sightings; i++) {
     const pts = i * 5;
-    html += `<span style="background:#e3f2fd;color:#1565c0;padding:3px 9px;border-radius:50px;font-size:0.78rem;font-weight:600;margin:2px;display:inline-block;">🏔 #${i}: +${pts} Pkt</span>`;
+    html += `<span style="background:#DDF0F0;color:#1F5F60;padding:3px 9px;border-radius:50px;font-size:0.78rem;font-weight:600;margin:2px;display:inline-block;">🏔 #${i}: +${pts} Pkt</span>`;
   }
   el.innerHTML = html;
 }

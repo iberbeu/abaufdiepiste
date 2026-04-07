@@ -12,12 +12,12 @@
   <!-- Hanger -->
   <line x1="40" y1="16" x2="40" y2="24" stroke="#5d4037" stroke-width="2" stroke-linecap="round"/>
   <!-- Small gondola -->
-  <rect x="26" y="24" width="28" height="20" rx="5" fill="#2e6da4"/>
-  <rect x="26" y="24" width="28" height="7" rx="5" fill="#1a3a5c"/>
+  <rect x="26" y="24" width="28" height="20" rx="5" fill="#3A8A8C"/>
+  <rect x="26" y="24" width="28" height="7" rx="5" fill="#1B2B4B"/>
   <rect x="30" y="28" width="8" height="5" rx="1.5" fill="#cfe4ff"/>
   <rect x="42" y="28" width="8" height="5" rx="1.5" fill="#cfe4ff"/>
   <!-- FREE RIDE ticket/coin -->
-  <circle cx="40" cy="56" r="13" fill="#f0c040" stroke="#5d4037" stroke-width="2"/>
+  <circle cx="40" cy="56" r="13" fill="#D4A017" stroke="#5d4037" stroke-width="2"/>
   <text x="40" y="53" text-anchor="middle" font-size="14" font-family="sans-serif" font-weight="900" fill="#5d4037">+1</text>
   <text x="40" y="63" text-anchor="middle" font-size="7" font-family="sans-serif" font-weight="700" fill="#5d4037">FAHRT</text>
 </svg>

@@ -7,21 +7,21 @@
   </defs>
   <rect width="80" height="80" rx="12" fill="url(#bg)"/>
   <!-- Cable line -->
-  <line x1="10" y1="14" x2="70" y2="14" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="10" y1="14" x2="70" y2="14" stroke="#1B2B4B" stroke-width="2.5" stroke-linecap="round"/>
   <!-- Pulley/wheel at top -->
-  <circle cx="40" cy="14" r="4" fill="#1a3a5c"/>
+  <circle cx="40" cy="14" r="4" fill="#1B2B4B"/>
   <!-- Hanger rod -->
-  <line x1="40" y1="18" x2="40" y2="28" stroke="#1a3a5c" stroke-width="2" stroke-linecap="round"/>
+  <line x1="40" y1="18" x2="40" y2="28" stroke="#1B2B4B" stroke-width="2" stroke-linecap="round"/>
   <!-- Gondola body (small 2-person) -->
-  <rect x="24" y="28" width="32" height="26" rx="6" fill="#2e6da4"/>
-  <rect x="24" y="28" width="32" height="10" rx="6" fill="#1a3a5c"/>
+  <rect x="24" y="28" width="32" height="26" rx="6" fill="#3A8A8C"/>
+  <rect x="24" y="28" width="32" height="10" rx="6" fill="#1B2B4B"/>
   <!-- Windows -->
   <rect x="28" y="32" width="9" height="7" rx="2" fill="#cfe4ff"/>
   <rect x="43" y="32" width="9" height="7" rx="2" fill="#cfe4ff"/>
   <!-- Body detail line -->
-  <line x1="24" y1="38" x2="56" y2="38" stroke="#1a3a5c" stroke-width="1"/>
+  <line x1="24" y1="38" x2="56" y2="38" stroke="#1B2B4B" stroke-width="1"/>
   <!-- Bottom arc -->
-  <path d="M24 48 q8 10 16 10 q8 0 16 -10" fill="#2e6da4" stroke="#1a3a5c" stroke-width="1"/>
+  <path d="M24 48 q8 10 16 10 q8 0 16 -10" fill="#3A8A8C" stroke="#1B2B4B" stroke-width="1"/>
   <!-- Label -->
-  <text x="40" y="75" text-anchor="middle" font-size="7" font-family="sans-serif" font-weight="700" fill="#1a3a5c" letter-spacing="0.3">KLEINGONDEL</text>
+  <text x="40" y="75" text-anchor="middle" font-size="7" font-family="sans-serif" font-weight="700" fill="#1B2B4B" letter-spacing="0.3">KLEINGONDEL</text>
 </svg>

@@ -1,16 +1,25 @@
 :root {
-    --blue: #4a90d9;
-    --red: #e05252;
-    --black: #2c2c2c;
-    --yellow: #f0c040;
-    --green: #4caf50;
-    --orange: #ff9800;
-    --bg: #f0f4f8;
-    --card: #ffffff;
-    --border: #dde3ea;
-    --text: #1a2733;
-    --muted: #6b7f8f;
-    --shadow: 0 2px 10px rgba(0,0,0,0.10);
+    /* ── Brand palette ── */
+    --alpine-night:  #1B2B4B;
+    --summit-white:  #F5F5F0;
+    --alpenglühen:   #E8431A;
+    --glacier-teal:  #3A8A8C;
+    --rock-grey:     #6B7280;
+
+    /* ── Piste colours (game only — do NOT use for brand UI) ── */
+    --piste-blue:   #4a90d9;
+    --piste-red:    #e05252;
+    --piste-black:  #2c2c2c;
+    --piste-yellow: #f0c040;
+
+    /* ── Semantic UI tokens ── */
+    --green: #4caf50;   /* success / Rot-Grün green result */
+    --bg:    var(--summit-white);
+    --card:  #ffffff;
+    --border: #D8D9D2;
+    --text:  var(--alpine-night);
+    --muted: var(--rock-grey);
+    --shadow: 0 2px 10px rgba(27,43,75,0.10);
     --radius: 14px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,7 +32,7 @@
 
   /* ── HEADER ── */
   header {
-    background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%);
+    background: linear-gradient(135deg, var(--alpine-night) 0%, #2A3F6A 100%);
     color: white;
     padding: 16px 20px;
     display: flex;
@@ -50,8 +59,8 @@
   /* ── TABS ── */
   .tabs {
     display: flex;
-    background: #1a3a5c;
-    border-bottom: 3px solid #2e6da4;
+    background: var(--alpine-night);
+    border-bottom: 3px solid #2A3F6A;
   }
   .tab-btn {
     flex: 1; padding: 10px 6px; border: none; background: transparent;
@@ -59,7 +68,7 @@
     cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
     transition: all 0.2s;
   }
-  .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-bottom: 3px solid #f0c040; margin-bottom: -3px; }
+  .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-bottom: 3px solid var(--alpenglühen); margin-bottom: -3px; }
   .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
 
   /* ── CONTENT PANELS ── */
@@ -89,8 +98,8 @@
     transition: all 0.2s; white-space: nowrap;
   }
   .player-chip.active {
-    border-color: #2e6da4; background: #2e6da4; color: white;
-    box-shadow: 0 2px 8px rgba(46,109,164,0.35);
+    border-color: var(--glacier-teal); background: var(--glacier-teal); color: white;
+    box-shadow: 0 2px 8px rgba(58,138,140,0.35);
   }
   .player-chip.done {
     background: #f0f0f0; color: #9aaa9a; border-color: #c8d6c8;
@@ -104,9 +113,10 @@
     display: inline-block; padding: 3px 10px; border-radius: 50px;
     font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
   }
-  .level-anfaenger { background: #cce5ff; color: #004085; }
-  .level-fortgeschritten { background: #f8d7da; color: #721c24; }
-  .level-profi { background: #d4edda; color: #155724; }
+  /* Level badges — deliberate non-piste colours to avoid semantic collision */
+  .level-anfaenger      { background: #DDF0F0; color: #1F5F60; }   /* Glacier Teal tint */
+  .level-fortgeschritten { background: #E8EEF7; color: #1B2B4B; }  /* Alpine Night tint */
+  .level-profi          { background: #FBE8E2; color: #8C2610; }   /* Alpenglühen tint */
 
   /* ── DICE AREA ── */
   .dice-row {
@@ -125,17 +135,17 @@
   .die img { width: 100%; height: 100%; object-fit: contain; border-radius: 9px; display: block; }
   .die:active { transform: scale(0.93); }
   .die.held {
-    border-color: #f0c040 !important;
-    box-shadow: 0 0 0 3px rgba(240,192,64,0.35), 0 3px 8px rgba(0,0,0,0.18);
+    border-color: var(--alpenglühen) !important;
+    box-shadow: 0 0 0 3px rgba(232,67,26,0.30), 0 3px 8px rgba(0,0,0,0.18);
   }
   .die.held::after {
     content: '★'; position: absolute; top: -8px; right: -6px;
-    font-size: 0.7rem; color: #f0c040;
+    font-size: 0.7rem; color: var(--alpenglühen);
   }
   .die.rolling { animation: rollAnim 0.35s ease-out; }
 
   /* Beförderungswürfel */
-  .die-transport { background: linear-gradient(135deg, #e8f0fe, #c5d8f8); color: #1a3a5c; }
+  .die-transport { background: linear-gradient(135deg, #DDF0F0, #A8D4D5); color: var(--alpine-night); }
   /* Ereigniswürfel */
   .die-event { background: linear-gradient(135deg, #fff3cd, #ffe082); color: #5d4037; }
   /* Abfahrt – Anfänger (rot) */
@@ -164,12 +174,12 @@
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   }
   .btn:active { transform: scale(0.96); }
-  .btn-primary { background: #2e6da4; color: white; }
-  .btn-primary:hover { background: #245a8f; }
+  .btn-primary { background: var(--glacier-teal); color: white; }
+  .btn-primary:hover { background: #2E6E70; }
   .btn-success { background: var(--green); color: white; }
-  .btn-danger  { background: var(--red); color: white; }
-  .btn-warn    { background: var(--orange); color: white; }
-  .btn-neutral { background: #e0e7ef; color: var(--text); }
+  .btn-danger  { background: var(--piste-red); color: white; }
+  .btn-warn    { background: var(--alpenglühen); color: white; }
+  .btn-neutral { background: #E5E6E0; color: var(--text); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-full { width: 100%; }
 
@@ -209,10 +219,10 @@
     font-size: 0.95rem; font-weight: 600; line-height: 1.5;
     border-left: 5px solid transparent;
   }
-  .result-box.success { background: #e8f5e9; border-color: var(--green); color: #2e7d32; }
-  .result-box.warning { background: #fff8e1; border-color: var(--orange); color: #e65100; }
-  .result-box.danger  { background: #ffebee; border-color: var(--red);    color: #c62828; }
-  .result-box.info    { background: #e3f2fd; border-color: var(--blue);   color: #0d47a1; }
+  .result-box.success { background: #e8f5e9; border-color: var(--green);        color: #2e7d32; }
+  .result-box.warning { background: #FBE8E2; border-color: var(--alpenglühen); color: #8C2610; }
+  .result-box.danger  { background: #ffebee; border-color: var(--piste-red);   color: #c62828; }
+  .result-box.info    { background: #DDF0F0; border-color: var(--glacier-teal); color: #1F5F60; }
 
   /* ── ACCORDION CARDS (Extraaktivität / Ohne Befugnis) ── */
   .accordion-card {
@@ -233,8 +243,8 @@
     padding: 0 16px 16px;
     border-top: 1px solid var(--border);
   }
-  #cardExtraaktivitaet .accordion-trigger { color: #2e6da4; }
-  #cardOhneBefugnis    .accordion-trigger { color: #c0392b; }
+  #cardExtraaktivitaet .accordion-trigger { color: var(--glacier-teal); }
+  #cardOhneBefugnis    .accordion-trigger { color: var(--alpenglühen); }
 
   /* ── STAT ROW ── */
   .stat-row {
@@ -248,12 +258,12 @@
   /* ── SCOREBOARD ── */
   .score-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   .score-table th {
-    background: #1a3a5c; color: white; padding: 8px 10px;
+    background: var(--alpine-night); color: white; padding: 8px 10px;
     font-weight: 600; text-align: left;
   }
   .score-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
-  .score-table tr:nth-child(even) td { background: #f7f9fb; }
-  .score-table tr.current-player td { background: #e3f0fb; font-weight: 700; }
+  .score-table tr:nth-child(even) td { background: #EEEEE9; }
+  .score-table tr.current-player td { background: #DDF0F0; font-weight: 700; }
 
   /* ── TRANSPORT SYMBOLS ── */
   .symbol-grid {
@@ -261,7 +271,7 @@
     margin: 10px 0;
   }
   .symbol-cell {
-    background: #f0f4f8; border-radius: 8px; padding: 8px;
+    background: var(--summit-white); border-radius: 8px; padding: 8px;
     text-align: center; font-size: 0.78rem; color: var(--muted); cursor: default;
   }
   .symbol-cell .sym { width: 48px; height: 48px; display: block; margin: 0 auto 4px; object-fit: contain; }
@@ -279,7 +289,7 @@
     border-radius: 8px; font-size: 0.9rem; background: white; color: var(--text);
     outline: none; transition: border-color 0.2s;
   }
-  .form-input:focus { border-color: #2e6da4; }
+  .form-input:focus { border-color: var(--glacier-teal); }
 
   /* ── PLAYER SETUP ── */
   .player-setup-row {
@@ -316,7 +326,7 @@
     width: 10px; height: 10px; border-radius: 50%;
     background: var(--border); transition: background 0.2s;
   }
-  .roll-dot.used { background: #2e6da4; }
+  .roll-dot.used { background: var(--glacier-teal); }
 
   /* ── EVENT ICON ── */
   .event-icon { font-size: 2rem; text-align: center; margin-bottom: 6px; }
@@ -341,20 +351,20 @@
   /* Forbidden slope label badge */
   .slope-forbidden-badge {
     display: inline-block; padding: 2px 8px; border-radius: 50px;
-    font-size: 0.68rem; font-weight: 700; background: #fff3cd; color: #856404;
-    border: 1px solid #ffc107;
+    font-size: 0.68rem; font-weight: 700; background: #FBE8E2; color: #8C2610;
+    border: 1px solid var(--alpenglühen);
   }
 
   /* Forbidden slope row — muted header, amber kbox highlight */
   .slope-row.slope-forbidden .slope-badge { opacity: 0.55; }
   .slope-row.slope-forbidden .slope-pts-label { opacity: 0.55; }
 
-  /* kbox selected on a forbidden row → amber instead of blue */
+  /* kbox selected on a forbidden row → Alpenglühen warning */
   .kbox.kbox-forbidden-active {
-    background: #ff9800;
-    border-color: #e65100;
+    background: var(--alpenglühen);
+    border-color: #C23615;
     color: white;
-    box-shadow: 0 2px 8px rgba(230,81,0,0.4);
+    box-shadow: 0 2px 8px rgba(232,67,26,0.4);
   }
 
   .kreuzung-boxes {
@@ -374,10 +384,10 @@
   }
   .kbox:active { transform: scale(0.93); }
   .kbox.kbox-active {
-    background: #2e6da4;
-    border-color: #2e6da4;
+    background: var(--glacier-teal);
+    border-color: var(--glacier-teal);
     color: white;
-    box-shadow: 0 2px 8px rgba(46,109,164,0.4);
+    box-shadow: 0 2px 8px rgba(58,138,140,0.4);
   }
   .kbox.kbox-disabled {
     background: #f0f0f0;
@@ -396,7 +406,7 @@
     gap: 4px;
     font-size: 2rem;
     font-weight: 800;
-    color: #2e6da4;
+    color: var(--glacier-teal);
     margin: 0 0 14px;
     letter-spacing: -0.5px;
   }
