@@ -69,7 +69,8 @@
     transition: all 0.2s;
   }
   .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-bottom: 3px solid var(--alpenglühen); margin-bottom: -3px; }
-  .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
+  .tab-btn:hover:not(.active):not(:disabled) { color: rgba(255,255,255,0.85); }
+  .tab-btn:disabled { color: rgba(255,255,255,0.25); cursor: not-allowed; }
 
   /* ── CONTENT PANELS ── */
   .panel { display: none; padding: 16px; }

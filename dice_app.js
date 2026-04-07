@@ -105,6 +105,10 @@ function startGame() {
 // TABS
 // ═══════════════════════════════════════
 function showTab(id) {
+  // Block access to gameplay tabs until the game has started
+  if (!state.gameStarted && (id === 'tab-turn' || id === 'tab-special')) {
+    id = 'tab-setup';
+  }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -112,9 +116,9 @@ function showTab(id) {
   document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
   if (id === 'tab-scores') updateScoreboard();
   if (id === 'tab-special') updateSpecialTab();
-  // Show sticky footer only on the Zug tab
+  // Show sticky footer only on the Zug tab (and only when game is active)
   const footer = document.getElementById('stickyFooter');
-  if (footer) footer.style.display = (id === 'tab-turn') ? '' : 'none';
+  if (footer) footer.style.display = (id === 'tab-turn' && state.gameStarted) ? '' : 'none';
 }
 
 // ═══════════════════════════════════════
@@ -199,6 +203,12 @@ function updateAll() {
 
   // Re-apply dice-roll lock on every UI refresh so it survives any re-render
   if (state.diceRolled) lockActionButtons();
+
+  // Enable/disable gameplay tabs based on whether the game has started
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  // tabBtns[0]=Zug, [1]=Sonder, [2]=Punkte, [3]=Setup
+  if (tabBtns[0]) tabBtns[0].disabled = !state.gameStarted;
+  if (tabBtns[1]) tabBtns[1].disabled = !state.gameStarted;
 
   // Sync sticky footer visibility
   const footer = document.getElementById('stickyFooter');
