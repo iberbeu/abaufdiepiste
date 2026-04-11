@@ -1257,7 +1257,7 @@ function showGameEnd() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
   overlay.innerHTML = `<div class="modal">
-    <h2>⛷ Spielende!</h2>
+    <h2><img src="img/logo_abaufdiepiste.png" alt="" style="height:28px;width:28px;object-fit:contain;border-radius:5px;vertical-align:middle;margin-right:6px;"> Spielende!</h2>
     <p>Der Skitag ist vorbei! Jetzt Schlusswertung durchführen (Tab <b>Punkte</b>).</p>
     <div class="btn-row"><button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();showTab('tab-scores')">Zur Schlusswertung</button></div>
   </div>`;

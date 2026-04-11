@@ -52,7 +52,8 @@
     justify-content: space-between;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
-  header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
+  header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 7px; }
+  .header-logo-img { height: 28px; width: 28px; object-fit: contain; border-radius: 5px; flex-shrink: 0; }
   header .clock { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
   .header-sub { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
   .header-player-info { text-align: right; }
