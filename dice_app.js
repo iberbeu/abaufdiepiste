@@ -84,7 +84,7 @@ function startGame() {
   const rounds = parseInt(document.getElementById('setupRounds').value)||20;
   const startH = parseInt(document.getElementById('setupStartTime').value)||8;
   state.players = names.map((n,i)=>({
-    name:n, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false
+    name:n, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false, skipNextTurn:false
   }));
   state.totalRounds = rounds;
   state.startHour = startH;
@@ -926,14 +926,15 @@ function confirmDescentPoints() {
   const p = currentPlayer();
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
 
-  // Unfall / Helikopter (no Joker used): just log and close the card
+  // Unfall / Helikopter (no Joker used): consume turn and mark next turn as skipped
   if ((ev?.sym === 'unfall' || ev?.sym === 'helikopter') && !state.jokerUsedOnEvent) {
     document.getElementById('descentPointsCard').style.display = 'none';
     const cc = document.getElementById('crossingCounter');
     if (cc) cc.classList.remove('counter-full','counter-over');
+    p.skipNextTurn = true;
     const logMsg = ev.sym === 'unfall'
-      ? `${p.name}: Unfall – Zug ausgesetzt`
-      : `${p.name}: Helikopter – Transport ins nächste Tal`;
+      ? `${p.name}: Unfall – dieser Zug und nächster Zug ausgesetzt`
+      : `${p.name}: Helikopter – Transport ins nächste Tal, nächster Zug ausgesetzt`;
     addHistory(logMsg);
     updateAll();
     return;
@@ -1194,7 +1195,7 @@ function takePause(type) {
   const pts = type === 'restaurant' ? 15 : 7;
   p.points += pts;
   p.pauseDone = true;
-  addHistory(`${p.name}: Mittagspause (${type==='restaurant'?'Restaurant':'Bar'}) → +${pts} Punkte, 1 Zug aussetzen`);
+  addHistory(`${p.name}: Mittagspause (${type==='restaurant'?'Restaurant':'Bar'}) → +${pts} Punkte`);
   saveState();
   updateAll();
   // Lock buttons immediately — pauseDone is now true
@@ -1205,7 +1206,7 @@ function takePause(type) {
   const sectionPause = document.getElementById('sectionPause');
   const msg = document.createElement('div');
   msg.className = 'result-box success';
-  msg.textContent = `✓ ${type==='restaurant'?'Restaurant':'Bar'}: +${pts} Punkte! Nächste Runde aussetzen.`;
+  msg.textContent = `✓ ${type==='restaurant'?'Restaurant':'Bar'}: +${pts} Punkte!`;
   msg.style.marginTop = '8px';
   sectionPause.appendChild(msg);
   setTimeout(() => msg.remove(), 3000);
@@ -1234,6 +1235,23 @@ function endTurn() {
     if (state.round > state.totalRounds) {
       state.round = state.totalRounds;
       showGameEnd();
+    }
+  }
+
+  // Skip next turn for Unfall / Helikopter: auto-advance past this player and log it
+  const nextP = state.players[state.currentPlayerIndex];
+  if (nextP && nextP.skipNextTurn) {
+    nextP.skipNextTurn = false;
+    addHistory(`── ${nextP.name}: Zug übersprungen (Unfall / Helikopter)`);
+    state.currentPlayerIndex++;
+    if (state.currentPlayerIndex >= state.players.length) {
+      state.currentPlayerIndex = 0;
+      state.playedThisRound = [];
+      state.round++;
+      if (state.round > state.totalRounds) {
+        state.round = state.totalRounds;
+        showGameEnd();
+      }
     }
   }
   resetTransportState();
@@ -1370,6 +1388,7 @@ function loadState() {
     // Backwards compatibility: fields may be missing in older saves
     if (!Array.isArray(state.playedThisRound)) state.playedThisRound = [];
     if (typeof state.diceRolled !== 'boolean') state.diceRolled = false;
+    state.players.forEach(p => { if (typeof p.skipNextTurn !== 'boolean') p.skipNextTurn = false; });
     return true;
   } catch (e) {
     console.warn('Could not load state:', e);
