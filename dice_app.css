@@ -146,7 +146,7 @@
     box-shadow: 0 3px 8px rgba(0,0,0,0.18);
     overflow: hidden; padding: 0;
   }
-  .die img { width: 100%; height: 100%; object-fit: contain; border-radius: 9px; display: block; }
+  .die img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .die:active { transform: scale(0.93); }
   .die.held {
     border-color: var(--alpenglühen) !important;
@@ -158,19 +158,53 @@
   }
   .die.rolling { animation: rollAnim 0.35s ease-out; }
 
-  /* Beförderungswürfel */
-  .die-transport { background: linear-gradient(135deg, #DDF0F0, #A8D4D5); color: var(--alpine-night); }
-  /* Ereigniswürfel */
-  .die-event { background: linear-gradient(135deg, #fff3cd, #ffe082); color: #5d4037; }
-  /* Abfahrt – Anfänger (rot) */
-  .die-descent-red { background: linear-gradient(135deg, #ffcdd2, #ef9a9a); color: #b71c1c; }
-  /* Abfahrt – Fortgeschrittene (schwarz) */
-  .die-descent-black { background: linear-gradient(135deg, #424242, #212121); color: #ffffff; }
-  /* Abfahrt – Profi (gelb) */
-  .die-descent-yellow { background: linear-gradient(135deg, #fff9c4, #fff176); color: #795548; }
-  /* Rot/Grün */
-  .die-rg-green { background: linear-gradient(135deg, #c8e6c9, #a5d6a7); color: #1b5e20; }
-  .die-rg-red   { background: linear-gradient(135deg, #ffcdd2, #ef9a9a); color: #b71c1c; }
+  /* Beförderungswürfel — Alpine Night (brand primary) */
+  .die-transport {
+    background: linear-gradient(135deg, #2A3F6A, var(--alpine-night));
+    color: var(--summit-white);
+    border-color: rgba(245,245,240,0.15);
+  }
+  /* Ereigniswürfel — transparent background, image fills entire surface */
+  .die-event {
+    background: transparent;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+    border-color: var(--border);
+    padding: 0;
+  }
+  .die-event img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+  }
+  /* Abfahrt – Anfänger: piste-blue (semantic — die colour matches piste colour) */
+  .die-descent-anfaenger {
+    background: linear-gradient(135deg, #6aaee8, var(--piste-blue));
+    color: #ffffff;
+  }
+  /* Abfahrt – Fortgeschritten: piste-red */
+  .die-descent-fortgeschritten {
+    background: linear-gradient(135deg, #e87070, var(--piste-red));
+    color: #ffffff;
+  }
+  /* Abfahrt – Profi: piste-yellow */
+  .die-descent-profi {
+    background: linear-gradient(135deg, #f5d070, var(--piste-yellow));
+    color: var(--alpine-night);
+  }
+  /* Keep old class names as aliases during transition */
+  .die-descent-red    { background: linear-gradient(135deg, #6aaee8, var(--piste-blue)); color: #ffffff; }
+  .die-descent-black  { background: linear-gradient(135deg, #e87070, var(--piste-red)); color: #ffffff; }
+  .die-descent-yellow { background: linear-gradient(135deg, #f5d070, var(--piste-yellow)); color: var(--alpine-night); }
+  /* Rot/Grün — Alpenglühen for red result, brand green for success */
+  .die-rg-green {
+    background: linear-gradient(135deg, #5cb85c, #3d8b3d);
+    color: #ffffff;
+  }
+  .die-rg-red {
+    background: linear-gradient(135deg, #f06030, var(--alpenglühen));
+    color: #ffffff;
+  }
 
   @keyframes rollAnim {
     0%   { transform: rotate(0deg) scale(1); }
@@ -437,8 +471,11 @@
     color: var(--red);
   }
 
-  /* ── ROT/GRÜN NEUTRAL (pre-roll state) ── */
-  .die-rg-neutral { background: linear-gradient(135deg, #e0e0e0, #bdbdbd); color: #555; }
+  /* ── ROT/GRÜN NEUTRAL (pre-roll state) — Rock Grey */
+  .die-rg-neutral {
+    background: linear-gradient(135deg, #8a9099, var(--rock-grey));
+    color: var(--summit-white);
+  }
 
   /* ── STICKY FOOTER ── */
   .sticky-footer {

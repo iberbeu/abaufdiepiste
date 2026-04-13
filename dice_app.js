@@ -12,12 +12,12 @@ const TRANSPORT_IMGS    = {
 };
 const TRANSPORT_NAMES   = ['Fußweg','Kleingondel','Skilift','Sesselbahn','Gondel','Zug/Bus'];
 const EVENT_FACES = [
-  { sym:'fahrt',       img:'img/event_fahrt.svg',       label:'+1 Fahrt',    cls:'success', text:'+1 Fahrt: Du erhältst eine Gratisfahrt-Münze! 🎟' },
-  { sym:'helikopter',  img:'img/event_helikopter.svg',  label:'Helikopter',  cls:'warning', text:'Helikopter: Transport ins nächste Tal – neu starten! 🚁' },
-  { sym:'schneesturm', img:'img/event_schneesturm.svg', label:'Schneesturm', cls:'danger',  text:'Schneesturm: Nur halbe Punkte für diese Abfahrt! ❄' },
-  { sym:'pulverschnee',img:'img/event_pulverschnee.svg',label:'Pulverschnee',cls:'success', text:'Pulverschnee: +5 Bonuspunkte! 🎉' },
-  { sym:'unfall',      img:'img/event_unfall.svg',      label:'Unfall',      cls:'danger',  text:'Unfall: Keine Abfahrt möglich – Zug aussetzen. Joker einsetzbar!' },
-  { sym:'sonne',       img:'img/event_sonne.svg',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
+  { sym:'fahrt',       img:'img/event_fahrt.png',       label:'+1 Fahrt',    cls:'success', text:'+1 Fahrt: Du erhältst eine Gratisfahrt-Münze! 🎟' },
+  { sym:'helikopter',  img:'img/event_helikopter.png',  label:'Helikopter',  cls:'warning', text:'Helikopter: Transport ins nächste Tal – neu starten! 🚁' },
+  { sym:'schneesturm', img:'img/event_schneesturm.png', label:'Schneesturm', cls:'danger',  text:'Schneesturm: Nur halbe Punkte für diese Abfahrt! ❄' },
+  { sym:'pulverschnee',img:'img/event_pulverschnee.png',label:'Pulverschnee',cls:'success', text:'Pulverschnee: +5 Bonuspunkte! 🎉' },
+  { sym:'unfall',      img:'img/event_unfall.png',      label:'Unfall',      cls:'danger',  text:'Unfall: Keine Abfahrt möglich – Zug aussetzen. Joker einsetzbar!' },
+  { sym:'sonne',       img:'img/event_sonne.png',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
 ];
 const DESCENT_DICE = {
   anfaenger:      { faces:[1,1,2,2,3,3], cls:'die-descent-red',    label:'🔴 Anfänger',      imgPrefix:'img/descent_anfaenger_' },
@@ -26,8 +26,9 @@ const DESCENT_DICE = {
 };
 const IMG_UNKNOWN = 'img/die_unknown.svg';
 
-function dieImg(src, alt) {
-  return `<img src="${src}" alt="${alt}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+function dieImg(src, alt, cover = false) {
+  const fit = cover ? 'cover' : 'contain';
+  return `<img src="${src}" alt="${alt}" style="width:100%;height:100%;object-fit:${fit};">`;
 }
 const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
 // Tracks selected Kreuzungen per slope colour: { blue: 0, red: 0, black: 0, yellow: 0 }
@@ -584,7 +585,7 @@ function rollBothDice() {
 
   const eventEl = document.getElementById('eventDie');
   eventEl.className = `die die-event rolling`;
-  eventEl.innerHTML = dieImg(ev.img, ev.label);
+  eventEl.innerHTML = dieImg(ev.img, ev.label, true);
   eventEl.addEventListener('animationend', () => eventEl.classList.remove('rolling'), {once:true});
 
   // Show descent result — suppress for events where no descent happens
