@@ -1,0 +1,15 @@
+{
+  "name": "abaufdiepiste-app",
+  "version": "1.0.0",
+  "description": "Digital dice companion for Ab auf die Piste",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "jsdom": "^25.0.0"
+  }
+}
