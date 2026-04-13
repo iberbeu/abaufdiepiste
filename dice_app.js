@@ -50,6 +50,7 @@ let state = {
   descentPtsAccumulated: 0,
   jokerUsedOnEvent: false,
   history: [],
+  roundSnapshots: [],    // [{round, time, points:[{name,pts}]}] — one entry per completed round
   gameStarted: false,    // true once a game is actively running
   playedThisRound: [],   // indices of players who have already played in the current round
   diceRolled: false,     // true once any dice have been rolled this turn — locks action switching and fresh re-rolls
@@ -91,6 +92,7 @@ function startGame() {
   state.round = 1;
   state.currentPlayerIndex = 0;
   state.history = [];
+  state.roundSnapshots = [];
   state.gameStarted = true;
   state.playedThisRound = [];
   state.diceRolled = false;
@@ -1231,6 +1233,13 @@ function endTurn() {
   if (state.currentPlayerIndex >= state.players.length) {
     state.currentPlayerIndex = 0;
     state.playedThisRound = []; // clear for the new round
+    // Snapshot points at the end of this completed round
+    if (!state.roundSnapshots) state.roundSnapshots = [];
+    state.roundSnapshots.push({
+      round: state.round,
+      time: gameTime(),
+      points: state.players.map(p => ({ name: p.name, pts: p.points }))
+    });
     state.round++;
     if (state.round > state.totalRounds) {
       state.round = state.totalRounds;
@@ -1247,6 +1256,13 @@ function endTurn() {
     if (state.currentPlayerIndex >= state.players.length) {
       state.currentPlayerIndex = 0;
       state.playedThisRound = [];
+      // Snapshot points at the end of this completed round (skip path)
+      if (!state.roundSnapshots) state.roundSnapshots = [];
+      state.roundSnapshots.push({
+        round: state.round,
+        time: gameTime(),
+        points: state.players.map(p => ({ name: p.name, pts: p.points }))
+      });
       state.round++;
       if (state.round > state.totalRounds) {
         state.round = state.totalRounds;
@@ -1302,11 +1318,60 @@ function updateHistory() {
 }
 
 // ═══════════════════════════════════════
+// PUNKTVERLAUF
+// ═══════════════════════════════════════
+function updatePunktverlauf() {
+  const snapshots = state.roundSnapshots || [];
+  const players   = state.players || [];
+  const head      = document.getElementById('punktverlaufHead');
+  const body      = document.getElementById('punktverlaufBody');
+  const card      = document.getElementById('punktverlaufCard');
+
+  if (!head || !body) return;
+
+  if (card) card.style.display = '';
+
+  if (snapshots.length === 0) {
+    head.innerHTML = '';
+    body.innerHTML = '<tr><td style="text-align:center;color:var(--muted);font-size:0.85rem;padding:16px 0;">Noch keine Runden gespielt – der Punktverlauf erscheint hier nach der ersten Runde.</td></tr>';
+    return;
+  }
+
+  // Header row: Zeit | Player 1 | Player 2 | …
+  head.innerHTML = '<tr><th>Zeit</th>' +
+    players.map(p =>
+      `<th><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px;vertical-align:middle;"></span>${p.name}</th>`
+    ).join('') +
+    '</tr>';
+
+  // One row per completed round snapshot
+  body.innerHTML = snapshots.map((snap, idx) => {
+    const prevSnap = snapshots[idx - 1];
+    const cells = players.map(p => {
+      const total = snap.points.find(e => e.name === p.name)?.pts ?? 0;
+      const prev  = prevSnap
+        ? (prevSnap.points.find(e => e.name === p.name)?.pts ?? 0)
+        : 0;
+      const delta = total - prev;
+      const deltaStr = delta >= 0 ? `+${delta}` : `${delta}`;
+      const deltaColor = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--piste-red)' : 'var(--muted)';
+      return `<td style="text-align:center;">
+        <span style="font-weight:600;">${total}</span>
+        <span style="font-size:0.75rem;color:${deltaColor};margin-left:3px;">(${deltaStr})</span>
+      </td>`;
+    }).join('');
+    return `<tr><td style="white-space:nowrap;color:var(--muted);font-size:0.82rem;">${snap.time}</td>${cells}</tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
 // SCOREBOARD
 // ═══════════════════════════════════════
 function updateScoreboard() {
   document.getElementById('scoreRound').textContent = `${state.round} / ${state.totalRounds}`;
   document.getElementById('scoreTime').textContent  = gameTime();
+
+  updatePunktverlauf();
 
   const sorted = [...state.players].sort((a,b) => b.points - a.points);
   const body = document.getElementById('scoreBody');
@@ -1343,6 +1408,7 @@ function resetGame() {
   state.round = 1;
   state.currentPlayerIndex = 0;
   state.history = [];
+  state.roundSnapshots = [];
   state.gameStarted = false;
   state.playedThisRound = [];
   state.diceRolled = false;
@@ -1370,6 +1436,7 @@ function saveState() {
       gameStarted:        state.gameStarted,
       playedThisRound:    state.playedThisRound || [],
       diceRolled:         state.diceRolled || false,
+      roundSnapshots:     state.roundSnapshots || [],
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
@@ -1388,6 +1455,7 @@ function loadState() {
     // Backwards compatibility: fields may be missing in older saves
     if (!Array.isArray(state.playedThisRound)) state.playedThisRound = [];
     if (typeof state.diceRolled !== 'boolean') state.diceRolled = false;
+    if (!Array.isArray(state.roundSnapshots)) state.roundSnapshots = [];
     state.players.forEach(p => { if (typeof p.skipNextTurn !== 'boolean') p.skipNextTurn = false; });
     return true;
   } catch (e) {
