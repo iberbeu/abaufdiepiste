@@ -3,10 +3,10 @@
 // ═══════════════════════════════════════
 const TRANSPORT_SYMBOLS = ['fussweg','kleingondel','skilift','sesselbahn','gondel','zug'];
 const TRANSPORT_IMGS    = {
-  fussweg:    'img/transport_fussweg.svg',
-  kleingondel:'img/transport_kleingondel.svg',
-  skilift:    'img/transport_skilift.svg',
-  sesselbahn: 'img/transport_sesselbahn.svg',
+  fussweg:    'img/transport_fussweg.png',
+  kleingondel:'img/transport_kleingondel.png',
+  skilift:    'img/transport_skilift.png',
+  sesselbahn: 'img/transport_sesselbahn.png',
   gondel:     'img/transport_gondel.svg',
   zug:        'img/transport_zug.png',
 };
