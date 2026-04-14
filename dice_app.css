@@ -417,9 +417,6 @@
   }
   .roll-dot.used { background: var(--glacier-teal); }
 
-  /* ── EVENT ICON ── */
-  .event-icon { font-size: 2rem; text-align: center; margin-bottom: 6px; }
-
   /* ── SLOPE SELECTOR ── */
   .slope-row {
     margin-bottom: 12px;

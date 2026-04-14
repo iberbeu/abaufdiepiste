@@ -118,8 +118,12 @@ function animateDieRoll(el, getRandomHTML, finalHTML) {
     if (t < 1) {
       requestAnimationFrame(animate);
     } else {
-      rot.x = spinX % 360;
-      rot.y = spinY % 360;
+      // Reset to the canonical rotation for the landing face so the next roll
+      // always starts from a known position. Without this, accumulated angles
+      // drift and the wrong face ends up facing the viewer.
+      rot.x = target.x;
+      rot.y = target.y;
+      cube.style.transform = `rotateX(${target.x}deg) rotateY(${target.y}deg)`;
       rot.rolling = false;
       el.classList.remove('die-rolling');
     }
@@ -564,6 +568,8 @@ function renderTransportDice(animate) {
         },
         dieImg(TRANSPORT_IMGS[d.sym], TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(d.sym)])
       );
+    } else if (state.transportRolls === 0) {
+      el.innerHTML = dieFaceHTML(dieImg(IMG_UNKNOWN, '?'));
     } else {
       el.innerHTML = dieFaceHTML(dieImg(TRANSPORT_IMGS[d.sym], TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(d.sym)]));
     }
@@ -701,8 +707,8 @@ function rollBothDice() {
   eventEl.className = `die die-event`;
   animateDieRoll(
     eventEl,
-    () => { const r = EVENT_FACES[Math.floor(Math.random() * EVENT_FACES.length)]; return dieImg(r.img, r.label, true); },
-    dieImg(ev.img, ev.label, true)
+    () => { const r = EVENT_FACES[Math.floor(Math.random() * EVENT_FACES.length)]; return dieImg(r.img, r.label); },
+    dieImg(ev.img, ev.label)
   );
 
   // Show results after animation completes
@@ -721,7 +727,7 @@ function rollBothDice() {
     const eventRes = document.getElementById('eventResult');
     eventRes.style.display = '';
     eventRes.className = `result-box ${ev.cls}`;
-    eventRes.innerHTML = `<div class="event-icon"><img src="${ev.img}" alt="${ev.label}" style="width:48px;height:48px;object-fit:contain;"></div><b>${ev.label}</b><br>${ev.text}`;
+    eventRes.innerHTML = `<b>${ev.label}</b><br>${ev.text}`;
 
     // Handle automatic coin/bonus effects — use ev.sym for all programmatic checks
     if (ev.sym === 'sonne') {
