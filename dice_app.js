@@ -8,7 +8,7 @@ const TRANSPORT_IMGS    = {
   skilift:    'img/transport_skilift.svg',
   sesselbahn: 'img/transport_sesselbahn.svg',
   gondel:     'img/transport_gondel.svg',
-  zug:        'img/transport_zug.svg',
+  zug:        'img/transport_zug.png',
 };
 const TRANSPORT_NAMES   = ['Fußweg','Kleingondel','Skilift','Sesselbahn','Gondel','Zug/Bus'];
 const EVENT_FACES = [
@@ -30,6 +30,104 @@ function dieImg(src, alt, cover = false) {
   const fit = cover ? 'cover' : 'contain';
   return `<img src="${src}" alt="${alt}" style="width:100%;height:100%;object-fit:${fit};">`;
 }
+
+// 3D die cube helpers — unified roll animation shared by every die in the app.
+// Based on rolling_die_example.html: spins to a random target face (one of 6)
+// using smoothstep easing over 500ms. The final result is placed on that
+// target face just before the animation ends, so every die — transport, event,
+// descent, Rot/Grün — rolls with the same look and feel.
+const ROLL_DURATION = 500; // ms — animation duration (matches example)
+const FACE_NAMES    = ['front','back','right','left','top','bottom'];
+
+// Rotation (deg) that brings each face to the viewer (front). Mirrors the
+// `faceRotations` array in rolling_die_example.html, mapped to named faces.
+const FACE_TARGET_ROTATIONS = {
+  front:  { x:   0, y:   0 },
+  back:   { x:   0, y: 180 },
+  right:  { x:   0, y: -90 },
+  left:   { x:   0, y:  90 },
+  top:    { x: -90, y:   0 },
+  bottom: { x:  90, y:   0 },
+};
+
+// Tracks per-die rotation state (accumulated angles) across rolls.
+const dieRotations = new WeakMap();
+
+// Wraps face content in the full 6-face cube structure (static — no animation).
+// Used for the pre-roll "?" state; all six faces show the same placeholder.
+function dieFaceHTML(innerHTML) {
+  return '<div class="die-cube">' +
+    FACE_NAMES.map(n => `<div class="die-face die-face-${n}">${innerHTML}</div>`).join('') +
+    '</div>';
+}
+
+// Animates a die with the example's 3D cube roll.
+//   el            — the .die wrapper element
+//   getRandomHTML — () => string, called once per face to fill the other 5
+//                   faces with varied content during the spin (visual noise)
+//   finalHTML     — string placed on the landing face (the one facing the
+//                   viewer when the animation stops)
+//
+// Per-die rotation is preserved across calls so consecutive rolls continue
+// from where the previous one ended, giving a continuous physical feel.
+function animateDieRoll(el, getRandomHTML, finalHTML) {
+  const rot = dieRotations.get(el) || { x: 0, y: 0, rolling: false };
+  if (rot.rolling) return;
+  dieRotations.set(el, rot);
+  rot.rolling = true;
+
+  el.classList.add('die-rolling');
+
+  // Pick a random landing face. The face that lands facing the viewer will
+  // receive the final HTML; the others get random filler.
+  const landingFace = FACE_NAMES[Math.floor(Math.random() * FACE_NAMES.length)];
+  const target      = FACE_TARGET_ROTATIONS[landingFace];
+
+  // Build cube — non-landing faces get random filler so the cube looks solid.
+  const cubeHTML = '<div class="die-cube">' +
+    FACE_NAMES.map(n => `<div class="die-face die-face-${n}">${getRandomHTML()}</div>`).join('') +
+    '</div>';
+  el.innerHTML = cubeHTML;
+  const cube = el.querySelector('.die-cube');
+
+  const startX = rot.x, startY = rot.y;
+  // Spin 2 full rotations (720°) plus the delta needed to land on the target.
+  // Matches the example exactly: startX + 720 + target.x.
+  const spinX = startX + 720 + target.x;
+  const spinY = startY + 720 + target.y;
+
+  const startTime = performance.now();
+
+  // Place the result on the landing face ~80ms before the animation ends,
+  // while that face is still rotated away from the viewer. This hides the
+  // swap so the player never sees it flip.
+  setTimeout(() => {
+    const landingEl = cube.querySelector('.die-face-' + landingFace);
+    if (landingEl) landingEl.innerHTML = finalHTML;
+  }, ROLL_DURATION - 80);
+
+  function animate(now) {
+    const t = Math.min((now - startTime) / ROLL_DURATION, 1);
+    // Smoothstep easing — identical to the example's t*t*(3-2*t).
+    const ease = t * t * (3 - 2 * t);
+
+    const x = startX + (spinX - startX) * ease;
+    const y = startY + (spinY - startY) * ease;
+    cube.style.transform = `rotateX(${x}deg) rotateY(${y}deg)`;
+
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      rot.x = spinX % 360;
+      rot.y = spinY % 360;
+      rot.rolling = false;
+      el.classList.remove('die-rolling');
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
 const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
 // Tracks selected Kreuzungen per slope colour: { blue: 0, red: 0, black: 0, yellow: 0 }
 let slopeSelection = { blue: 0, red: 0, black: 0, yellow: 0 };
@@ -450,15 +548,25 @@ function renderTransportDice(animate) {
   row.innerHTML = '';
   state.transportDice.forEach((d, i) => {
     const el = document.createElement('div');
-    el.className = 'die die-transport' + (d.held ? ' held' : '') + (animate && !d.held ? ' rolling' : '');
-    el.innerHTML = dieImg(TRANSPORT_IMGS[d.sym], TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(d.sym)]);
+    el.className = 'die die-transport' + (d.held ? ' held' : '');
     el.title = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(d.sym)];
     el.onclick = () => {
       if (state.transportRolls === 0) return;
       d.held = !d.held;
       renderTransportDice(false);
     };
-    if (animate && !d.held) el.addEventListener('animationend', () => el.classList.remove('rolling'));
+    if (animate && !d.held) {
+      animateDieRoll(
+        el,
+        () => {
+          const s = TRANSPORT_SYMBOLS[Math.floor(Math.random() * TRANSPORT_SYMBOLS.length)];
+          return dieImg(TRANSPORT_IMGS[s], TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(s)]);
+        },
+        dieImg(TRANSPORT_IMGS[d.sym], TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(d.sym)])
+      );
+    } else {
+      el.innerHTML = dieFaceHTML(dieImg(TRANSPORT_IMGS[d.sym], TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(d.sym)]));
+    }
     row.appendChild(el);
   });
 }
@@ -526,7 +634,7 @@ function resetDescentDice() {
   const dd = DESCENT_DICE[lvl];
   const descentDieEl = document.getElementById('descentDie');
   descentDieEl.className = `die ${dd.cls}`;
-  descentDieEl.innerHTML = dieImg(IMG_UNKNOWN, '?');
+  descentDieEl.innerHTML = dieFaceHTML(dieImg(IMG_UNKNOWN, '?'));
   document.getElementById('descentDieLegend').textContent = dd.label + ' · ' + dd.faces.join(', ');
   document.getElementById('descentDiceLabel').textContent = dd.label;
   document.getElementById('descentResult').style.display = 'none';
@@ -539,7 +647,7 @@ function resetDescentDice() {
   const maxEl = document.getElementById('crossingMax');
   if (maxEl) maxEl.textContent = '0';
   const eventDieEl = document.getElementById('eventDie');
-  eventDieEl.innerHTML = dieImg(IMG_UNKNOWN, '?');
+  eventDieEl.innerHTML = dieFaceHTML(dieImg(IMG_UNKNOWN, '?'));
   state.descentRolled = false;
   state.eventRolled = false;
   state.descentValue = 0;
@@ -572,74 +680,86 @@ function rollBothDice() {
   state.descentValue = val;
   state.descentRolled = true;
 
-  const descentEl = document.getElementById('descentDie');
-  descentEl.className = `die ${dd.cls} rolling`;
-  descentEl.innerHTML = dieImg(`${dd.imgPrefix}${val}.svg`, String(val));
-  descentEl.addEventListener('animationend', () => descentEl.classList.remove('rolling'), {once:true});
-
-  // Roll event die
+  // Roll event die (compute before animating so both dice animate together)
   const idx = Math.floor(Math.random() * EVENT_FACES.length);
   state.eventIndex = idx;
   state.eventRolled = true;
   const ev = EVENT_FACES[idx];
 
+  // Animate descent die — cycle through unique face values, then settle
+  const descentEl = document.getElementById('descentDie');
+  descentEl.className = `die ${dd.cls}`;
+  const uniqueFaces = [...new Set(dd.faces)];
+  animateDieRoll(
+    descentEl,
+    () => dieImg(`${dd.imgPrefix}${uniqueFaces[Math.floor(Math.random() * uniqueFaces.length)]}.svg`, '?'),
+    dieImg(`${dd.imgPrefix}${val}.svg`, String(val))
+  );
+
+  // Animate event die — cycle through random event faces, then settle
   const eventEl = document.getElementById('eventDie');
-  eventEl.className = `die die-event rolling`;
-  eventEl.innerHTML = dieImg(ev.img, ev.label, true);
-  eventEl.addEventListener('animationend', () => eventEl.classList.remove('rolling'), {once:true});
+  eventEl.className = `die die-event`;
+  animateDieRoll(
+    eventEl,
+    () => { const r = EVENT_FACES[Math.floor(Math.random() * EVENT_FACES.length)]; return dieImg(r.img, r.label, true); },
+    dieImg(ev.img, ev.label, true)
+  );
 
-  // Show descent result — suppress for events where no descent happens
-  const descentRes = document.getElementById('descentResult');
-  if (ev.sym === 'helikopter' || ev.sym === 'unfall') {
-    descentRes.style.display = 'none';
-  } else {
-    descentRes.style.display = '';
-    descentRes.className = 'result-box info';
-    descentRes.textContent = `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val>1?'en':''} passieren.`;
-  }
+  // Show results after animation completes
+  setTimeout(() => {
+    // Show descent result — suppress for events where no descent happens
+    const descentRes = document.getElementById('descentResult');
+    if (ev.sym === 'helikopter' || ev.sym === 'unfall') {
+      descentRes.style.display = 'none';
+    } else {
+      descentRes.style.display = '';
+      descentRes.className = 'result-box info';
+      descentRes.textContent = `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val>1?'en':''} passieren.`;
+    }
 
-  // Show event result
-  const eventRes = document.getElementById('eventResult');
-  eventRes.style.display = '';
-  eventRes.className = `result-box ${ev.cls}`;
-  eventRes.innerHTML = `<div class="event-icon"><img src="${ev.img}" alt="${ev.label}" style="width:48px;height:48px;object-fit:contain;"></div><b>${ev.label}</b><br>${ev.text}`;
+    // Show event result
+    const eventRes = document.getElementById('eventResult');
+    eventRes.style.display = '';
+    eventRes.className = `result-box ${ev.cls}`;
+    eventRes.innerHTML = `<div class="event-icon"><img src="${ev.img}" alt="${ev.label}" style="width:48px;height:48px;object-fit:contain;"></div><b>${ev.label}</b><br>${ev.text}`;
 
-  // Handle automatic coin/bonus effects — use ev.sym for all programmatic checks
-  if (ev.sym === 'sonne') {
-    p.joker++;
-    addHistory(`${p.name}: Sonne → +1 Joker (${p.joker} total)`);
-    checkCoinLimit(p);
-    updateCoinsDisplay();
-  } else if (ev.sym === 'fahrt') {
-    p.gratis++;
-    checkCoinLimit(p);
-    updateCoinsDisplay();
-    addHistory(`${p.name}: +1 Fahrt → +1 Gratisfahrt-Münze (${p.gratis} total)`);
-  }
-  // Pulverschnee bonus is applied at confirmation time via ev.sym check
+    // Handle automatic coin/bonus effects — use ev.sym for all programmatic checks
+    if (ev.sym === 'sonne') {
+      p.joker++;
+      addHistory(`${p.name}: Sonne → +1 Joker (${p.joker} total)`);
+      checkCoinLimit(p);
+      updateCoinsDisplay();
+    } else if (ev.sym === 'fahrt') {
+      p.gratis++;
+      checkCoinLimit(p);
+      updateCoinsDisplay();
+      addHistory(`${p.name}: +1 Fahrt → +1 Gratisfahrt-Münze (${p.gratis} total)`);
+    }
+    // Pulverschnee bonus is applied at confirmation time via ev.sym check
 
-  // Show points card
-  if (ev.sym === 'unfall' || ev.sym === 'helikopter') {
-    const jokerBtn = p && p.joker > 0
-      ? `<button class="btn btn-warning" style="margin-top:8px;" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
-      : '';
-    const bannerText = ev.sym === 'unfall'
-      ? `🤕 <b>Unfall</b> – Zug aussetzen, keine Abfahrt.`
-      : `🚁 <b>Helikopter</b> – Transport ins nächste Tal, keine Abfahrt.`;
-    document.getElementById('descentPointsCard').style.display = '';
-    document.getElementById('descentEventBanner').innerHTML =
-      `<div class="result-box danger" style="margin:0;">${bannerText}${jokerBtn}</div>`;
-    document.getElementById('slopeSelector').style.display = 'none';
-    document.getElementById('descentPointsPreview').style.display = 'none';
-  } else {
-    document.getElementById('descentPointsCard').style.display = '';
-    renderDescentEventBanner();
-    filterSlopesByLevel();
-    initSlopeBoxes();
-    updateDescentPreview();
-    updateOhneBefugnisUI();
-  }
-  updatePrimaryActionButton();
+    // Show points card
+    if (ev.sym === 'unfall' || ev.sym === 'helikopter') {
+      const jokerBtn = p && p.joker > 0
+        ? `<button class="btn btn-warning" style="margin-top:8px;" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
+        : '';
+      const bannerText = ev.sym === 'unfall'
+        ? `🤕 <b>Unfall</b> – Zug aussetzen, keine Abfahrt.`
+        : `🚁 <b>Helikopter</b> – Transport ins nächste Tal, keine Abfahrt.`;
+      document.getElementById('descentPointsCard').style.display = '';
+      document.getElementById('descentEventBanner').innerHTML =
+        `<div class="result-box danger" style="margin:0;">${bannerText}${jokerBtn}</div>`;
+      document.getElementById('slopeSelector').style.display = 'none';
+      document.getElementById('descentPointsPreview').style.display = 'none';
+    } else {
+      document.getElementById('descentPointsCard').style.display = '';
+      renderDescentEventBanner();
+      filterSlopesByLevel();
+      initSlopeBoxes();
+      updateDescentPreview();
+      updateOhneBefugnisUI();
+    }
+    updatePrimaryActionButton();
+  }, ROLL_DURATION);
 }
 
 function useJokerOnEvent() {
@@ -786,7 +906,7 @@ function updateOhneBefugnisUI() {
     const dieEl = document.getElementById('rgDieOhneBefugnisInline');
     if (dieEl) {
       dieEl.className = 'die die-rg-neutral';
-      dieEl.innerHTML = dieImg('img/die_unknown.svg', '?');
+      dieEl.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
     }
     const resEl = document.getElementById('ohneBefugnisInlineResult');
     if (resEl) resEl.style.display = 'none';
@@ -884,7 +1004,7 @@ function clearSlopeSelection() {
   const dieInline = document.getElementById('rgDieOhneBefugnisInline');
   if (dieInline) {
     dieInline.className = 'die die-rg-neutral';
-    dieInline.innerHTML = dieImg('img/die_unknown.svg', '?');
+    dieInline.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
   }
   const resInline = document.getElementById('ohneBefugnisInlineResult');
   if (resInline) resInline.style.display = 'none';
@@ -900,29 +1020,32 @@ function rollOhneBefugnisInline() {
   const isGreen = Math.random() < 0.5;
   ohneBefugnisResult = isGreen;
 
-  const dieEl = document.getElementById('rgDieOhneBefugnisInline');
-  dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'} rolling`;
-  dieEl.innerHTML = dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot');
-  dieEl.addEventListener('animationend', () => dieEl.classList.remove('rolling'), {once:true});
-
-  // Disable re-roll button after rolling
+  // Disable re-roll button immediately
   const rollBtn = document.getElementById('btnRollOhneBefugnis');
   if (rollBtn) rollBtn.disabled = true;
 
-  const resEl = document.getElementById('ohneBefugnisInlineResult');
-  resEl.style.display = '';
-  if (isGreen) {
-    resEl.className = 'result-box success';
-    resEl.textContent = '✅ Grün – normale Punkte werden eingetragen.';
-  } else {
-    resEl.className = 'result-box danger';
-    resEl.textContent = '✗ Rot – Punkte werden als negative Werte eingetragen!';
-  }
-  addHistory(`${p.name}: Ohne Befugnis → ${isGreen ? 'GRÜN → normale Punkte' : 'ROT → negative Punkte'}`);
+  const dieEl = document.getElementById('rgDieOhneBefugnisInline');
+  dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'}`;
+  animateDieRoll(
+    dieEl,
+    () => { const g = Math.random() < 0.5; return dieImg(g ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', g ? 'Grün' : 'Rot'); },
+    dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot')
+  );
 
-  // Update preview and unlock confirm button
-  updateDescentPreview();
-  updateOhneBefugnisUI();
+  setTimeout(() => {
+    const resEl = document.getElementById('ohneBefugnisInlineResult');
+    resEl.style.display = '';
+    if (isGreen) {
+      resEl.className = 'result-box success';
+      resEl.textContent = '✅ Grün – normale Punkte werden eingetragen.';
+    } else {
+      resEl.className = 'result-box danger';
+      resEl.textContent = '✗ Rot – Punkte werden als negative Werte eingetragen!';
+    }
+    addHistory(`${p.name}: Ohne Befugnis → ${isGreen ? 'GRÜN → normale Punkte' : 'ROT → negative Punkte'}`);
+    updateDescentPreview();
+    updateOhneBefugnisUI();
+  }, ROLL_DURATION);
 }
 
 function confirmDescentPoints() {
@@ -1004,7 +1127,7 @@ function resetRGAccordions() {
   const rgDieExtra = document.getElementById('rgDieExtra');
   if (rgDieExtra) {
     rgDieExtra.className = 'die die-rg-neutral';
-    rgDieExtra.innerHTML = dieImg('img/die_unknown.svg', '?');
+    rgDieExtra.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
   }
   const rgResultExtra = document.getElementById('rgResultExtra');
   if (rgResultExtra) rgResultExtra.style.display = 'none';
@@ -1013,7 +1136,7 @@ function resetRGAccordions() {
   const dieInline = document.getElementById('rgDieOhneBefugnisInline');
   if (dieInline) {
     dieInline.className = 'die die-rg-neutral';
-    dieInline.innerHTML = dieImg('img/die_unknown.svg', '?');
+    dieInline.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
   }
   const resInline = document.getElementById('ohneBefugnisInlineResult');
   if (resInline) resInline.style.display = 'none';
@@ -1031,25 +1154,29 @@ function rollRGInTurn(context) {
 
   if (context === 'extraaktivitaet') {
     const dieEl = document.getElementById('rgDieExtra');
-    dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'} rolling`;
-    dieEl.innerHTML = dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot');
-    dieEl.addEventListener('animationend', () => dieEl.classList.remove('rolling'), {once:true});
+    dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'}`;
+    animateDieRoll(
+      dieEl,
+      () => { const g = Math.random() < 0.5; return dieImg(g ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', g ? 'Grün' : 'Rot'); },
+      dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot')
+    );
 
-    const res = document.getElementById('rgResultExtra');
-    res.style.display = '';
-    if (isGreen) {
-      res.className = 'result-box success';
-      res.textContent = '✅ Erfolg! +12 Punkte werden eingetragen.';
-      p.points += 12;
-      saveState();
-      updateAll();
-      addHistory(`${p.name}: Extraaktivität → GRÜN → +12 Punkte`);
-    } else {
-      res.className = 'result-box danger';
-      res.textContent = '✗ Nicht gemeistert – 0 Punkte.';
-      addHistory(`${p.name}: Extraaktivität → ROT → 0 Punkte`);
-    }
-
+    setTimeout(() => {
+      const res = document.getElementById('rgResultExtra');
+      res.style.display = '';
+      if (isGreen) {
+        res.className = 'result-box success';
+        res.textContent = '✅ Erfolg! +12 Punkte werden eingetragen.';
+        p.points += 12;
+        saveState();
+        updateAll();
+        addHistory(`${p.name}: Extraaktivität → GRÜN → +12 Punkte`);
+      } else {
+        res.className = 'result-box danger';
+        res.textContent = '✗ Nicht gemeistert – 0 Punkte.';
+        addHistory(`${p.name}: Extraaktivität → ROT → 0 Punkte`);
+      }
+    }, ROLL_DURATION);
   }
 }
 

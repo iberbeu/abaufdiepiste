@@ -137,84 +137,118 @@
     display: flex; flex-wrap: wrap; gap: 10px;
     justify-content: center; margin: 12px 0;
   }
+  /* The .die wrapper is a pure 3D scene — perspective only, no visual box.
+     All visual styling (gradient/border/shadow) lives on the individual
+     .die-face elements so every die matches rolling_die_example.html:
+     the cube itself IS the die, no outer frame around it. */
   .die {
-    width: 64px; height: 64px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem; font-weight: 800; cursor: pointer;
-    border: 3px solid transparent;
-    transition: all 0.15s; position: relative; user-select: none;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
-    overflow: hidden; padding: 0;
+    width: 64px; height: 64px;
+    display: block;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    perspective: 400px;
+    font-size: 1.6rem; font-weight: 800;
   }
-  .die img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .die:active { transform: scale(0.93); }
-  .die.held {
+  /* ── 3D CUBE STRUCTURE ── */
+  /* Shared roll animation — see animateDieRoll() in dice_app.js.
+     Every die in the app (transport, event, descent, Rot/Grün) uses this
+     same cube so the roll looks and feels identical across dice. */
+  .die-cube {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    /* Tiny transition smooths sub-frame jitter during the JS-driven spin
+       (mirrors rolling_die_example.html). */
+    transition: transform 0.05s linear;
+  }
+  /* Each face carries its own background, border, and rounded corners —
+     inherited from the colour modifier classes (.die-transport, .die-event,
+     .die-descent-*, .die-rg-*). No background on the parent wrapper, so
+     there is no flat frame behind the cube. */
+.die-face {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    backface-visibility: hidden;
+    background: inherit;
+    border: 2px solid rgba(0,0,0,0.12);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+  .die-face img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  /* Face positions — die is 64px, half = 32px */
+  .die-face-front  { transform: translateZ(32px); }
+  .die-face-back   { transform: rotateY(180deg)  translateZ(32px); }
+  .die-face-right  { transform: rotateY(90deg)   translateZ(32px); }
+  .die-face-left   { transform: rotateY(-90deg)  translateZ(32px); }
+  .die-face-top    { transform: rotateX(90deg)   translateZ(32px); }
+  .die-face-bottom { transform: rotateX(-90deg)  translateZ(32px); }
+  /* Inline 52px variant (Ohne-Befugnis inline die) — half-size = 26px */
+  #rgDieOhneBefugnisInline .die-face-front  { transform: translateZ(26px); }
+  #rgDieOhneBefugnisInline .die-face-back   { transform: rotateY(180deg)  translateZ(26px); }
+  #rgDieOhneBefugnisInline .die-face-right  { transform: rotateY(90deg)   translateZ(26px); }
+  #rgDieOhneBefugnisInline .die-face-left   { transform: rotateY(-90deg)  translateZ(26px); }
+  #rgDieOhneBefugnisInline .die-face-top    { transform: rotateX(90deg)   translateZ(26px); }
+  #rgDieOhneBefugnisInline .die-face-bottom { transform: rotateX(-90deg)  translateZ(26px); }
+  .die:active .die-cube { transform: scale(0.93); }
+  /* Held indicator — border/glow applied to the faces so it wraps the cube itself */
+  .die.held .die-face {
     border-color: var(--alpenglühen) !important;
-    box-shadow: 0 0 0 3px rgba(232,67,26,0.30), 0 3px 8px rgba(0,0,0,0.18);
+    box-shadow: 0 0 0 3px rgba(232,67,26,0.30), inset 0 0 0 1px rgba(255,255,255,0.15);
   }
   .die.held::after {
     content: '★'; position: absolute; top: -8px; right: -6px;
-    font-size: 0.7rem; color: var(--alpenglühen);
+    font-size: 0.9rem; color: var(--alpenglühen);
+    z-index: 2;
   }
-  .die.rolling { animation: rollAnim 0.35s ease-out; }
+
+  /* ── COLOUR MODIFIERS ──
+     Colour/gradient is applied to the faces (not the wrapper), so the cube
+     itself is the die — no flat frame behind it. Matches rolling_die_example.html. */
 
   /* Beförderungswürfel — Alpine Night (brand primary) */
-  .die-transport {
+  .die-transport .die-face {
     background: linear-gradient(135deg, #2A3F6A, var(--alpine-night));
     color: var(--summit-white);
-    border-color: rgba(245,245,240,0.15);
+    border-color: rgba(245,245,240,0.25);
   }
-  /* Ereigniswürfel — transparent background, image fills entire surface */
-  .die-event {
-    background: transparent;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+  /* Ereigniswürfel — white faces, image fills entire surface */
+  .die-event .die-face {
+    background: #ffffff;
     border-color: var(--border);
-    padding: 0;
   }
-  .die-event img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-    display: block;
-  }
-  /* Abfahrt – Anfänger: piste-blue (semantic — die colour matches piste colour) */
-  .die-descent-anfaenger {
+  .die-event .die-face img { object-fit: cover; }
+  /* Abfahrt – Anfänger: piste-blue */
+  .die-descent-anfaenger .die-face {
     background: linear-gradient(135deg, #6aaee8, var(--piste-blue));
     color: #ffffff;
   }
   /* Abfahrt – Fortgeschritten: piste-red */
-  .die-descent-fortgeschritten {
+  .die-descent-fortgeschritten .die-face {
     background: linear-gradient(135deg, #e87070, var(--piste-red));
     color: #ffffff;
   }
   /* Abfahrt – Profi: piste-yellow */
-  .die-descent-profi {
+  .die-descent-profi .die-face {
     background: linear-gradient(135deg, #f5d070, var(--piste-yellow));
     color: var(--alpine-night);
   }
   /* Keep old class names as aliases during transition */
-  .die-descent-red    { background: linear-gradient(135deg, #6aaee8, var(--piste-blue)); color: #ffffff; }
-  .die-descent-black  { background: linear-gradient(135deg, #e87070, var(--piste-red)); color: #ffffff; }
-  .die-descent-yellow { background: linear-gradient(135deg, #f5d070, var(--piste-yellow)); color: var(--alpine-night); }
-  /* Rot/Grün — Alpenglühen for red result, brand green for success */
-  .die-rg-green {
-    background: linear-gradient(135deg, #5cb85c, #3d8b3d);
-    color: #ffffff;
-  }
-  .die-rg-red {
-    background: linear-gradient(135deg, #f06030, var(--alpenglühen));
-    color: #ffffff;
-  }
+  .die-descent-red    .die-face { background: linear-gradient(135deg, #6aaee8, var(--piste-blue));  color: #ffffff; }
+  .die-descent-black  .die-face { background: linear-gradient(135deg, #e87070, var(--piste-red));   color: #ffffff; }
+  .die-descent-yellow .die-face { background: linear-gradient(135deg, #f5d070, var(--piste-yellow)); color: var(--alpine-night); }
+  /* Rot/Grün — Alpenglühen for red, brand green for success, Rock Grey neutral */
+  .die-rg-green   .die-face { background: linear-gradient(135deg, #5cb85c, #3d8b3d); color: #ffffff; }
+  .die-rg-red     .die-face { background: linear-gradient(135deg, #f06030, var(--alpenglühen)); color: #ffffff; }
+  .die-rg-neutral .die-face { background: linear-gradient(135deg, #8a9099, var(--rock-grey)); color: var(--summit-white); }
 
-  @keyframes rollAnim {
-    0%   { transform: rotate(0deg) scale(1); }
-    25%  { transform: rotate(-15deg) scale(1.1); }
-    50%  { transform: rotate(10deg) scale(0.95); }
-    75%  { transform: rotate(-6deg) scale(1.05); }
-    100% { transform: rotate(0deg) scale(1); }
-  }
-
-  /* ── BUTTONS ── */
+/* ── BUTTONS ── */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     padding: 12px 20px; border-radius: 50px; border: 2px solid transparent; cursor: pointer;
@@ -363,7 +397,14 @@
   @media (min-width: 600px) {
     .panel { padding: 20px; max-width: 640px; margin: 0 auto; }
     .dice-row { gap: 14px; }
-    .die { width: 72px; height: 72px; font-size: 1.8rem; overflow: hidden; }
+    .die { width: 72px; height: 72px; font-size: 1.8rem; }
+    /* Cube half-size = 36px at this breakpoint */
+    .die-face-front  { transform: translateZ(36px); }
+    .die-face-back   { transform: rotateY(180deg)  translateZ(36px); }
+    .die-face-right  { transform: rotateY(90deg)   translateZ(36px); }
+    .die-face-left   { transform: rotateY(-90deg)  translateZ(36px); }
+    .die-face-top    { transform: rotateX(90deg)   translateZ(36px); }
+    .die-face-bottom { transform: rotateX(-90deg)  translateZ(36px); }
   }
 
   /* ── ROLL COUNT ── */
@@ -469,12 +510,6 @@
   }
   .crossing-counter.counter-over {
     color: var(--red);
-  }
-
-  /* ── ROT/GRÜN NEUTRAL (pre-roll state) — Rock Grey */
-  .die-rg-neutral {
-    background: linear-gradient(135deg, #8a9099, var(--rock-grey));
-    color: var(--summit-white);
   }
 
   /* ── STICKY FOOTER ── */
