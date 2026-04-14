@@ -1200,7 +1200,6 @@ function updateSpecialTab() {
   document.getElementById('jokerCount').textContent = p.joker;
   document.getElementById('gratisCount').textContent = p.gratis;
   updateSightingsDisplay();
-  checkCoinWarning(p);
 }
 
 
@@ -1311,17 +1310,11 @@ function checkCoinLimit(p) {
   }
 }
 
-function checkCoinWarning(p) {
-  // Warning is no longer needed — coins are auto-removed at 3
-  document.getElementById('coinWarning').style.display = 'none';
-}
-
 function updateCoinsDisplay() {
   const p = currentPlayer();
   if (!p) return;
   document.getElementById('jokerCount').textContent  = p.joker;
   document.getElementById('gratisCount').textContent = p.gratis;
-  checkCoinWarning(p);
 }
 
 // ═══════════════════════════════════════
