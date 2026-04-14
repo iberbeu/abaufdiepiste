@@ -408,17 +408,7 @@
   </div>
 
   <div class="btn-row">
-    <button class="btn btn-primary btn-full" onclick="startGame()">🎿 Spiel starten</button>
-  </div>
-
-  <div class="card" style="margin-top:8px;">
-    <div class="card-title">Gespeichertes Spiel</div>
-    <p style="font-size:0.83rem;color:var(--muted);margin-bottom:10px;">
-      Der Spielstand wird automatisch gespeichert. Hier kannst du das gespeicherte Spiel komplett zurücksetzen und von vorne beginnen.
-    </p>
-    <div class="btn-row" style="margin-top:0;">
-      <button class="btn btn-danger btn-full" onclick="confirmReset()">🗑 Gespeichertes Spiel löschen &amp; neu beginnen</button>
-    </div>
+    <button class="btn btn-primary btn-full" onclick="confirmStart()">🎿 Spiel starten</button>
   </div>
 </div>
 
@@ -431,7 +421,7 @@
     <p>Alle Punkte, Spieler und Zugdaten werden gelöscht. Das Spiel beginnt von vorne. Fortfahren?</p>
     <div class="btn-row">
       <button class="btn btn-neutral" onclick="closeModal('resetModal')">Abbrechen</button>
-      <button class="btn btn-danger"  onclick="resetGame()">Ja, zurücksetzen</button>
+      <button class="btn btn-primary" onclick="startGame()">🎿 Ja, Spiel starten</button>
     </div>
   </div>
 </div>

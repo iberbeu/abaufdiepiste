@@ -150,7 +150,6 @@ let state = {
   descentValue: 0,
   eventRolled: false,
   eventIndex: -1,
-  descentPtsAccumulated: 0,
   jokerUsedOnEvent: false,
   history: [],
   roundSnapshots: [],    // [{round, time, points:[{name,pts}]}] — one entry per completed round
@@ -184,6 +183,7 @@ function addPlayerField(name) {
 }
 
 function startGame() {
+  closeModal('resetModal');
   const names = [...document.querySelectorAll('.player-name-input')].map(i=>i.value.trim()).filter(Boolean);
   if (names.length === 0) { alert('Mindestens einen Spieler eingeben!'); return; }
   const rounds = parseInt(document.getElementById('setupRounds').value)||20;
@@ -664,7 +664,6 @@ function resetDescentDice() {
   state.eventRolled = false;
   state.descentValue = 0;
   state.eventIndex = -1;
-  state.descentPtsAccumulated = 0;
   state.jokerUsedOnEvent = false;
   clearSlopeSelection();
   resetRGAccordions();
@@ -1417,7 +1416,6 @@ function endTurn() {
   state.eventRolled = false;
   state.descentValue = 0;
   state.eventIndex = -1;
-  state.descentPtsAccumulated = 0;
   state.jokerUsedOnEvent = false;
   state.action = null;
   state.diceRolled = false;  // unlock for the next player's turn
@@ -1537,27 +1535,11 @@ function updateScoreboard() {
 // ═══════════════════════════════════════
 // RESET
 // ═══════════════════════════════════════
-function confirmReset() {
+function confirmStart() {
   document.getElementById('resetModal').classList.add('open');
 }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
-}
-function resetGame() {
-  closeModal('resetModal');
-  clearSavedState();
-  state.players = [];
-  state.round = 1;
-  state.currentPlayerIndex = 0;
-  state.history = [];
-  state.roundSnapshots = [];
-  state.gameStarted = false;
-  state.playedThisRound = [];
-  state.diceRolled = false;
-  resetTransportState();
-  setAction(null);
-  initDefaultPlayers();
-  showTab('tab-setup');
 }
 
 // ═══════════════════════════════════════
