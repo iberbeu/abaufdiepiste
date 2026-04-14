@@ -157,6 +157,7 @@ let state = {
   gameStarted: false,    // true once a game is actively running
   playedThisRound: [],   // indices of players who have already played in the current round
   diceRolled: false,     // true once any dice have been rolled this turn — locks action switching and fresh re-rolls
+  gameFinished: false,   // true once all rounds are completed — blocks Zug and Sonder tabs
 };
 
 // ═══════════════════════════════════════
@@ -197,6 +198,7 @@ function startGame() {
   state.history = [];
   state.roundSnapshots = [];
   state.gameStarted = true;
+  state.gameFinished = false;
   state.playedThisRound = [];
   state.diceRolled = false;
   resetTransportState();
@@ -213,6 +215,10 @@ function showTab(id) {
   // Block access to gameplay tabs until the game has started
   if (!state.gameStarted && (id === 'tab-turn' || id === 'tab-special')) {
     id = 'tab-setup';
+  }
+  // After the game is finished, Zug and Sonder are locked — scores only
+  if (state.gameFinished && (id === 'tab-turn' || id === 'tab-special')) {
+    id = 'tab-scores';
   }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -309,11 +315,11 @@ function updateAll() {
   // Re-apply dice-roll lock on every UI refresh so it survives any re-render
   if (state.diceRolled) lockActionButtons();
 
-  // Enable/disable gameplay tabs based on whether the game has started
+  // Enable/disable gameplay tabs based on whether the game has started / finished
   const tabBtns = document.querySelectorAll('.tab-btn');
   // tabBtns[0]=Zug, [1]=Sonder, [2]=Punkte, [3]=Setup
-  if (tabBtns[0]) tabBtns[0].disabled = !state.gameStarted;
-  if (tabBtns[1]) tabBtns[1].disabled = !state.gameStarted;
+  if (tabBtns[0]) tabBtns[0].disabled = !state.gameStarted || state.gameFinished;
+  if (tabBtns[1]) tabBtns[1].disabled = !state.gameStarted || state.gameFinished;
 
   // Sync sticky footer visibility
   const footer = document.getElementById('stickyFooter');
@@ -1422,6 +1428,8 @@ function endTurn() {
 }
 
 function showGameEnd() {
+  state.gameFinished = true;
+  saveState();
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
   overlay.innerHTML = `<div class="modal">
@@ -1571,6 +1579,7 @@ function saveState() {
       playedThisRound:    state.playedThisRound || [],
       diceRolled:         state.diceRolled || false,
       roundSnapshots:     state.roundSnapshots || [],
+      gameFinished:       state.gameFinished || false,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
@@ -1590,6 +1599,7 @@ function loadState() {
     if (!Array.isArray(state.playedThisRound)) state.playedThisRound = [];
     if (typeof state.diceRolled !== 'boolean') state.diceRolled = false;
     if (!Array.isArray(state.roundSnapshots)) state.roundSnapshots = [];
+    if (typeof state.gameFinished !== 'boolean') state.gameFinished = false;
     state.players.forEach(p => { if (typeof p.skipNextTurn !== 'boolean') p.skipNextTurn = false; });
     return true;
   } catch (e) {
@@ -1612,7 +1622,7 @@ if (restored && state.gameStarted) {
   resetTransportState();
   updateAll();
   setAction(null);
-  showTab('tab-turn');
+  showTab(state.gameFinished ? 'tab-scores' : 'tab-turn');
 } else {
   // Fresh start – go to setup
   showTab('tab-setup');
