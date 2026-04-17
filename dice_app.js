@@ -1,7 +1,13 @@
+import {
+  TRANSPORT_SYMBOLS, TRANSPORT_NAMES, SLOPE_PTS, ALLOWED_SLOPES,
+  getLevel, levelLabel,
+  gameTime as _gameTime, gameTimeHour as _gameTimeHour,
+  calcDescentPoints,
+} from './game_logic.js';
+
 // ═══════════════════════════════════════
 // GAME STATE
 // ═══════════════════════════════════════
-const TRANSPORT_SYMBOLS = ['fussweg','kleingondel','skilift','sesselbahn','gondel','zug'];
 const TRANSPORT_IMGS    = {
   fussweg:    'img/transport_fussweg.png',
   kleingondel:'img/transport_kleingondel.png',
@@ -10,7 +16,6 @@ const TRANSPORT_IMGS    = {
   gondel:     'img/transport_gondel.svg',
   zug:        'img/transport_zug.png',
 };
-const TRANSPORT_NAMES   = ['Fußweg','Kleingondel','Skilift','Sesselbahn','Gondel','Zug/Bus'];
 const EVENT_FACES = [
   { sym:'fahrt',       img:'img/event_fahrt.png',       label:'+1 Fahrt',    cls:'success', text:'+1 Fahrt: Du erhältst eine Gratisfahrt-Münze! 🎟' },
   { sym:'helikopter',  img:'img/event_helikopter.png',  label:'Helikopter',  cls:'warning', text:'Helikopter: Transport ins nächste Tal – neu starten! 🚁' },
@@ -132,7 +137,6 @@ function animateDieRoll(el, getRandomHTML, finalHTML) {
   requestAnimationFrame(animate);
 }
 
-const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
 // Tracks selected Kreuzungen per slope colour: { blue: 0, red: 0, black: 0, yellow: 0 }
 let slopeSelection = { blue: 0, red: 0, black: 0, yellow: 0 };
 const PLAYER_COLORS = ['#3A8A8C','#e05252','#4caf50','#ff9800','#9c27b0','#00bcd4'];
@@ -236,29 +240,16 @@ function showTab(id) {
 // CLOCK
 // ═══════════════════════════════════════
 function gameTime() {
-  // Each round = 30 min; after all players in a round, clock advances
-  const totalMin = (state.startHour * 60) + ((state.round - 1) * 30);
-  const h = Math.floor(totalMin / 60) % 24;
-  const m = totalMin % 60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  return _gameTime(state.startHour, state.round);
 }
 function gameTimeHour() {
-  const totalMin = (state.startHour * 60) + ((state.round - 1) * 30);
-  return totalMin / 60;
+  return _gameTimeHour(state.startHour, state.round);
 }
 
 // ═══════════════════════════════════════
 // PLAYER HELPERS
 // ═══════════════════════════════════════
 function currentPlayer() { return state.players[state.currentPlayerIndex]; }
-function getLevel(pts) {
-  if (pts <= 20) return 'anfaenger';
-  if (pts <= 70) return 'fortgeschritten';
-  return 'profi';
-}
-function levelLabel(l) {
-  return { anfaenger:'Anfänger', fortgeschritten:'Fortgeschritten', profi:'Profi' }[l];
-}
 function levelBadgeClass(l) {
   return { anfaenger:'level-anfaenger', fortgeschritten:'level-fortgeschritten', profi:'level-profi' }[l];
 }
@@ -835,11 +826,7 @@ function updateCrossingCounter() {
 function getAllowedSlopes() {
   const p = currentPlayer();
   const lvl = p ? getLevel(p.points) : 'anfaenger';
-  return {
-    anfaenger:      ['blue','red'],
-    fortgeschritten:['blue','red','black'],
-    profi:          ['blue','red','black','yellow']
-  }[lvl];
+  return ALLOWED_SLOPES[lvl];
 }
 
 function filterSlopesByLevel() {
@@ -948,28 +935,10 @@ function updateKboxAvailability() {
 }
 
 // Returns { total, basePoints, parts, bonusText } for the current descent selection.
-// Single source of truth — used by both the preview label and the confirm button.
+// Delegates pure calculation to game_logic.js; reads module-level state here.
 function calcDescentTotal() {
-  let basePoints = 0;
-  const parts = [];
-  ['blue','red','black','yellow'].forEach(c => {
-    const k = slopeSelection[c];
-    if (k > 0) {
-      const pts = k * SLOPE_PTS[c];
-      const label = {blue:'Blau',red:'Rot',black:'Schwarz',yellow:'Gelb'}[c];
-      parts.push(`${label} ×${k} = ${pts}`);
-      basePoints += pts;
-    }
-  });
-
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
-  let total = basePoints;
-  let bonusText = '';
-  if (ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent) { total = Math.floor(total / 2); bonusText = ' (÷2 Schneesturm)'; }
-  if (ev?.sym === 'pulverschnee') { total += 5; bonusText = ' (+5 Pulverschnee)'; }
-  if (ohneBefugnisResult === false) { total = -total; bonusText += ' (Ohne Befugnis: negativ)'; }
-
-  return { total, basePoints, parts, bonusText };
+  return calcDescentPoints(slopeSelection, ev?.sym ?? null, state.jokerUsedOnEvent, ohneBefugnisResult);
 }
 
 function updateDescentPreview() {
@@ -1083,23 +1052,9 @@ function confirmDescentPoints() {
     return;
   }
 
-  let basePoints = 0;
-  const parts = [];
-  ['blue','red','black','yellow'].forEach(c => {
-    const k = slopeSelection[c];
-    if (k > 0) {
-      const pts = k * SLOPE_PTS[c];
-      const label = {blue:'Blau',red:'Rot',black:'Schwarz',yellow:'Gelb'}[c];
-      parts.push(`${label}×${k}=${pts}`);
-      basePoints += pts;
-    }
-  });
-
-  let total = basePoints;
-  if (ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent) { total = Math.floor(total / 2); }
-  if (ev?.sym === 'pulverschnee') { total += 5; }
+  // Use the same calculation as the preview — guarantees committed value matches what was shown.
+  const { total, parts } = calcDescentTotal();
   const ohneBefugnisRed = ohneBefugnisResult === false;
-  if (ohneBefugnisRed) { total = -total; }
 
   p.points += total;
   const schneesturmActive = ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent;
@@ -1572,3 +1527,17 @@ if (restored && state.gameStarted) {
   // Fresh start – go to setup
   showTab('tab-setup');
 }
+
+// ES modules don't expose names to global scope, but the HTML uses onclick="…"
+// attributes. Re-attach every function that the HTML or dynamic HTML strings call.
+Object.assign(window, {
+  showTab, setAction,
+  rollTransportDice, resetTransportDice,
+  rollBothDice, useJokerOnEvent,
+  rollOhneBefugnisInline, confirmDescentPoints, clearSlopeSelection,
+  toggleAccordion, rollRGInTurn,
+  takePause,
+  addSighting, adjustPoints, adjustCoins,
+  addPlayerField, confirmStart, closeModal, startGame,
+  handlePrimaryAction,
+});

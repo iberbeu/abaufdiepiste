@@ -88,24 +88,25 @@ describe('gameTimeHour', () => {
 describe('analyzeTransportSymbols — helicopter', () => {
   it('detects 6 identical symbols as helicopter', () => {
     const syms = Array(6).fill('gondel');
-    const result = analyzeTransportSymbols(syms);
+    const [result] = analyzeTransportSymbols(syms);
     expect(result.type).toBe('helicopter');
   });
 });
 
 describe('analyzeTransportSymbols — Sonder-Transport', () => {
-  it('detects a triplet with no pair as sonder', () => {
+  it('detects a triplet with no pair as sonder only', () => {
     // 3× fussweg + 1× gondel + 1× zug + 1× skilift  (no pair)
     const syms = ['fussweg', 'fussweg', 'fussweg', 'gondel', 'zug', 'skilift'];
-    const result = analyzeTransportSymbols(syms);
-    expect(result.type).toBe('sonder');
+    const results = analyzeTransportSymbols(syms);
+    expect(results[0].type).toBe('sonder');
+    expect(results).toHaveLength(1);
   });
 });
 
 describe('analyzeTransportSymbols — valid pair', () => {
   it('detects a simple pair', () => {
     const syms = ['gondel', 'gondel', 'fussweg', 'skilift', 'zug', 'sesselbahn'];
-    const result = analyzeTransportSymbols(syms);
+    const [result] = analyzeTransportSymbols(syms);
     expect(result.type).toBe('valid');
     expect(result.message).toContain('Gondel');
   });
@@ -113,21 +114,22 @@ describe('analyzeTransportSymbols — valid pair', () => {
   it('detects multiple pairs and reports all', () => {
     // 2× gondel + 2× skilift + 1× fussweg + 1× zug
     const syms = ['gondel', 'gondel', 'skilift', 'skilift', 'fussweg', 'zug'];
-    const result = analyzeTransportSymbols(syms);
+    const [result] = analyzeTransportSymbols(syms);
     expect(result.type).toBe('valid');
     expect(result.message).toContain('Gondel');
     expect(result.message).toContain('Skilift');
   });
 
-  // BUG-8 regression: triplet + pair in same roll → both should be reported
-  it('BUG-8: triplet + pair in same roll → reports sonder first (both valid)', () => {
+  // BUG-8 regression: triplet + pair in same roll → both must be reported
+  it('BUG-8: triplet + pair in same roll → returns sonder AND valid', () => {
     // 3× gondel + 2× skilift + 1× fussweg
     const syms = ['gondel', 'gondel', 'gondel', 'skilift', 'skilift', 'fussweg'];
-    const result = analyzeTransportSymbols(syms);
-    // Sonder takes precedence in single-result return, but the pair is also valid.
-    // The important thing is that we don't suppress it — the type should be 'sonder'.
-    expect(result.type).toBe('sonder');
-    expect(result.message).toContain('Gondel');
+    const results = analyzeTransportSymbols(syms);
+    expect(results).toHaveLength(2);
+    expect(results[0].type).toBe('sonder');
+    expect(results[0].message).toContain('Gondel');
+    expect(results[1].type).toBe('valid');
+    expect(results[1].message).toContain('Skilift');
   });
 });
 
@@ -135,7 +137,7 @@ describe('analyzeTransportSymbols — invalid', () => {
   it('returns invalid when no valid combination', () => {
     // all different
     const syms = TRANSPORT_SYMBOLS.slice(); // 6 unique symbols
-    const result = analyzeTransportSymbols(syms);
+    const [result] = analyzeTransportSymbols(syms);
     expect(result.type).toBe('invalid');
   });
 });

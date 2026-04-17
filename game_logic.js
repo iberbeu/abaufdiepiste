@@ -84,24 +84,13 @@ export function gameTimeHour(startHour, round) {
 // ─── Transport dice analysis ─────────────────────────────────────────────────
 
 /**
- * Analyses an array of 6 transport die symbols and returns a result object
- * describing the best valid combination(s).
- *
- * This is the pure, DOM-free version of analyzeTransport().
- * Rules implemented:
- *   6 same             → helicopter flight (special)
- *   3+ same            → Sonder-Transport (special transport)
- *   2+ same (pair)     → valid regular transport (all pairs reported)
- *   1 symbol + 3 same others → valid combo (1 + 3 rule)
- *   else               → no valid combination
- *
- * NOTE on BUG-8: a triplet and a pair in the same roll CAN coexist.
- * Both are reported independently. The triplet → Sonder-Transport check
- * no longer suppresses the pair result.
+ * Analyses an array of 6 transport die symbols and returns all valid results.
+ * Pure, DOM-free counterpart of analyzeTransport() in dice_app.js.
  *
  * @param {string[]} syms  — array of 6 symbol strings (from TRANSPORT_SYMBOLS)
- * @returns {{ type: string, message: string }}
- *   type: 'helicopter' | 'sonder' | 'valid' | 'invalid'
+ * @returns {Array<{ type: string, message: string }>}
+ *   Each entry: type 'helicopter' | 'sonder' | 'valid' | 'invalid'
+ *   Triplet + pair in same roll → two entries (sonder first, then valid).
  */
 export function analyzeTransportSymbols(syms) {
   const counts = {};
@@ -109,10 +98,10 @@ export function analyzeTransportSymbols(syms) {
 
   // 6 same → helicopter
   if (Object.values(counts).some(c => c === 6)) {
-    return {
+    return [{
       type: 'helicopter',
       message: '6 gleiche – Helikopterflug! Du kannst beliebig weit fliegen!',
-    };
+    }];
   }
 
   const results = [];
@@ -127,12 +116,12 @@ export function analyzeTransportSymbols(syms) {
     });
   });
 
-  // Pairs (≥2) → valid regular transport
-  const pairs = Object.entries(counts).filter(([, c]) => c >= 2);
+  // Pairs (exactly 2 — triplets already reported above)
+  const pairs = Object.entries(counts).filter(([, c]) => c === 2);
   if (pairs.length > 0) {
-    const lines = pairs.map(([key, cnt]) => {
+    const lines = pairs.map(([key]) => {
       const name = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)];
-      return `${name} (${cnt}×)`;
+      return `${name} (2×)`;
     });
     results.push({
       type: 'valid',
@@ -140,31 +129,14 @@ export function analyzeTransportSymbols(syms) {
     });
   }
 
-  // 1 symbol + 3 of a different symbol → valid combo
-  const singles = Object.entries(counts).filter(([, c]) => c === 1);
-  const others  = Object.entries(counts).filter(([, c]) => c >= 3);
-  if (singles.length > 0 && others.length > 0) {
-    const sName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(singles[0][0])];
-    const oName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(others[0][0])];
-    // Only add if not already covered by the pairs check
-    if (pairs.length === 0) {
-      results.push({
-        type: 'valid',
-        message: `1 + 3 gleiche – gültige Kombination! ${sName} kann mit den 3× ${oName} ergänzt werden.`,
-      });
-    }
-  }
-
   if (results.length === 0) {
-    return {
+    return [{
       type: 'invalid',
       message: 'Keine gültige Kombination – in der Warteschlange bleiben oder Joker einsetzen.',
-    };
+    }];
   }
 
-  // Return the most significant result (sonder > valid > invalid)
-  // Caller can also use the full array if needed (not exposed here for simplicity)
-  return results[0];
+  return results;
 }
 
 // ─── Descent point calculation ───────────────────────────────────────────────
