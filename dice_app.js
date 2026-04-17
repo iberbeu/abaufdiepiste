@@ -602,29 +602,29 @@ function analyzeTransport() {
     resultBox.textContent = '🚁 6 gleiche – Helikopterflug! Du kannst beliebig weit fliegen!';
     return;
   }
-  // 3 same (and no other pair) → Sonder-Transport
-  const triplets = Object.entries(counts).filter(([,c])=>c>=3);
-  if (triplets.length > 0 && !Object.values(counts).some(c=>c===2)) {
-    const key3 = triplets[0][0];
-    const name3 = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key3)];
-    resultBox.className = 'result-box info';
-    resultBox.textContent = `🚂 3× ${name3} – Sonder-Transport erlaubt (Transportmittel ohne eigenes Symbol)!`;
-    return;
-  }
-  // Pairs (2 same)
-  const pairs = Object.entries(counts).filter(([,c])=>c>=2);
+  const msgLines = [];
+  let hasSpecial = false;
+
+  // Triplets → Sonder-Transport (independent of pairs)
+  Object.entries(counts).filter(([,c]) => c >= 3).forEach(([key]) => {
+    const name = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)];
+    msgLines.push(`🚂 3× ${name} – Sonder-Transport erlaubt (Transportmittel ohne eigenes Symbol)!`);
+    hasSpecial = true;
+  });
+  // Pairs (exactly 2 — triplets already reported above)
+  const pairs = Object.entries(counts).filter(([,c]) => c === 2);
   if (pairs.length > 0) {
-    const lines = pairs.map(([key,cnt]) => {
-      const name = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)];
-      return `${name} (${cnt}×)`;
-    });
-    resultBox.className = 'result-box success';
-    resultBox.textContent = '✓ Gültige Beförderung: ' + lines.join('  +  ');
+    const pLines = pairs.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)] + ' (2×)');
+    msgLines.push('✓ Gültige Beförderung: ' + pLines.join('  +  '));
+  }
+  if (msgLines.length > 0) {
+    resultBox.className = hasSpecial ? 'result-box info' : 'result-box success';
+    resultBox.innerHTML = msgLines.join('<br>');
     return;
   }
-  // Check 1 + 3 other same
-  const singles = Object.entries(counts).filter(([,c])=>c===1);
-  const others  = Object.entries(counts).filter(([,c])=>c>=3);
+  // 1 + 3 same (no pairs found above)
+  const singles = Object.entries(counts).filter(([,c]) => c === 1);
+  const others  = Object.entries(counts).filter(([,c]) => c >= 3);
   if (singles.length > 0 && others.length > 0) {
     const sName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(singles[0][0])];
     const oName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(others[0][0])];
@@ -1073,6 +1073,12 @@ function confirmDescentPoints() {
       ? `${p.name}: Unfall – dieser Zug und nächster Zug ausgesetzt`
       : `${p.name}: Helikopter – Transport ins nächste Tal, nächster Zug ausgesetzt`;
     addHistory(logMsg);
+    const res = document.getElementById('descentResult');
+    res.className = 'result-box danger';
+    res.textContent = ev.sym === 'unfall'
+      ? '✓ Unfall bestätigt – nächster Zug ausgesetzt.'
+      : '✓ Helikopter bestätigt – nächster Zug ausgesetzt.';
+    res.style.display = '';
     updateAll();
     return;
   }
@@ -1200,42 +1206,6 @@ function updateSpecialTab() {
   document.getElementById('jokerCount').textContent = p.joker;
   document.getElementById('gratisCount').textContent = p.gratis;
   updateSightingsDisplay();
-}
-
-
-function rollRGDie(context) {
-  const isGreen = Math.random() < 0.5;
-  const dieEl = document.getElementById('rgDie');
-  dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'} rolling`;
-  dieEl.innerHTML = dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot');
-  dieEl.addEventListener('animationend', () => dieEl.classList.remove('rolling'), {once:true});
-
-  const res = document.getElementById('rgResult');
-  res.style.display = '';
-  const p = currentPlayer();
-
-  if (context === 'extraaktivitaet') {
-    if (isGreen) {
-      res.className = 'result-box success';
-      res.textContent = '✅ Erfolg! Extraaktivität gemeistert: +12 Punkte!';
-    } else {
-      res.className = 'result-box danger';
-      res.textContent = '✗ Nicht gemeistert – 0 Punkte. Piste bis Ende fahren.';
-    }
-  } else if (context === 'ohne_befugnis') {
-    if (isGreen) {
-      res.className = 'result-box success';
-      res.textContent = '✅ Erfolg! Piste erfolgreich befahren – normale Punkte.';
-    } else {
-      res.className = 'result-box danger';
-      res.textContent = '✗ Fehlschlag! Negative Punkte in Höhe der normalen Pistenwertung!';
-    }
-  } else {
-    res.className = isGreen ? 'result-box success' : 'result-box danger';
-    res.textContent = isGreen ? '✅ Grün – Erfolg!' : '✗ Rot – Fehlschlag / negative Konsequenz.';
-  }
-
-  addHistory(`${p?.name||'?'}: Rot/Grün-Würfel (${context}) → ${isGreen?'GRÜN':'ROT'}`);
 }
 
 function addSighting() {
