@@ -47,7 +47,7 @@
   <!-- Action choice -->
   <div class="card">
     <div class="card-title">Aktion wählen</div>
-    <div class="btn-row" style="margin-top:0">
+    <div class="btn-row btn-row--flush">
       <button class="btn btn-primary btn-action" onclick="setAction('bergauf')" id="actionBergauf">⬆ Bergauf</button>
       <button class="btn btn-warn btn-action"    onclick="setAction('bergab')"  id="actionBergab">⬇ Bergab</button>
       <button class="btn btn-neutral btn-action" onclick="setAction('pause')"   id="actionPause">☕ Pause</button>
@@ -57,7 +57,7 @@
   <!-- BERGAUF: Transport dice -->
   <div id="sectionBergauf" style="display:none">
     <div class="card">
-      <div class="card-title">Beförderungswürfel <span id="rollCountLabel" style="font-weight:400;color:var(--muted);">(Wurf 1 von 2)</span></div>
+      <div class="card-title">Beförderungswürfel <span id="rollCountLabel" class="label-sub">(Wurf 1 von 2)</span></div>
       <div class="held-hint">Tippe auf einen Würfel, um ihn zu behalten ★</div>
       <div class="dice-row" id="transportDiceRow"></div>
       <div class="roll-count-dots">
@@ -68,7 +68,7 @@
         <button class="btn btn-primary" id="btnRollTransport" onclick="rollTransportDice()">🎲 Würfeln</button>
         <button class="btn btn-neutral" id="btnResetTransport" onclick="resetTransportDice()">↺ Reset</button>
       </div>
-      <div id="transportResult" class="result-box info" style="display:none;"></div>
+      <div id="transportResult" class="result-box info" style="display:none"></div>
     </div>
 
   </div>
@@ -78,30 +78,30 @@
 
     <!-- Single unified card: roll + result + slope selector -->
     <div class="card">
-      <div class="card-title">Abfahrts- &amp; Ereigniswürfel <span id="descentDiceLabel" style="font-weight:400;color:var(--muted);font-size:0.78rem;"></span></div>
-      <div class="dice-row" style="justify-content:center;gap:24px;">
-        <div style="text-align:center;">
-          <div class="die die-descent-anfaenger" id="descentDie"><img src="img/die_unknown.svg" alt="?" style="width:100%;height:100%;object-fit:contain;"></div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;" id="descentDieLegend">Abfahrt</div>
+      <div class="card-title">Abfahrts- &amp; Ereigniswürfel <span id="descentDiceLabel" class="label-sub"></span></div>
+      <div class="dice-row">
+        <div class="die-wrapper">
+          <div class="die die-descent-anfaenger" id="descentDie"></div>
+          <div class="die-legend" id="descentDieLegend">Abfahrt</div>
         </div>
-        <div style="text-align:center;">
-          <div class="die die-event" id="eventDie"><img src="img/die_unknown.svg" alt="?" style="width:100%;height:100%;object-fit:contain;"></div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Ereignis</div>
+        <div class="die-wrapper">
+          <div class="die die-event" id="eventDie"></div>
+          <div class="die-legend">Ereignis</div>
         </div>
       </div>
       <div class="btn-row">
         <button class="btn btn-warn" id="btnRollBothDice" onclick="rollBothDice()">🎿 Würfeln</button>
       </div>
-      <div id="eventResult" class="result-box info" style="display:none;margin-top:8px;"></div>
+      <div id="eventResult" class="result-box info result-box--mt-8" style="display:none"></div>
 
       <!-- Crossing counter + slope selector — revealed after rolling -->
-      <div id="descentPointsCard" style="display:none;margin-top:16px;">
+      <div id="descentPointsCard" style="display:none">
         <!-- Prominent crossing counter linking the die result to the selector -->
         <div id="crossingCounter" class="crossing-counter">
           <span id="crossingUsed">0</span> / <span id="crossingMax">0</span>
           <span class="crossing-counter-label"> Kreuzungen genutzt</span>
         </div>
-        <div id="descentEventBanner" style="font-size:0.85rem;margin-bottom:12px;"></div>
+        <div id="descentEventBanner"></div>
 
         <!-- Slope colour selectors -->
         <div id="slopeSelector">
@@ -110,7 +110,7 @@
             <div class="slope-label">
               <span class="slope-badge slope-blue">🔵 Blau</span>
               <span class="slope-pts-label">2 Pkt/Strecke</span>
-              <span class="slope-forbidden-badge" id="forbiddenBadge-blue" style="display:none;">⚠ Ohne Befugnis</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-blue" style="display:none">⚠ Ohne Befugnis</span>
             </div>
             <div class="kreuzung-boxes" data-color="blue">
               <button class="kbox" data-val="1">1</button>
@@ -126,7 +126,7 @@
             <div class="slope-label">
               <span class="slope-badge slope-red">🔴 Rot</span>
               <span class="slope-pts-label">4 Pkt/Strecke</span>
-              <span class="slope-forbidden-badge" id="forbiddenBadge-red" style="display:none;">⚠ Ohne Befugnis</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-red" style="display:none">⚠ Ohne Befugnis</span>
             </div>
             <div class="kreuzung-boxes" data-color="red">
               <button class="kbox" data-val="1">1</button>
@@ -142,7 +142,7 @@
             <div class="slope-label">
               <span class="slope-badge slope-black">⚫ Schwarz</span>
               <span class="slope-pts-label">6 Pkt/Strecke</span>
-              <span class="slope-forbidden-badge" id="forbiddenBadge-black" style="display:none;">⚠ Ohne Befugnis</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-black" style="display:none">⚠ Ohne Befugnis</span>
             </div>
             <div class="kreuzung-boxes" data-color="black">
               <button class="kbox" data-val="1">1</button>
@@ -158,7 +158,7 @@
             <div class="slope-label">
               <span class="slope-badge slope-yellow">🟡 Gelb</span>
               <span class="slope-pts-label">8 Pkt/Strecke</span>
-              <span class="slope-forbidden-badge" id="forbiddenBadge-yellow" style="display:none;">⚠ Ohne Befugnis</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-yellow" style="display:none">⚠ Ohne Befugnis</span>
             </div>
             <div class="kreuzung-boxes" data-color="yellow">
               <button class="kbox" data-val="1">1</button>
@@ -171,32 +171,30 @@
           </div>
         </div>
 
-        <div id="descentPointsPreview" style="font-size:0.9rem;font-weight:700;color:var(--glacier-teal);min-height:24px;margin:10px 0 4px;text-align:center;"></div>
+        <div id="descentPointsPreview" class="descent-points-preview"></div>
 
         <!-- Ohne Befugnis inline roll area — shown when forbidden slope is selected -->
-        <div id="ohneBefugnisRollArea" style="display:none;margin-bottom:8px;">
-          <div class="result-box warning" style="margin:0 0 8px;">
+        <div id="ohneBefugnisRollArea" style="display:none">
+          <div class="result-box warning result-box--flush-top">
             ⚠ Du hast eine nicht erlaubte Piste gewählt. Würfle den Rot/Grün-Würfel:
-            <br><span style="font-size:0.8rem;color:var(--muted);">Grün = normale Punkte · Rot = negative Punkte</span>
+            <br><span class="text-muted-sm">Grün = normale Punkte · Rot = negative Punkte</span>
           </div>
-          <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin:8px 0;">
-            <div class="die die-rg-neutral" id="rgDieOhneBefugnisInline" style="width:52px;height:52px;flex-shrink:0;">
-              <img src="img/die_unknown.svg" alt="?" style="width:100%;height:100%;object-fit:contain;">
-            </div>
+          <div class="ohne-befugnis-roll-row">
+            <div class="die die-rg-neutral" id="rgDieOhneBefugnisInline"></div>
             <button class="btn btn-warn" id="btnRollOhneBefugnis" onclick="rollOhneBefugnisInline()">🎲 Würfeln</button>
           </div>
-          <div id="ohneBefugnisInlineResult" style="display:none;"></div>
+          <div id="ohneBefugnisInlineResult" style="display:none"></div>
         </div>
 
         <!-- btnConfirmDescent kept hidden — used only by updateOhneBefugnisUI() for state tracking -->
-        <button id="btnConfirmDescent" style="display:none;" onclick="confirmDescentPoints()">✓ Punkte eintragen</button>
+        <button id="btnConfirmDescent" style="display:none" onclick="confirmDescentPoints()">✓ Punkte eintragen</button>
         <div class="btn-row">
           <button class="btn btn-neutral btn-full" onclick="clearSlopeSelection()">↺ Auswahl zurücksetzen</button>
         </div>
       </div><!-- /descentPointsCard -->
 
       <!-- Confirmation result shown after confirming -->
-      <div id="descentResult" class="result-box info" style="display:none;margin-top:10px;"></div>
+      <div id="descentResult" class="result-box info result-box--mt-10" style="display:none"></div>
     </div>
 
     <!-- ── EXTRAAKTIVITÄT panel (accordion) ── -->
@@ -204,17 +202,17 @@
       <button class="accordion-trigger" onclick="toggleAccordion('extraaktivitaet')" id="triggerExtraaktivitaet">
         <span>🏂 Extraaktivität</span><span class="accordion-chevron" id="chevronExtraaktivitaet">▸</span>
       </button>
-      <div class="accordion-body" id="bodyExtraaktivitaet" style="display:none;">
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">
+      <div class="accordion-body" id="bodyExtraaktivitaet" style="display:none">
+        <p class="section-hint">
           Nur für Fortgeschrittene &amp; Profis. Grün = +12 Punkte · Rot = 0 Punkte.
         </p>
-        <div class="dice-row" style="justify-content:center;">
-          <div class="die die-rg-neutral" id="rgDieExtra"><img src="img/die_unknown.svg" alt="?" style="width:100%;height:100%;object-fit:contain;"></div>
+        <div class="dice-row">
+          <div class="die die-rg-neutral" id="rgDieExtra"></div>
         </div>
         <div class="btn-row">
           <button class="btn btn-primary" onclick="rollRGInTurn('extraaktivitaet')">🎲 Würfeln</button>
         </div>
-        <div id="rgResultExtra" class="result-box info" style="display:none;margin-top:8px;"></div>
+        <div id="rgResultExtra" class="result-box info result-box--mt-8" style="display:none"></div>
       </div>
     </div>
 
@@ -224,13 +222,13 @@
   <div id="sectionPause" style="display:none">
     <div class="card">
       <div class="card-title">Mittagspause</div>
-      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">
+      <p class="section-hint">
         Erlaubt zwischen 11:00 und 12:30 Uhr (aktuelle Zeit: <span id="pauseCurrentTime">—</span>).
         Nur in Restaurant oder Bar.
       </p>
-      <div id="pauseTimeWarning" class="result-box warning" style="display:none;">⚠ Außerhalb des Mittagspausen-Zeitfensters (11:00–12:30)!</div>
-      <div id="pauseDoneWarning" class="result-box warning" style="display:none;">✓ Mittagspause bereits eingelegt.</div>
-      <div class="btn-row" style="margin-top:0;flex-direction:column;gap:8px;">
+      <div id="pauseTimeWarning" class="result-box warning" style="display:none">⚠ Außerhalb des Mittagspausen-Zeitfensters (11:00–12:30)!</div>
+      <div id="pauseDoneWarning" class="result-box warning" style="display:none">✓ Mittagspause bereits eingelegt.</div>
+      <div class="btn-row btn-row--flush btn-row--column">
         <button id="btnPauseRestaurant" class="btn btn-success btn-full" onclick="takePause('restaurant')">🍽 Restaurant (+15 Punkte, 1 Zug aussetzen)</button>
         <button id="btnPauseBar"        class="btn btn-warn   btn-full" onclick="takePause('bar')">🍺 Bar (+7 Punkte, 1 Zug aussetzen)</button>
       </div>
@@ -238,7 +236,7 @@
   </div>
 
   <!-- Symbolübersicht accordion -->
-  <div class="card accordion-card" style="margin-top:8px;">
+  <div class="card accordion-card card--mt-8">
     <button class="accordion-trigger" onclick="toggleAccordion('symboluebersicht')" id="triggerSymboluebersicht">
       Symbolübersicht
       <span class="accordion-chevron" id="chevronSymboluebersicht">▸</span>
@@ -252,7 +250,7 @@
         <div class="symbol-cell"><img class="sym" src="img/transport_gondel.svg" alt="Gondel">Gondel</div>
         <div class="symbol-cell"><img class="sym" src="img/transport_zug.png" alt="Zug/Bus">Zug/Bus</div>
       </div>
-      <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-top:6px;">
+      <div class="text-muted-sm">
         <b>2 gleiche</b> = gültige Beförderung &nbsp;|&nbsp;
         <b>1 + 3 andere gleiche</b> = auch gültig &nbsp;|&nbsp;
         <b>3 gleiche</b> = Sonder-Transport (Zug/Bus) &nbsp;|&nbsp;
@@ -262,7 +260,7 @@
   </div>
 
   <!-- Turn log -->
-  <div class="card" style="margin-top:14px;">
+  <div class="card">
     <div class="card-title">Zugverlauf</div>
     <div class="history-list" id="turnHistory"></div>
   </div>
@@ -277,11 +275,11 @@
   <!-- Sehenswürdigkeiten -->
   <div class="card">
     <div class="card-title">Sehenswürdigkeit passiert</div>
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">
+    <p class="section-hint">
       Erste: +5 · Zweite: +10 · Dritte: +15 · Danach +5 mehr als die vorherige
     </p>
-    <div id="sightingsDisplay" style="margin-bottom:10px;"></div>
-    <div class="btn-row" style="margin-top:0;">
+    <div id="sightingsDisplay"></div>
+    <div class="btn-row btn-row--flush">
       <button class="btn btn-success" onclick="addSighting()">🏔 Sehenswürdigkeit eintragen</button>
     </div>
   </div>
@@ -289,12 +287,12 @@
   <!-- Manual point adjustment -->
   <div class="card">
     <div class="card-title">Punkte manuell anpassen</div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <input type="number" id="manualPoints" class="form-input" style="width:90px;" placeholder="±Pts" value="5">
+    <div class="input-row">
+      <input type="number" id="manualPoints" class="form-input input-pts" placeholder="±Pts" value="5">
       <button class="btn btn-success" onclick="adjustPoints(1)">+ Addieren</button>
       <button class="btn btn-danger"  onclick="adjustPoints(-1)">− Abziehen</button>
     </div>
-    <div id="manualResult" style="margin-top:8px;font-size:0.85rem;color:var(--muted);"></div>
+    <div id="manualResult"></div>
   </div>
 
   <!-- Münzen / Joker tracker -->
@@ -302,18 +300,18 @@
     <div class="card-title">Münzen & Joker (aktueller Spieler)</div>
     <div class="stat-row">
       <span class="stat-label">🃏 Joker-Münzen</span>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('joker',-1)">−</button>
-        <span id="jokerCount" class="stat-value" style="font-size:1.2rem;">0</span>
-        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('joker',1)">+</button>
+      <div class="coin-control">
+        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',-1)">−</button>
+        <span id="jokerCount" class="stat-value coin-count">0</span>
+        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',1)">+</button>
       </div>
     </div>
     <div class="stat-row">
       <span class="stat-label">🎟 Gratisfahrt-Münzen</span>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('gratis',-1)">−</button>
-        <span id="gratisCount" class="stat-value" style="font-size:1.2rem;">0</span>
-        <button class="btn btn-neutral" style="padding:10px 16px;font-size:1rem;min-width:44px;min-height:44px;" onclick="adjustCoins('gratis',1)">+</button>
+      <div class="coin-control">
+        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',-1)">−</button>
+        <span id="gratisCount" class="stat-value coin-count">0</span>
+        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',1)">+</button>
       </div>
     </div>
   </div>
@@ -337,7 +335,7 @@
 
   <div class="card" id="punktverlaufCard">
     <div class="card-title">Punktverlauf</div>
-    <div id="punktverlaufContainer" style="overflow-x:auto;">
+    <div id="punktverlaufContainer">
       <table class="score-table" id="punktverlaufTable">
         <thead id="punktverlaufHead"></thead>
         <tbody id="punktverlaufBody"></tbody>
@@ -347,7 +345,7 @@
 
   <div class="card">
     <div class="card-title">Schlusswertung – Strafpunkte</div>
-    <div style="font-size:0.85rem;line-height:1.7;color:var(--muted);">
+    <div class="penalty-text">
       • Talstation nicht erreicht: <b>−15 Punkte</b><br>
       • Jede zusätzliche Piste (zur TS): normale Punkte, halbiert<br>
       • Jede Beförderung zurück: <b>−5 Punkte</b><br>
@@ -401,7 +399,7 @@
         <option value="9">09:00</option>
       </select>
     </div>
-    <div style="font-size:0.8rem;color:var(--muted);">Standard: 20 Runden, 08:00–17:30 Uhr, je Runde 30 Min.</div>
+    <div class="setup-note">Standard: 20 Runden, 08:00–17:30 Uhr, je Runde 30 Min.</div>
   </div>
 
   <div class="btn-row">
@@ -426,7 +424,7 @@
 <!-- ═══════════════════════════════════════
      STICKY PRIMARY ACTION FOOTER
 ════════════════════════════════════════ -->
-<div class="sticky-footer" id="stickyFooter" style="display:none;">
+<div class="sticky-footer" id="stickyFooter" style="display:none">
   <button class="btn btn-success btn-full" id="btnPrimaryAction" onclick="handlePrimaryAction()" disabled>
     ✓ Zug beenden → Nächster Spieler
   </button>
