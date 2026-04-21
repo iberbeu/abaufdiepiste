@@ -399,6 +399,9 @@ function updatePrimaryActionButton() {
   const btn = document.getElementById('btnPrimaryAction');
   if (!btn) return;
 
+  const sublabel = document.getElementById('footerSublabel');
+  if (sublabel) sublabel.style.display = 'none';
+
   const a = state.action;
 
   // Helper to set button appearance
@@ -418,6 +421,7 @@ function updatePrimaryActionButton() {
       set('Zug beenden →', false, 'btn-neutral');
     } else {
       set('Zug beenden → Nächster Spieler', true, 'btn-success');
+      if (sublabel && state.transportRolls === 1) sublabel.style.display = '';
     }
     return;
   }

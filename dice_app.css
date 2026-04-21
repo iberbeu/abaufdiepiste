@@ -522,7 +522,14 @@
   }
   /* Give the Zug panel enough bottom space so content isn't hidden under the footer */
   #tab-turn.active {
-    padding-bottom: 80px;
+    padding-bottom: 100px;
+  }
+  .footer-sublabel {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 4px 0 0;
+    white-space: nowrap;
   }
 
   /* ── MODAL ── */
