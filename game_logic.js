@@ -172,7 +172,7 @@ export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, oh
     total = Math.floor(total / 2);
     bonusText = ' (÷2 Schneesturm)';
   }
-  if (eventSym === 'pulverschnee') {
+  if (eventSym === 'pulverschnee' && basePoints > 0) {
     total += 5;
     bonusText = ' (+5 Pulverschnee)';
   }

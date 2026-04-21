@@ -25,9 +25,9 @@ const EVENT_FACES = [
   { sym:'sonne',       img:'img/event_sonne.png',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
 ];
 const DESCENT_DICE = {
-  anfaenger:      { faces:[1,1,2,2,3,3], cls:'die-descent-red',    label:'🔴 Anfänger',      imgPrefix:'img/descent_anfaenger_' },
-  fortgeschritten:{ faces:[2,2,3,3,4,4], cls:'die-descent-black',  label:'⚫ Fortgeschritten', imgPrefix:'img/descent_fortgeschritten_' },
-  profi:          { faces:[3,3,4,4,6,6], cls:'die-descent-yellow', label:'🟡 Profi',          imgPrefix:'img/descent_profi_' }
+  anfaenger:      { faces:[1,1,2,2,3,3], cls:'die-descent-anfaenger',      label:'🔴 Anfänger',      imgPrefix:'img/descent_anfaenger_' },
+  fortgeschritten:{ faces:[2,2,3,3,4,4], cls:'die-descent-fortgeschritten', label:'⚫ Fortgeschritten', imgPrefix:'img/descent_fortgeschritten_' },
+  profi:          { faces:[3,3,4,4,6,6], cls:'die-descent-profi',           label:'🟡 Profi',          imgPrefix:'img/descent_profi_' }
 };
 const IMG_UNKNOWN = 'img/die_unknown.svg';
 
@@ -733,9 +733,9 @@ function rollBothDice() {
       updateCoinsDisplay();
     } else if (ev.sym === 'fahrt') {
       p.gratis++;
+      addHistory(`${p.name}: +1 Fahrt → +1 Gratisfahrt-Münze (${p.gratis} total)`);
       checkCoinLimit(p);
       updateCoinsDisplay();
-      addHistory(`${p.name}: +1 Fahrt → +1 Gratisfahrt-Münze (${p.gratis} total)`);
     }
     // Pulverschnee bonus is applied at confirmation time via ev.sym check
 

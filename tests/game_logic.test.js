@@ -212,10 +212,10 @@ describe('calcDescentPoints — Pulverschnee (+5 bonus)', () => {
     expect(total).toBe(7);
   });
 
-  it('+5 even on empty slope selection', () => {
+  it('no bonus on empty slope selection (BUG-11 fix: bonus requires actual skiing)', () => {
     const sel = { blue: 0, red: 0, black: 0, yellow: 0 };
     const { total } = calcDescentPoints(sel, 'pulverschnee', false, null);
-    expect(total).toBe(5);
+    expect(total).toBe(0);
   });
 });
 

@@ -239,10 +239,7 @@
     background: linear-gradient(135deg, #f5d070, var(--piste-yellow));
     color: var(--alpine-night);
   }
-  /* Keep old class names as aliases during transition */
-  .die-descent-red    .die-face { background: linear-gradient(135deg, #6aaee8, var(--piste-blue));  color: #ffffff; }
-  .die-descent-black  .die-face { background: linear-gradient(135deg, #e87070, var(--piste-red));   color: #ffffff; }
-  .die-descent-yellow .die-face { background: linear-gradient(135deg, #f5d070, var(--piste-yellow)); color: var(--alpine-night); }
+
   /* Rot/Grün — Alpenglühen for red, brand green for success, Rock Grey neutral */
   .die-rg-green   .die-face { background: linear-gradient(135deg, #5cb85c, #3d8b3d); color: #ffffff; }
   .die-rg-red     .die-face { background: linear-gradient(135deg, #f06030, var(--alpenglühen)); color: #ffffff; }
