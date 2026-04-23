@@ -936,6 +936,8 @@ function updateKboxAvailability() {
     });
   });
   updateCrossingCounter();
+  const clearBtn = document.getElementById('btnClearSlopeSelection');
+  if (clearBtn) clearBtn.style.display = used > 0 ? '' : 'none';
 }
 
 // Returns { total, basePoints, parts, bonusText } for the current descent selection.
