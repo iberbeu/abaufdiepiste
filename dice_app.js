@@ -2,6 +2,7 @@ import {
   TRANSPORT_SYMBOLS, TRANSPORT_NAMES, SLOPE_PTS, ALLOWED_SLOPES,
   getLevel, levelLabel,
   gameTime as _gameTime, gameTimeHour as _gameTimeHour,
+  analyzeTransportSymbols,
   calcDescentPoints,
 } from './game_logic.js';
 
@@ -585,50 +586,38 @@ function updateRollDots() {
 
 function analyzeTransport() {
   const syms = state.transportDice.map(d => d.sym);
-  const counts = {};
-  syms.forEach(s => counts[s] = (counts[s]||0) + 1);
-
   const resultBox = document.getElementById('transportResult');
   resultBox.style.display = '';
 
-  // 6 same → Helikopter
-  if (Object.values(counts).some(c => c === 6)) {
-    resultBox.className = 'result-box success';
-    resultBox.textContent = '🚁 6 gleiche – Helikopterflug! Du kannst beliebig weit fliegen!';
-    return;
-  }
-  const msgLines = [];
-  let hasSpecial = false;
+  const results = analyzeTransportSymbols(syms);
 
-  // Triplets → Sonder-Transport (independent of pairs)
-  Object.entries(counts).filter(([,c]) => c >= 3).forEach(([key]) => {
-    const name = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)];
-    msgLines.push(`🚂 3× ${name} – Sonder-Transport erlaubt (Transportmittel ohne eigenes Symbol)!`);
-    hasSpecial = true;
-  });
-  // Pairs (exactly 2 — triplets already reported above)
-  const pairs = Object.entries(counts).filter(([,c]) => c === 2);
-  if (pairs.length > 0) {
-    const pLines = pairs.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)] + ' (2×)');
-    msgLines.push('✓ Gültige Beförderung: ' + pLines.join('  +  '));
-  }
-  if (msgLines.length > 0) {
-    resultBox.className = hasSpecial ? 'result-box info' : 'result-box success';
-    resultBox.innerHTML = msgLines.join('<br>');
-    return;
-  }
-  // 1 + 3 same (no pairs found above)
-  const singles = Object.entries(counts).filter(([,c]) => c === 1);
-  const others  = Object.entries(counts).filter(([,c]) => c >= 3);
-  if (singles.length > 0 && others.length > 0) {
-    const sName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(singles[0][0])];
-    const oName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(others[0][0])];
+  if (results[0].type === 'helicopter') {
     resultBox.className = 'result-box success';
-    resultBox.textContent = `✓ 1 + 3 gleiche – gültige Kombination! ${sName} kann mit den 3× ${oName} ergänzt werden.`;
+    resultBox.textContent = '🚁 ' + results[0].message;
     return;
   }
-  resultBox.className = 'result-box danger';
-  resultBox.textContent = '✗ Keine gültige Kombination – in der Warteschlange bleiben oder Joker einsetzen.';
+
+  const lines = [];
+  let hasGood = false;
+  let hasWildcard = false;
+
+  for (const r of results) {
+    if (r.type === 'wildcard2') {
+      lines.push('🎯 ' + r.message);
+      hasGood = true;
+    } else if (r.type === 'wildcard1') {
+      lines.push('🃏 ' + r.message);
+      hasWildcard = true;
+    } else if (r.type === 'valid') {
+      lines.push('✓ ' + r.message);
+      hasGood = true;
+    } else {
+      lines.push('✗ ' + r.message);
+    }
+  }
+
+  resultBox.className = hasGood ? 'result-box success' : hasWildcard ? 'result-box info' : 'result-box danger';
+  resultBox.innerHTML = lines.join('<br>');
 }
 
 // ═══════════════════════════════════════

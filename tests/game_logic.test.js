@@ -93,13 +93,51 @@ describe('analyzeTransportSymbols — helicopter', () => {
   });
 });
 
-describe('analyzeTransportSymbols — Sonder-Transport', () => {
-  it('detects a triplet with no pair as sonder only', () => {
-    // 3× fussweg + 1× gondel + 1× zug + 1× skilift  (no pair)
+describe('analyzeTransportSymbols — Joker (wildcard)', () => {
+  it('one triplet with only singles → wildcard1 listing all valid targets', () => {
+    // 3× fussweg + 1× gondel + 1× zug + 1× skilift — joker can pair with any of the singles
     const syms = ['fussweg', 'fussweg', 'fussweg', 'gondel', 'zug', 'skilift'];
     const results = analyzeTransportSymbols(syms);
-    expect(results[0].type).toBe('sonder');
     expect(results).toHaveLength(1);
+    expect(results[0].type).toBe('wildcard1');
+    expect(results[0].message).toContain('Gondel');
+    expect(results[0].message).toContain('Zug/Bus');
+    expect(results[0].message).toContain('Skilift');
+  });
+
+  it('two triplets → wildcard2 (completely free choice)', () => {
+    // 3× gondel + 3× skilift — two jokers → any transport
+    const syms = ['gondel', 'gondel', 'gondel', 'skilift', 'skilift', 'skilift'];
+    const results = analyzeTransportSymbols(syms);
+    expect(results).toHaveLength(1);
+    expect(results[0].type).toBe('wildcard2');
+  });
+
+  it('triplet + pair → wildcard1 AND valid pair both reported', () => {
+    // 3× gondel + 2× skilift + 1× fussweg — joker (can target skilift or fussweg) + skilift pair
+    const syms = ['gondel', 'gondel', 'gondel', 'skilift', 'skilift', 'fussweg'];
+    const results = analyzeTransportSymbols(syms);
+    expect(results).toHaveLength(2);
+    expect(results[0].type).toBe('wildcard1');
+    expect(results[0].message).toContain('Skilift');
+    expect(results[0].message).toContain('Fußweg');
+    expect(results[1].type).toBe('valid');
+    expect(results[1].message).toContain('Skilift');
+  });
+
+  it('4-of-a-kind: wildcard does NOT list its own symbol as a target', () => {
+    // 4× gondel + 2× skilift — triplet from gondel, remaining: gondel×1, skilift×2
+    // joker must not list "Gondel" as a combinable target (same symbol as the wildcard)
+    const syms = ['gondel', 'gondel', 'gondel', 'gondel', 'skilift', 'skilift'];
+    const results = analyzeTransportSymbols(syms);
+    expect(results[0].type).toBe('wildcard1');
+    // "Gondel" appears in "3× Gondel – Joker!" but must NOT appear after "Kombinierbar mit:"
+    const targets = results[0].message.split('Kombinierbar mit:')[1] ?? '';
+    expect(targets).not.toContain('Gondel');
+    expect(targets).toContain('Skilift');
+    // regular pair of skilift is also valid
+    expect(results[1].type).toBe('valid');
+    expect(results[1].message).toContain('Skilift');
   });
 });
 
@@ -118,18 +156,6 @@ describe('analyzeTransportSymbols — valid pair', () => {
     expect(result.type).toBe('valid');
     expect(result.message).toContain('Gondel');
     expect(result.message).toContain('Skilift');
-  });
-
-  // BUG-8 regression: triplet + pair in same roll → both must be reported
-  it('BUG-8: triplet + pair in same roll → returns sonder AND valid', () => {
-    // 3× gondel + 2× skilift + 1× fussweg
-    const syms = ['gondel', 'gondel', 'gondel', 'skilift', 'skilift', 'fussweg'];
-    const results = analyzeTransportSymbols(syms);
-    expect(results).toHaveLength(2);
-    expect(results[0].type).toBe('sonder');
-    expect(results[0].message).toContain('Gondel');
-    expect(results[1].type).toBe('valid');
-    expect(results[1].message).toContain('Skilift');
   });
 });
 

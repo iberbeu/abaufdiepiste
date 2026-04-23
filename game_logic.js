@@ -89,15 +89,15 @@ export function gameTimeHour(startHour, round) {
  *
  * @param {string[]} syms  — array of 6 symbol strings (from TRANSPORT_SYMBOLS)
  * @returns {Array<{ type: string, message: string }>}
- *   Each entry: type 'helicopter' | 'sonder' | 'valid' | 'invalid'
- *   Triplet + pair in same roll → two entries (sonder first, then valid).
+ *   Each entry: type 'helicopter' | 'wildcard1' | 'wildcard2' | 'valid' | 'invalid'
+ *   Triplet + pair → two entries (wildcard1 first, then valid).
  */
 export function analyzeTransportSymbols(syms) {
   const counts = {};
   syms.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
 
-  // 6 same → helicopter
-  if (Object.values(counts).some(c => c === 6)) {
+  // 6× same → helicopter
+  if (Object.values(counts).some(c => c >= 6)) {
     return [{
       type: 'helicopter',
       message: '6 gleiche – Helikopterflug! Du kannst beliebig weit fliegen!',
@@ -106,27 +106,56 @@ export function analyzeTransportSymbols(syms) {
 
   const results = [];
 
-  // Triplets → Sonder-Transport (one report per triplet found)
+  // Each triplet (count ≥ 3) is a wildcard: substitutes for 1× of any other symbol already present.
   const triplets = Object.entries(counts).filter(([, c]) => c >= 3);
-  triplets.forEach(([key]) => {
-    const name = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)];
-    results.push({
-      type: 'sonder',
-      message: `3× ${name} – Sonder-Transport erlaubt (Transportmittel ohne eigenes Symbol)!`,
-    });
-  });
 
-  // Pairs (exactly 2 — triplets already reported above)
-  const pairs = Object.entries(counts).filter(([, c]) => c === 2);
-  if (pairs.length > 0) {
-    const lines = pairs.map(([key]) => {
-      const name = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)];
-      return `${name} (2×)`;
-    });
+  if (triplets.length >= 2) {
+    // Two wildcards → completely free transport choice
+    const names = triplets.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)]);
     results.push({
-      type: 'valid',
-      message: 'Gültige Beförderung: ' + lines.join('  +  '),
+      type: 'wildcard2',
+      message: `3× ${names[0]} + 3× ${names[1]} – 2 Joker: Beliebiges Transportmittel erlaubt!`,
     });
+  } else if (triplets.length === 1) {
+    const [tripletKey] = triplets[0];
+    const tripletName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(tripletKey)];
+
+    // Remaining counts after consuming the 3 dice used as wildcard
+    const remaining = { ...counts };
+    remaining[tripletKey] -= 3;
+    if (remaining[tripletKey] <= 0) delete remaining[tripletKey];
+
+    // Valid targets: any OTHER symbol with ≥1 remaining die (wildcard + 1× = pair)
+    const targets = Object.entries(remaining)
+      .filter(([key, c]) => key !== tripletKey && c >= 1)
+      .map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)]);
+
+    results.push({
+      type: 'wildcard1',
+      message: targets.length > 0
+        ? `3× ${tripletName} – Joker! Kombinierbar mit: ${targets.join(', ')}`
+        : `3× ${tripletName} – Joker, aber keine weiteren Symbole zum Kombinieren.`,
+    });
+
+    // Also report any regular pairs in the remaining dice
+    const pairs = Object.entries(remaining).filter(([, c]) => c >= 2);
+    if (pairs.length > 0) {
+      const lines = pairs.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)] + ' (2×)');
+      results.push({
+        type: 'valid',
+        message: 'Gültige Beförderung: ' + lines.join('  +  '),
+      });
+    }
+  } else {
+    // No triplets — check for regular pairs only
+    const pairs = Object.entries(counts).filter(([, c]) => c >= 2);
+    if (pairs.length > 0) {
+      const lines = pairs.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)] + ' (2×)');
+      results.push({
+        type: 'valid',
+        message: 'Gültige Beförderung: ' + lines.join('  +  '),
+      });
+    }
   }
 
   if (results.length === 0) {
