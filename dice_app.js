@@ -344,8 +344,12 @@ function setAction(a) {
       btn.classList.add('btn-action-selected');
       btn.classList.remove('btn-action-unselected');
     } else {
-      btn.classList.add('btn-action-unselected');
       btn.classList.remove('btn-action-selected');
+      if (locked) {
+        btn.classList.add('btn-action-unselected');
+      } else {
+        btn.classList.remove('btn-action-unselected');
+      }
     }
     // Disable all action buttons once a roll has happened
     btn.disabled = locked;

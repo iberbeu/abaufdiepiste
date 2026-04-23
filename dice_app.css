@@ -272,9 +272,9 @@
     position: relative;
   }
   .btn-action.btn-action-selected {
-    border: 2px solid rgba(255,255,255,0.7) !important;
-    box-shadow: 0 0 0 3px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.25);
-    transform: translateY(-2px);
+    border: 2px solid rgba(255,255,255,0.85) !important;
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.28), 0 6px 16px rgba(0,0,0,0.32);
+    transform: translateY(-3px);
   }
   .btn-action.btn-action-selected::after {
     content: '✓';
