@@ -161,7 +161,7 @@ let state = {
   gameStarted: false,    // true once a game is actively running
   playedThisRound: [],   // indices of players who have already played in the current round
   diceRolled: false,     // true once any dice have been rolled this turn — locks action switching and fresh re-rolls
-  gameFinished: false,   // true once all rounds are completed — blocks Zug and Sonder tabs
+  gameFinished: false,   // true once all rounds are completed — blocks Zug tab
 };
 
 // ═══════════════════════════════════════
@@ -217,21 +217,20 @@ function startGame() {
 // TABS
 // ═══════════════════════════════════════
 function showTab(id) {
-  // Block access to gameplay tabs until the game has started
-  if (!state.gameStarted && (id === 'tab-turn' || id === 'tab-special')) {
+  // Block access to the Zug tab until the game has started
+  if (!state.gameStarted && id === 'tab-turn') {
     id = 'tab-setup';
   }
-  // After the game is finished, Zug and Sonder are locked — scores only
-  if (state.gameFinished && (id === 'tab-turn' || id === 'tab-special')) {
+  // After the game is finished, Zug is locked — scores only
+  if (state.gameFinished && id === 'tab-turn') {
     id = 'tab-scores';
   }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  const idx = ['tab-turn','tab-special','tab-scores','tab-setup'].indexOf(id);
+  const idx = ['tab-turn','tab-scores','tab-setup'].indexOf(id);
   document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
   if (id === 'tab-scores') updateScoreboard();
-  if (id === 'tab-special') updateSpecialTab();
   // Show sticky footer only on the Zug tab (and only when game is active)
   const footer = document.getElementById('stickyFooter');
   if (footer) footer.style.display = (id === 'tab-turn' && state.gameStarted) ? '' : 'none';
@@ -309,9 +308,8 @@ function updateAll() {
 
   // Enable/disable gameplay tabs based on whether the game has started / finished
   const tabBtns = document.querySelectorAll('.tab-btn');
-  // tabBtns[0]=Zug, [1]=Sonder, [2]=Punkte, [3]=Setup
+  // tabBtns[0]=Zug, [1]=Punkte, [2]=Setup
   if (tabBtns[0]) tabBtns[0].disabled = !state.gameStarted || state.gameFinished;
-  if (tabBtns[1]) tabBtns[1].disabled = !state.gameStarted || state.gameFinished;
 
   // Sync sticky footer visibility
   const footer = document.getElementById('stickyFooter');
@@ -323,7 +321,8 @@ function updateAll() {
 
   // Scores tab (if visible)
   if (document.getElementById('tab-scores').classList.contains('active')) updateScoreboard();
-  if (document.getElementById('tab-special').classList.contains('active')) updateSpecialTab();
+  // Sightings display is now in the Zug tab — always update it
+  updateSightingsDisplay();
 }
 
 // ═══════════════════════════════════════
@@ -739,7 +738,7 @@ function rollBothDice() {
     // Show points card
     if (ev.sym === 'unfall' || ev.sym === 'helikopter') {
       const jokerBtn = p && p.joker > 0
-        ? `<button class="btn btn-warning" style="margin-top:8px;" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
+        ? `<button class="btn btn-warn btn--mt-8" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
         : '';
       const bannerText = ev.sym === 'unfall'
         ? `🤕 <b>Unfall</b> – Zug aussetzen, keine Abfahrt.`
@@ -792,7 +791,7 @@ function renderDescentEventBanner() {
   if (ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent) {
     const p = currentPlayer();
     const jokerBtn = p && p.joker > 0
-      ? `<button class="btn btn-warning" style="margin-top:6px;font-size:0.8rem;" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
+      ? `<button class="btn btn-warn btn--mt-8 btn--sm" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
       : '';
     html += `<div class="result-box warning" style="margin:0 0 8px;">⚠ Schneesturm aktiv – nur <b>halbe Punkte</b>!${jokerBtn}</div>`;
   } else if (ev?.sym === 'schneesturm' && state.jokerUsedOnEvent) {
@@ -1151,16 +1150,8 @@ function rollRGInTurn(context) {
 }
 
 // ═══════════════════════════════════════
-// SPECIAL TAB
+// SEHENSWÜRDIGKEITEN / SIGHTINGS
 // ═══════════════════════════════════════
-function updateSpecialTab() {
-  const p = currentPlayer();
-  if (!p) return;
-  document.getElementById('jokerCount').textContent = p.joker;
-  document.getElementById('gratisCount').textContent = p.gratis;
-  updateSightingsDisplay();
-}
-
 function addSighting() {
   const p = currentPlayer();
   if (!p) return;
@@ -1174,11 +1165,9 @@ function addSighting() {
   addHistory(`${p.name}: Sehenswürdigkeit #${p.sightings} → +${pts} Punkte`);
   const msg = `✓ Sehenswürdigkeit #${p.sightings} eingetragen: +${pts} Punkte`;
   const res = document.createElement('div');
-  res.className = 'result-box success';
+  res.className = 'result-box success result-box--mt-8';
   res.textContent = msg;
-  res.style.marginTop = '8px';
-  const btn = document.querySelector('#tab-special .btn-success');
-  btn.parentElement.appendChild(res);
+  document.getElementById('sightingsFeedback').appendChild(res);
   setTimeout(() => res.remove(), 3000);
 }
 
@@ -1187,15 +1176,31 @@ function updateSightingsDisplay() {
   if (!p) return;
   const el = document.getElementById('sightingsDisplay');
   if (p.sightings === 0) {
-    el.innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">Noch keine passiert.</span>';
+    el.innerHTML = '<span class="text-muted-sm">Noch keine passiert.</span>';
     return;
   }
   let html = '';
   for (let i=1; i<=p.sightings; i++) {
     const pts = i * 5;
-    html += `<span style="background:#DDF0F0;color:#1F5F60;padding:3px 9px;border-radius:50px;font-size:0.78rem;font-weight:600;margin:2px;display:inline-block;">🏔 #${i}: +${pts} Pkt</span>`;
+    html += `<span class="sighting-pill">🏔 #${i}: +${pts} Pkt</span>`;
   }
   el.innerHTML = html;
+}
+
+function openManualAdjustConfirm() {
+  const body = document.getElementById('bodyManuell');
+  if (body.style.display !== 'none') {
+    toggleAccordion('manuell');
+    return;
+  }
+  document.getElementById('manualAdjustModal').classList.add('open');
+}
+
+function confirmOpenManualAdjust() {
+  closeModal('manualAdjustModal');
+  const body = document.getElementById('bodyManuell');
+  body.style.display = '';
+  document.getElementById('chevronManuell').textContent = '▾';
 }
 
 function adjustPoints(sign) {
@@ -1262,9 +1267,8 @@ function takePause(type) {
   document.getElementById('pauseTimeWarning').style.display = 'none';
   const sectionPause = document.getElementById('sectionPause');
   const msg = document.createElement('div');
-  msg.className = 'result-box success';
+  msg.className = 'result-box success result-box--mt-8';
   msg.textContent = `✓ ${type==='restaurant'?'Restaurant':'Bar'}: +${pts} Punkte!`;
-  msg.style.marginTop = '8px';
   sectionPause.appendChild(msg);
   setTimeout(() => msg.remove(), 3000);
   updatePrimaryActionButton();
@@ -1513,6 +1517,7 @@ Object.assign(window, {
   toggleAccordion, rollRGInTurn,
   takePause,
   addSighting, adjustPoints, adjustCoins,
+  openManualAdjustConfirm, confirmOpenManualAdjust,
   addPlayerField, confirmStart, closeModal, startGame,
   handlePrimaryAction,
 });

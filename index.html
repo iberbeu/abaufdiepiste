@@ -31,7 +31,6 @@
 <!-- ═══════════════ TABS ═══════════════ -->
 <div class="tabs">
   <button class="tab-btn active" onclick="showTab('tab-turn')">Zug</button>
-  <button class="tab-btn" onclick="showTab('tab-special')">Sonder</button>
   <button class="tab-btn" onclick="showTab('tab-scores')">Punkte</button>
   <button class="tab-btn" onclick="showTab('tab-setup')">Setup</button>
 </div>
@@ -235,6 +234,17 @@
     </div>
   </div>
 
+  <!-- Sehenswürdigkeit quick-register -->
+  <div class="card card--mt-8">
+    <div class="card-title">Sehenswürdigkeit passiert</div>
+    <p class="section-hint">Erste: +5 · Zweite: +10 · Dritte: +15 · Danach +5 mehr</p>
+    <div id="sightingsDisplay"></div>
+    <div class="btn-row btn-row--flush">
+      <button class="btn btn-success" onclick="addSighting()">🏔 Sehenswürdigkeit eintragen</button>
+    </div>
+    <div id="sightingsFeedback"></div>
+  </div>
+
   <!-- Symbolübersicht accordion -->
   <div class="card accordion-card card--mt-8">
     <button class="accordion-trigger" onclick="toggleAccordion('symboluebersicht')" id="triggerSymboluebersicht">
@@ -267,55 +277,6 @@
 </div>
 
 
-<!-- ═══════════════════════════════════════
-     TAB 3: SONDER (Special dice)
-════════════════════════════════════════ -->
-<div id="tab-special" class="panel">
-
-  <!-- Sehenswürdigkeiten -->
-  <div class="card">
-    <div class="card-title">Sehenswürdigkeit passiert</div>
-    <p class="section-hint">
-      Erste: +5 · Zweite: +10 · Dritte: +15 · Danach +5 mehr als die vorherige
-    </p>
-    <div id="sightingsDisplay"></div>
-    <div class="btn-row btn-row--flush">
-      <button class="btn btn-success" onclick="addSighting()">🏔 Sehenswürdigkeit eintragen</button>
-    </div>
-  </div>
-
-  <!-- Manual point adjustment -->
-  <div class="card">
-    <div class="card-title">Punkte manuell anpassen</div>
-    <div class="input-row">
-      <input type="number" id="manualPoints" class="form-input input-pts" placeholder="±Pts" value="5">
-      <button class="btn btn-success" onclick="adjustPoints(1)">+ Addieren</button>
-      <button class="btn btn-danger"  onclick="adjustPoints(-1)">− Abziehen</button>
-    </div>
-    <div id="manualResult"></div>
-  </div>
-
-  <!-- Münzen / Joker tracker -->
-  <div class="card">
-    <div class="card-title">Münzen & Joker (aktueller Spieler)</div>
-    <div class="stat-row">
-      <span class="stat-label">🃏 Joker-Münzen</span>
-      <div class="coin-control">
-        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',-1)">−</button>
-        <span id="jokerCount" class="stat-value coin-count">0</span>
-        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',1)">+</button>
-      </div>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">🎟 Gratisfahrt-Münzen</span>
-      <div class="coin-control">
-        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',-1)">−</button>
-        <span id="gratisCount" class="stat-value coin-count">0</span>
-        <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',1)">+</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════
      TAB 4: SCOREBOARD
@@ -323,14 +284,16 @@
 <div id="tab-scores" class="panel">
   <div class="card">
     <div class="card-title">Spielstand</div>
-    <table class="score-table" id="scoreTable">
-      <thead>
-        <tr>
-          <th>Spieler</th><th>Niveau</th><th>Punkte</th><th>Joker</th><th>Gratis</th>
-        </tr>
-      </thead>
-      <tbody id="scoreBody"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="score-table" id="scoreTable">
+        <thead>
+          <tr>
+            <th>Spieler</th><th>Niveau</th><th>Punkte</th><th>Joker</th><th>Gratis</th>
+          </tr>
+        </thead>
+        <tbody id="scoreBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="card" id="punktverlaufCard">
@@ -370,6 +333,41 @@
     <div class="stat-row"><span class="stat-label">🔴 Rot</span><span class="stat-value">4 Pkt/Strecke</span></div>
     <div class="stat-row"><span class="stat-label">⚫ Schwarz</span><span class="stat-value">6 Pkt/Strecke</span></div>
     <div class="stat-row"><span class="stat-label">🟡 Gelb</span><span class="stat-value">8 Pkt/Strecke</span></div>
+  </div>
+
+  <!-- Manuelle Anpassungen accordion -->
+  <div class="card accordion-card card--mt-8">
+    <button class="accordion-trigger" onclick="openManualAdjustConfirm()" id="triggerManuell">
+      <span>⚙ Anpassungen</span>
+      <span class="accordion-chevron" id="chevronManuell">▸</span>
+    </button>
+    <div class="accordion-body" id="bodyManuell" style="display:none">
+      <p class="section-hint">Punkte manuell anpassen</p>
+      <div class="input-row">
+        <input type="number" id="manualPoints" class="form-input input-pts" placeholder="±Pts" value="5">
+        <button class="btn btn-success" onclick="adjustPoints(1)">+ Addieren</button>
+        <button class="btn btn-danger"  onclick="adjustPoints(-1)">− Abziehen</button>
+      </div>
+      <div id="manualResult"></div>
+      <hr class="section-hr">
+      <p class="section-hint">Münzen &amp; Joker (aktueller Spieler)</p>
+      <div class="stat-row">
+        <span class="stat-label">🃏 Joker-Münzen</span>
+        <div class="coin-control">
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',-1)">−</button>
+          <span id="jokerCount" class="stat-value coin-count">0</span>
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',1)">+</button>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">🎟 Gratisfahrt-Münzen</span>
+        <div class="coin-control">
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',-1)">−</button>
+          <span id="gratisCount" class="stat-value coin-count">0</span>
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',1)">+</button>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -417,6 +415,17 @@
     <div class="btn-row">
       <button class="btn btn-neutral" onclick="closeModal('resetModal')">Abbrechen</button>
       <button class="btn btn-primary" onclick="startGame()">🎿 Ja, Spiel starten</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="manualAdjustModal">
+  <div class="modal">
+    <h2>Anpassungen</h2>
+    <p>Bist du sicher, dass du Punkte oder Münzen manuell ändern willst?</p>
+    <div class="btn-row">
+      <button class="btn btn-neutral" onclick="closeModal('manualAdjustModal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="confirmOpenManualAdjust()">Ja, anpassen</button>
     </div>
   </div>
 </div>

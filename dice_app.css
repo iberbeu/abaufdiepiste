@@ -335,6 +335,7 @@
   .stat-value { font-weight: 700; }
 
   /* ── SCOREBOARD ── */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .score-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   .score-table th {
     background: var(--alpine-night); color: white; padding: 8px 10px;
@@ -547,6 +548,11 @@
   .modal p { font-size: 0.9rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
   .modal .btn-row { justify-content: flex-end; }
 
+  .section-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .sighting-pill { background: #DDF0F0; color: #1F5F60; padding: 3px 9px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; margin: 2px; display: inline-block; }
+  .btn--mt-8 { margin-top: 8px; }
+  .btn--sm { font-size: 0.8rem; }
+
   /* ── UI-5: EXTRACTED INLINE STYLES ──
      All classes below were previously inline style="" attributes in index.html.
      New HTML must use these classes — no inline styles allowed (see CLAUDE.md). */
@@ -626,7 +632,7 @@
   #rgDieOhneBefugnisInline { width: 52px; height: 52px; flex-shrink: 0; }
 
   /* Punktverlauf scrollable container */
-  #punktverlaufContainer { overflow-x: auto; }
+  #punktverlaufContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* descentEventBanner spacing */
   #descentEventBanner { font-size: 0.85rem; margin-bottom: 12px; }
