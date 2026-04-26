@@ -1415,15 +1415,15 @@ function updateScoreboard() {
   body.innerHTML = '';
   sorted.forEach(pl => {
     const lvl = getLevel(pl.points);
+    const shortLevel = { anfaenger: 'ANF.', fortgeschritten: 'FORT.', profi: 'PROFI' }[lvl];
     const isCurrent = pl === currentPlayer();
     const tr = document.createElement('tr');
     if (isCurrent) tr.className = 'current-player';
     tr.innerHTML = `
       <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${pl.color};margin-right:7px;"></span>${pl.name}</td>
-      <td><span class="level-badge ${levelBadgeClass(lvl)}">${levelLabel(lvl)}</span></td>
-      <td style="font-size:1rem;font-weight:800;">${pl.points}</td>
-      <td>🃏${pl.joker}</td>
-      <td>🎟${pl.gratis}</td>
+      <td><span class="level-badge ${levelBadgeClass(lvl)}">${shortLevel}</span></td>
+      <td class="score-pts">${pl.points}</td>
+      <td>🃏${pl.joker} 🎟${pl.gratis}</td>
     `;
     body.appendChild(tr);
   });

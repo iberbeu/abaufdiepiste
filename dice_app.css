@@ -344,6 +344,7 @@
   .score-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
   .score-table tr:nth-child(even) td { background: #EEEEE9; }
   .score-table tr.current-player td { background: #DDF0F0; font-weight: 700; }
+  .score-pts { font-size: 1rem; font-weight: 800; }
 
   /* ── TRANSPORT SYMBOLS ── */
   .symbol-grid {
