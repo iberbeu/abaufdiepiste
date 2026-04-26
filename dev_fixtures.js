@@ -17,7 +17,6 @@
       gratis:       opts.gratis       || 0,
       sightings:    opts.sightings    || 0,
       pauseDone:    opts.pauseDone    || false,
-      skipNextTurn: opts.skipNextTurn || false,
     };
   }
 
@@ -71,18 +70,6 @@
         return base({
           round:   7,
           players: [player('Anna', 0, 20), player('Ben', 1, 40)],
-        });
-      },
-    },
-    {
-      label: 'Skip next turn — player 2 flagged',
-      state: function () {
-        return base({
-          round:   5,
-          players: [
-            player('Anna', 0, 30),
-            player('Ben',  1, 50, 0, { skipNextTurn: true }),
-          ],
         });
       },
     },

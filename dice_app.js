@@ -194,7 +194,7 @@ function startGame() {
   const rounds = parseInt(document.getElementById('setupRounds').value)||20;
   const startH = parseInt(document.getElementById('setupStartTime').value)||8;
   state.players = names.map((n,i)=>({
-    name:n, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false, skipNextTurn:false
+    name:n, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false
   }));
   state.totalRounds = rounds;
   state.startHour = startH;
@@ -1031,21 +1031,20 @@ function confirmDescentPoints() {
   const p = currentPlayer();
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
 
-  // Unfall / Helikopter (no Joker used): consume turn and mark next turn as skipped
+  // Unfall / Helikopter (no Joker used): consume turn with no points
   if ((ev?.sym === 'unfall' || ev?.sym === 'helikopter') && !state.jokerUsedOnEvent) {
     document.getElementById('descentPointsCard').style.display = 'none';
     const cc = document.getElementById('crossingCounter');
     if (cc) cc.classList.remove('counter-full','counter-over');
-    p.skipNextTurn = true;
     const logMsg = ev.sym === 'unfall'
-      ? `${p.name}: Unfall – dieser Zug und nächster Zug ausgesetzt`
-      : `${p.name}: Helikopter – Transport ins nächste Tal, nächster Zug ausgesetzt`;
+      ? `${p.name}: Unfall – dieser Zug ausgesetzt`
+      : `${p.name}: Helikopter – Transport ins nächste Tal, dieser Zug ausgesetzt`;
     addHistory(logMsg);
     const res = document.getElementById('descentResult');
     res.className = 'result-box danger';
     res.textContent = ev.sym === 'unfall'
-      ? '✓ Unfall bestätigt – nächster Zug ausgesetzt.'
-      : '✓ Helikopter bestätigt – nächster Zug ausgesetzt.';
+      ? '✓ Unfall bestätigt – Zug ohne Punkte.'
+      : '✓ Helikopter bestätigt – Zug ohne Punkte.';
     res.style.display = '';
     updateAll();
     return;
@@ -1303,29 +1302,6 @@ function endTurn() {
     }
   }
 
-  // Skip next turn for Unfall / Helikopter: auto-advance past this player and log it
-  const nextP = state.players[state.currentPlayerIndex];
-  if (nextP && nextP.skipNextTurn) {
-    nextP.skipNextTurn = false;
-    addHistory(`── ${nextP.name}: Zug übersprungen (Unfall / Helikopter)`);
-    state.currentPlayerIndex++;
-    if (state.currentPlayerIndex >= state.players.length) {
-      state.currentPlayerIndex = 0;
-      state.playedThisRound = [];
-      // Snapshot points at the end of this completed round (skip path)
-      if (!state.roundSnapshots) state.roundSnapshots = [];
-      state.roundSnapshots.push({
-        round: state.round,
-        time: gameTime(),
-        points: state.players.map(p => ({ name: p.name, pts: p.points }))
-      });
-      state.round++;
-      if (state.round > state.totalRounds) {
-        state.round = state.totalRounds;
-        showGameEnd();
-      }
-    }
-  }
   resetTransportState();
   renderTransportDice(false);
   // Reset transient descent state so the next player starts clean
@@ -1499,7 +1475,7 @@ function loadState() {
     if (typeof state.diceRolled !== 'boolean') state.diceRolled = false;
     if (!Array.isArray(state.roundSnapshots)) state.roundSnapshots = [];
     if (typeof state.gameFinished !== 'boolean') state.gameFinished = false;
-    state.players.forEach(p => { if (typeof p.skipNextTurn !== 'boolean') p.skipNextTurn = false; });
+    state.players.forEach(p => { delete p.skipNextTurn; });
     return true;
   } catch (e) {
     console.warn('Could not load state:', e);
