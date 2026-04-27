@@ -67,3 +67,65 @@
 #devPanel .dp-close:hover {
   color: #fff;
 }
+
+#devPanel .dp-section-title {
+  color: #6ee7b7;
+  margin: 18px 0 6px;
+  font-size: .85rem;
+  letter-spacing: .05em;
+  border-top: 1px solid #374151;
+  padding-top: 14px;
+}
+
+#devPanel .dp-textarea {
+  width: 100%;
+  min-height: 180px;
+  background: #0d1117;
+  color: #d1d5db;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: monospace;
+  font-size: .75rem;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+#devPanel .dp-textarea:focus {
+  outline: none;
+  border-color: #6ee7b7;
+}
+
+#devPanel .dp-error {
+  color: #f87171;
+  font-size: .72rem;
+  margin: 4px 0 0;
+  min-height: 1em;
+}
+
+#devPanel .dp-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+#devPanel .dp-btn-row .dp-btn {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+#devPanel .dp-btn--secondary {
+  background: #1f2937;
+  color: #9ca3af;
+}
+
+#devPanel .dp-btn--apply {
+  background: #065f46;
+  color: #6ee7b7;
+  border-color: #047857;
+}
+
+#devPanel .dp-btn--apply:hover {
+  background: #047857;
+}

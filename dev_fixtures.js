@@ -95,6 +95,16 @@
     },
   ];
 
+  function applyJson(json, errorEl) {
+    try {
+      const parsed = JSON.parse(json);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      location.reload();
+    } catch (e) {
+      errorEl.textContent = 'Ungültiges JSON: ' + e.message;
+    }
+  }
+
   function buildPanel() {
     const panel = document.createElement('div');
     panel.id = 'devPanel';
@@ -121,6 +131,48 @@
       box.appendChild(btn);
     });
 
+    // --- Raw JSON editor ---
+    const editorH = document.createElement('h2');
+    editorH.className = 'dp-section-title';
+    editorH.textContent = 'RAW JSON EDITOR';
+    box.appendChild(editorH);
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'dp-textarea';
+    textarea.spellcheck = false;
+    box.appendChild(textarea);
+
+    const errorEl = document.createElement('p');
+    errorEl.className = 'dp-error';
+    box.appendChild(errorEl);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'dp-btn-row';
+
+    const formatBtn = document.createElement('button');
+    formatBtn.className = 'dp-btn dp-btn--secondary';
+    formatBtn.textContent = 'Format JSON';
+    formatBtn.onclick = function () {
+      errorEl.textContent = '';
+      try {
+        textarea.value = JSON.stringify(JSON.parse(textarea.value), null, 2);
+      } catch (e) {
+        errorEl.textContent = 'Ungültiges JSON: ' + e.message;
+      }
+    };
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'dp-btn dp-btn--apply';
+    applyBtn.textContent = 'Apply & Reload';
+    applyBtn.onclick = function () {
+      errorEl.textContent = '';
+      applyJson(textarea.value, errorEl);
+    };
+
+    btnRow.appendChild(formatBtn);
+    btnRow.appendChild(applyBtn);
+    box.appendChild(btnRow);
+
     const close = document.createElement('button');
     close.className = 'dp-close';
     close.textContent = '✕ Schließen';
@@ -129,6 +181,8 @@
 
     panel.appendChild(box);
     document.body.appendChild(panel);
+    panel._textarea = textarea;
+    panel._errorEl = errorEl;
     return panel;
   }
 
@@ -138,7 +192,22 @@
     if (e.ctrlKey && e.shiftKey && e.key === 'D') {
       e.preventDefault();
       if (!panel) panel = buildPanel();
-      panel.style.display = (panel.style.display === 'none') ? 'flex' : 'none';
+      const isOpen = panel.style.display !== 'none';
+      panel.style.display = isOpen ? 'none' : 'flex';
+      if (!isOpen) {
+        panel._errorEl.textContent = '';
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          try {
+            panel._textarea.value = JSON.stringify(JSON.parse(raw), null, 2);
+          } catch (e) {
+            panel._textarea.value = raw;
+            panel._errorEl.textContent = 'Warnung: gespeichertes JSON ist ungültig — ' + e.message;
+          }
+        } else {
+          panel._textarea.value = '';
+        }
+      }
     }
   });
 })();
