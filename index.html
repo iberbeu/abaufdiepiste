@@ -199,7 +199,7 @@
     <!-- ── EXTRAAKTIVITÄT panel (accordion) ── -->
     <div class="card accordion-card" id="cardExtraaktivitaet">
       <button class="accordion-trigger" onclick="toggleAccordion('extraaktivitaet')" id="triggerExtraaktivitaet">
-        <span>🏂 Extraaktivität</span><span class="accordion-chevron" id="chevronExtraaktivitaet">▸</span>
+        <span id="labelExtraaktivitaet"><span id="extraaktivitaetTitle">🏂 Extraaktivität</span><span id="extraaktivitaetHint" class="accordion-trigger-hint" style="display:none"></span></span><span class="accordion-chevron" id="chevronExtraaktivitaet">▸</span>
       </button>
       <div class="accordion-body" id="bodyExtraaktivitaet" style="display:none">
         <p class="section-hint">
@@ -209,7 +209,7 @@
           <div class="die die-rg-neutral" id="rgDieExtra"></div>
         </div>
         <div class="btn-row">
-          <button class="btn btn-primary" onclick="rollRGInTurn('extraaktivitaet')">🎲 Würfeln</button>
+          <button class="btn btn-primary" id="btnRollExtraaktivitaet" onclick="rollRGInTurn('extraaktivitaet')">🎲 Würfeln</button>
         </div>
         <div id="rgResultExtra" class="result-box info result-box--mt-8" style="display:none"></div>
       </div>

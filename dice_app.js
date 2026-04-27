@@ -320,6 +320,7 @@ function updateAll() {
     footer.style.display = (onZugTab && state.gameStarted) ? '' : 'none';
   }
   updatePrimaryActionButton();
+  updateExtraaktivitaetCard();
 
   // Scores tab (if visible)
   if (document.getElementById('tab-scores').classList.contains('active')) updateScoreboard();
@@ -330,6 +331,49 @@ function updateAll() {
 // ═══════════════════════════════════════
 // ACTION SELECTION
 // ═══════════════════════════════════════
+
+// Shows the Extraaktivität card whenever action === 'bergab'.
+// When the feature is not available (Anfänger level, or active Unfall/Helikopter
+// without a joker), the card is greyed out and a reason label is shown —
+// so the player knows the feature exists but is blocked.
+function updateExtraaktivitaetCard() {
+  const el = document.getElementById('cardExtraaktivitaet');
+  if (!el) return;
+
+  // Only relevant during Bergab
+  if (state.action !== 'bergab') {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = '';
+
+  const p = currentPlayer();
+  const lvl = p ? getLevel(p.points) : 'anfaenger';
+  const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
+  const isBlockedByEvent = (ev?.sym === 'unfall' || ev?.sym === 'helikopter') && !state.jokerUsedOnEvent;
+  const isAnfaenger = lvl === 'anfaenger';
+  const isBlocked = isAnfaenger || isBlockedByEvent;
+
+  const hint = document.getElementById('extraaktivitaetHint');
+  const rollBtn = document.getElementById('btnRollExtraaktivitaet');
+
+  if (isBlocked) {
+    el.classList.add('accordion-card--disabled');
+    if (hint) {
+      hint.style.display = '';
+      hint.textContent = isAnfaenger
+        ? 'Nur für Fortgeschrittene & Profis'
+        : 'Nicht möglich bei Unfall oder Helikopter';
+    }
+    if (rollBtn) rollBtn.disabled = true;
+  } else {
+    el.classList.remove('accordion-card--disabled');
+    if (hint) hint.style.display = 'none';
+    // Re-enable roll button only if not already rolled this turn
+    if (rollBtn) rollBtn.disabled = extraaktivitaetPending !== null;
+  }
+}
+
 function setAction(a) {
   state.action = a;
 
@@ -365,10 +409,10 @@ function setAction(a) {
     btn.disabled = locked;
   });
 
-  document.getElementById('sectionBergauf').style.display      = a==='bergauf' ? '' : 'none';
-  document.getElementById('sectionBergabShort').style.display  = a==='bergab'  ? '' : 'none';
-  document.getElementById('sectionPause').style.display        = a==='pause'   ? '' : 'none';
-  document.getElementById('cardExtraaktivitaet').style.display = a==='bergab'  ? '' : 'none';
+  document.getElementById('sectionBergauf').style.display     = a==='bergauf' ? '' : 'none';
+  document.getElementById('sectionBergabShort').style.display = a==='bergab'  ? '' : 'none';
+  document.getElementById('sectionPause').style.display       = a==='pause'   ? '' : 'none';
+  updateExtraaktivitaetCard();
 
   updatePrimaryActionButton();
 
@@ -470,14 +514,19 @@ function updatePrimaryActionButton() {
       set('Erst Rot/Grün würfeln', false, 'btn-warn');
       return;
     }
-    // Compute point total
+    // Compute point total (descent pts + any pending Extraaktivität pts)
     const { total, parts } = calcDescentTotal();
-    if (parts.length === 0) {
+    const extraPts = extraaktivitaetPending !== null ? extraaktivitaetPending : 0;
+    const displayTotal = total + extraPts;
+    const hasAnyPoints = parts.length > 0 || extraPts > 0;
+    if (!hasAnyPoints) {
       set('Weiter (0 Punkte) →', true, 'btn-success');
-    } else if (total < 0) {
-      set(`${Math.abs(total)} Punkte entfernen & weiter →`, true, 'btn-warn');
+    } else if (displayTotal < 0) {
+      set(`${Math.abs(displayTotal)} Punkte entfernen & weiter →`, true, 'btn-warn');
+    } else if (displayTotal === 0) {
+      set('Weiter (0 Punkte) →', true, 'btn-success');
     } else {
-      set(`${total} Punkte eintragen & weiter →`, true, 'btn-success');
+      set(`${displayTotal} Punkte eintragen & weiter →`, true, 'btn-success');
     }
     return;
   }
@@ -775,6 +824,7 @@ function rollBothDice() {
       updateOhneBefugnisUI();
     }
     updatePrimaryActionButton();
+    updateExtraaktivitaetCard();
   }, ROLL_DURATION);
 }
 
@@ -1070,13 +1120,17 @@ function confirmDescentPoints() {
   // Use the same calculation as the preview — guarantees committed value matches what was shown.
   const { total, parts } = calcDescentTotal();
   const ohneBefugnisRed = ohneBefugnisResult === false;
+  const extraPts = extraaktivitaetPending !== null ? extraaktivitaetPending : 0;
 
-  p.points += total;
+  p.points += total + extraPts;
   const schneesturmActive = ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent;
   const histLine = parts.length > 0
-    ? `${p.name}: Abfahrt [${parts.join(', ')}]${schneesturmActive?' (Schneesturm ÷2)':''}${state.jokerUsedOnEvent && ev?.sym==='schneesturm'?' (Joker: Schneesturm abgewendet)':''}${ev?.sym==='pulverschnee'?' (+5 Pulverschnee)':''}${ohneBefugnisRed?' (Ohne Befugnis: negativ)':''} → ${total >= 0 ? '+' : ''}${total} Punkte`
-    : `${p.name}: Abfahrt ohne Pisten-Punkte bestätigt`;
+    ? `${p.name}: Abfahrt [${parts.join(', ')}]${schneesturmActive?' (Schneesturm ÷2)':''}${state.jokerUsedOnEvent && ev?.sym==='schneesturm'?' (Joker: Schneesturm abgewendet)':''}${ev?.sym==='pulverschnee'?' (+5 Pulverschnee)':''}${ohneBefugnisRed?' (Ohne Befugnis: negativ)':''}${extraPts > 0 ? ' + Extraaktivität +12':''} → ${(total + extraPts) >= 0 ? '+' : ''}${total + extraPts} Punkte`
+    : `${p.name}: Abfahrt ohne Pisten-Punkte bestätigt${extraPts > 0 ? ' + Extraaktivität +12':''}`;
   addHistory(histLine);
+  if (extraaktivitaetPending !== null) {
+    addHistory(`${p.name}: Extraaktivität → ${extraPts > 0 ? 'GRÜN → +12 Punkte' : 'ROT → 0 Punkte'}`);
+  }
   saveState();
   updateAll();
 
@@ -1084,8 +1138,9 @@ function confirmDescentPoints() {
   const crossingCounter = document.getElementById('crossingCounter');
   if (crossingCounter) crossingCounter.classList.remove('counter-full','counter-over');
   const res = document.getElementById('descentResult');
+  const grandTotal = total + extraPts;
   res.className = 'result-box success';
-  res.textContent = total > 0 ? `✓ +${total} Punkte eingetragen!` : '✓ Abfahrt bestätigt (0 Punkte).';
+  res.textContent = grandTotal > 0 ? `✓ +${grandTotal} Punkte eingetragen!` : '✓ Abfahrt bestätigt (0 Punkte).';
 }
 
 // ═══════════════════════════════════════
@@ -1095,6 +1150,10 @@ function confirmDescentPoints() {
 // Tracks the result of the Ohne Befugnis roll for the current descent
 // null = not yet rolled, true = green (use positive pts), false = red (negate pts)
 let ohneBefugnisResult = null;
+
+// Tracks pending Extraaktivität points — applied in confirmDescentPoints(), not at roll time
+// null = not rolled this turn, 0 = rolled red, 12 = rolled green
+let extraaktivitaetPending = null;
 
 function toggleAccordion(which) {
   const body    = document.getElementById('body'    + which.charAt(0).toUpperCase() + which.slice(1));
@@ -1107,6 +1166,7 @@ function toggleAccordion(which) {
 
 function resetRGAccordions() {
   // Close Extraaktivität panel and reset its die + result
+  extraaktivitaetPending = null;
   const bodyExtra = document.getElementById('bodyExtraaktivitaet');
   if (bodyExtra) bodyExtra.style.display = 'none';
   const chevronExtra = document.getElementById('chevronExtraaktivitaet');
@@ -1118,6 +1178,8 @@ function resetRGAccordions() {
   }
   const rgResultExtra = document.getElementById('rgResultExtra');
   if (rgResultExtra) rgResultExtra.style.display = 'none';
+  const titleEl = document.getElementById('extraaktivitaetTitle');
+  if (titleEl) titleEl.textContent = '🏂 Extraaktivität';
 
   // Reset inline Ohne-Befugnis area
   const dieInline = document.getElementById('rgDieOhneBefugnisInline');
@@ -1136,11 +1198,14 @@ function resetRGAccordions() {
 }
 
 function rollRGInTurn(context) {
-  const p = currentPlayer();
   const isGreen = Math.random() < 0.5;
 
   if (context === 'extraaktivitaet') {
+    const rollBtn = document.getElementById('btnRollExtraaktivitaet');
+    if (rollBtn) rollBtn.disabled = true;
+
     const dieEl = document.getElementById('rgDieExtra');
+    if (!dieEl) return;
     dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'}`;
     animateDieRoll(
       dieEl,
@@ -1149,20 +1214,21 @@ function rollRGInTurn(context) {
     );
 
     setTimeout(() => {
+      extraaktivitaetPending = isGreen ? 12 : 0;
       const res = document.getElementById('rgResultExtra');
-      res.style.display = '';
-      if (isGreen) {
-        res.className = 'result-box success';
-        res.textContent = '✅ Erfolg! +12 Punkte werden eingetragen.';
-        p.points += 12;
-        saveState();
-        updateAll();
-        addHistory(`${p.name}: Extraaktivität → GRÜN → +12 Punkte`);
-      } else {
-        res.className = 'result-box danger';
-        res.textContent = '✗ Nicht gemeistert – 0 Punkte.';
-        addHistory(`${p.name}: Extraaktivität → ROT → 0 Punkte`);
+      if (res) {
+        res.style.display = '';
+        if (isGreen) {
+          res.className = 'result-box success';
+          res.textContent = '✅ Grün – +12 Punkte werden beim Zug beenden eingetragen.';
+        } else {
+          res.className = 'result-box danger';
+          res.textContent = '✗ Rot – 0 Punkte.';
+        }
       }
+      const titleEl = document.getElementById('extraaktivitaetTitle');
+      if (titleEl) titleEl.textContent = isGreen ? '🏂 Extraaktivität · ✅ +12 Pkt' : '🏂 Extraaktivität · ✗ +0 Pkt';
+      updatePrimaryActionButton();
     }, ROLL_DURATION);
   }
 }
@@ -1347,6 +1413,7 @@ function endTurn() {
   state.diceRolled = false;
   state.pauseSelection = null;
   ohneBefugnisResult = null;
+  extraaktivitaetPending = null;
   saveState();
   setAction(null);
   updateAll();
