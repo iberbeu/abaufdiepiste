@@ -290,6 +290,16 @@
     box-shadow: none;
   }
 
+  /* Pause option buttons — selected/unselected highlight */
+  .btn-pause-selected {
+    border: 2px solid rgba(255,255,255,0.85) !important;
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.28), 0 6px 16px rgba(0,0,0,0.32) !important;
+    transform: translateY(-3px);
+  }
+  .btn-pause-unselected {
+    opacity: 0.45;
+  }
+
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
 
   /* ── RESULT BOX ── */

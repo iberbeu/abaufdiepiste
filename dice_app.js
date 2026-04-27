@@ -160,8 +160,9 @@ let state = {
   roundSnapshots: [],    // [{round, time, points:[{name,pts}]}] — one entry per completed round
   gameStarted: false,    // true once a game is actively running
   playedThisRound: [],   // indices of players who have already played in the current round
-  diceRolled: false,     // true once any dice have been rolled this turn — locks action switching and fresh re-rolls
-  gameFinished: false,   // true once all rounds are completed — blocks Zug tab
+  diceRolled: false,       // true once any dice have been rolled this turn — locks action switching and fresh re-rolls
+  pauseSelection: null,   // 'restaurant' | 'bar' | null — pending pause choice; confirmed only on "Zug beenden"
+  gameFinished: false,    // true once all rounds are completed — blocks Zug tab
 };
 
 // ═══════════════════════════════════════
@@ -206,6 +207,7 @@ function startGame() {
   state.gameFinished = false;
   state.playedThisRound = [];
   state.diceRolled = false;
+  state.pauseSelection = null;
   resetTransportState();
   saveState();
   updateAll();
@@ -331,6 +333,15 @@ function updateAll() {
 function setAction(a) {
   state.action = a;
 
+  // Leaving Pause tab without confirming — discard pending selection and reset highlights
+  if (a !== 'pause') {
+    state.pauseSelection = null;
+    const btnR = document.getElementById('btnPauseRestaurant');
+    const btnB = document.getElementById('btnPauseBar');
+    if (btnR) btnR.classList.remove('btn-pause-selected', 'btn-pause-unselected');
+    if (btnB) btnB.classList.remove('btn-pause-selected', 'btn-pause-unselected');
+  }
+
   // Once dice have been rolled, the player cannot switch actions
   const locked = state.diceRolled;
 
@@ -386,7 +397,7 @@ function setAction(a) {
 
 // Computes the correct label, style, and enabled state for the sticky footer button.
 // Called from setAction(), updateConfirmButtonLabel(), rollBothDice(), confirmDescentPoints(),
-// takePause(), and updateAll().
+// selectPause(), and updateAll().
 //
 // Button states:
 //   - No action:                         "Aktion wählen …"   [disabled, neutral]
@@ -397,8 +408,8 @@ function setAction(a) {
 //   - Bergab: rolled, OhneBefugnis pending: "Erst Rot/Grün würfeln" [disabled, warn]
 //   - Bergab: rolled, crossings chosen:  "X Punkte & weiter →" [enabled, green]
 //   - Bergab: rolled, no slope chosen:   "Weiter (0 Punkte) →" [enabled, muted-green]
-//   - Pause: selected, not confirmed:    "Pause wählen…"     [disabled]
-//   - Pause: confirmed (pauseDone):      "Zug beenden →"     [enabled, green]
+//   - Pause: no option chosen:           "Pause wählen …"    [disabled]
+//   - Pause: option selected:            "🍽/🍺 +X Pkt & weiter →" [enabled, green]
 function updatePrimaryActionButton() {
   const btn = document.getElementById('btnPrimaryAction');
   if (!btn) return;
@@ -431,9 +442,10 @@ function updatePrimaryActionButton() {
   }
 
   if (a === 'pause') {
-    const p = currentPlayer();
-    if (p && p.pauseDone) {
-      set('Zug beenden → Nächster Spieler', true, 'btn-success');
+    if (state.pauseSelection) {
+      const pts = state.pauseSelection === 'restaurant' ? 15 : 7;
+      const label = state.pauseSelection === 'restaurant' ? '🍽 Restaurant' : '🍺 Bar';
+      set(`${label}: +${pts} Pkt & weiter →`, true, 'btn-success');
     } else {
       set('Pause wählen …', false, 'btn-neutral');
     }
@@ -493,7 +505,13 @@ function handlePrimaryAction() {
     return;
   }
 
-  // Bergauf, Pause, or fallback
+  if (a === 'pause' && state.pauseSelection) {
+    if (btn) { btn.disabled = true; btn.textContent = '✓ Eingetragen …'; }
+    confirmPause();
+    endTurn();
+    return;
+  }
+
   endTurn();
 }
 
@@ -1248,30 +1266,41 @@ function updateCoinsDisplay() {
 // ═══════════════════════════════════════
 // PAUSE
 // ═══════════════════════════════════════
-function takePause(type) {
+function selectPause(type) {
   const p = currentPlayer();
   if (!p) return;
   const h = gameTimeHour();
-  if (!(h >= 11 && h <= 12.5)) return; // buttons are disabled; guard against direct JS calls
+  if (!(h >= 11 && h <= 12.5)) return;
   if (p.pauseDone) return;
+
+  state.pauseSelection = type;
+
+  const btnR = document.getElementById('btnPauseRestaurant');
+  const btnB = document.getElementById('btnPauseBar');
+  if (type === 'restaurant') {
+    btnR.classList.add('btn-pause-selected');
+    btnR.classList.remove('btn-pause-unselected');
+    btnB.classList.add('btn-pause-unselected');
+    btnB.classList.remove('btn-pause-selected');
+  } else {
+    btnB.classList.add('btn-pause-selected');
+    btnB.classList.remove('btn-pause-unselected');
+    btnR.classList.add('btn-pause-unselected');
+    btnR.classList.remove('btn-pause-selected');
+  }
+
+  updatePrimaryActionButton();
+}
+
+function confirmPause() {
+  const p = currentPlayer();
+  if (!p || !state.pauseSelection) return;
+  const type = state.pauseSelection;
   const pts = type === 'restaurant' ? 15 : 7;
   p.points += pts;
   p.pauseDone = true;
-  addHistory(`${p.name}: Mittagspause (${type==='restaurant'?'Restaurant':'Bar'}) → +${pts} Punkte`);
+  addHistory(`${p.name}: Mittagspause (${type === 'restaurant' ? 'Restaurant' : 'Bar'}) → +${pts} Punkte`);
   saveState();
-  updateAll();
-  // Lock buttons immediately — pauseDone is now true
-  document.getElementById('btnPauseRestaurant').disabled = true;
-  document.getElementById('btnPauseBar').disabled        = true;
-  document.getElementById('pauseDoneWarning').style.display = '';
-  document.getElementById('pauseTimeWarning').style.display = 'none';
-  const sectionPause = document.getElementById('sectionPause');
-  const msg = document.createElement('div');
-  msg.className = 'result-box success result-box--mt-8';
-  msg.textContent = `✓ ${type==='restaurant'?'Restaurant':'Bar'}: +${pts} Punkte!`;
-  sectionPause.appendChild(msg);
-  setTimeout(() => msg.remove(), 3000);
-  updatePrimaryActionButton();
 }
 
 // ═══════════════════════════════════════
@@ -1315,7 +1344,8 @@ function endTurn() {
   state.eventIndex = -1;
   state.jokerUsedOnEvent = false;
   state.action = null;
-  state.diceRolled = false;  // unlock for the next player's turn
+  state.diceRolled = false;
+  state.pauseSelection = null;
   ohneBefugnisResult = null;
   saveState();
   setAction(null);
@@ -1456,9 +1486,9 @@ function saveState() {
       history:            state.history,
       gameStarted:        state.gameStarted,
       playedThisRound:    state.playedThisRound || [],
-      diceRolled:         state.diceRolled || false,
-      roundSnapshots:     state.roundSnapshots || [],
-      gameFinished:       state.gameFinished || false,
+      diceRolled:       state.diceRolled || false,
+      roundSnapshots:   state.roundSnapshots || [],
+      gameFinished:            state.gameFinished || false,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
@@ -1515,7 +1545,7 @@ Object.assign(window, {
   rollBothDice, useJokerOnEvent,
   rollOhneBefugnisInline, confirmDescentPoints, clearSlopeSelection,
   toggleAccordion, rollRGInTurn,
-  takePause,
+  selectPause,
   addSighting, adjustPoints, adjustCoins,
   openManualAdjustConfirm, confirmOpenManualAdjust,
   addPlayerField, confirmStart, closeModal, startGame,
