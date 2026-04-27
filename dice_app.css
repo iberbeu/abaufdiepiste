@@ -390,10 +390,12 @@
   .form-input:focus { border-color: var(--glacier-teal); }
 
   /* ── PLAYER SETUP ── */
-  .player-setup-row {
-    display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
-  }
-  .player-setup-row input { flex: 1; }
+  .player-setup-row { margin-bottom: 12px; }
+  .player-setup-row-main { display: flex; gap: 8px; align-items: center; }
+  .player-setup-row-main input { flex: 1; }
+  /* 36px = dot 28px + gap 8px — aligns talstation input with name input left edge */
+  .player-setup-talstation { margin-left: 36px; margin-top: 4px; }
+  .btn-setup-remove { padding: 10px 12px; font-size: 0.85rem; min-height: 44px; }
   .player-color-dot {
     width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
     border: 2px solid rgba(0,0,0,0.15);

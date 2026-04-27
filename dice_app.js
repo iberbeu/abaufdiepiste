@@ -6,6 +6,8 @@ import {
   calcDescentPoints,
 } from './game_logic.js';
 
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+
 // ═══════════════════════════════════════
 // GAME STATE
 // ═══════════════════════════════════════
@@ -171,31 +173,52 @@ let state = {
 function initDefaultPlayers() {
   const setupList = document.getElementById('playerSetupList');
   setupList.innerHTML = '';
-  ['Spieler 1','Spieler 2'].forEach(n => addPlayerField(n));
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved.players) && saved.players.length) {
+        saved.players.forEach(p => addPlayerField(p.name, p.talstation || ''));
+        return;
+      }
+    }
+  } catch(e) {}
+  ['Spieler 1', 'Spieler 2'].forEach(n => addPlayerField(n, ''));
 }
 
-function addPlayerField(name) {
+function addPlayerField(name, talstation) {
   const setupList = document.getElementById('playerSetupList');
   const idx = setupList.children.length;
   if (idx >= 6) return;
   const row = document.createElement('div');
   row.className = 'player-setup-row';
   row.innerHTML = `
-    <div class="player-color-dot" style="background:${PLAYER_COLORS[idx]}"></div>
-    <input type="text" class="form-input player-name-input" value="${name||'Spieler '+(idx+1)}" placeholder="Name">
-    <button class="btn btn-danger" style="padding:6px 10px;font-size:0.85rem;" onclick="this.parentElement.remove()">✕</button>
+    <div class="player-setup-row-main">
+      <div class="player-color-dot"></div>
+      <input type="text" class="form-input player-name-input" value="${esc(name||'Spieler '+(idx+1))}" placeholder="Name">
+      <button class="btn btn-danger btn-setup-remove" onclick="this.closest('.player-setup-row').remove()">✕</button>
+    </div>
+    <div class="player-setup-talstation">
+      <input type="text" class="form-input player-talstation-input" value="${esc(talstation||'')}" placeholder="Talstation (optional)">
+    </div>
   `;
   setupList.appendChild(row);
+  row.querySelector('.player-color-dot').style.background = PLAYER_COLORS[idx];
 }
 
 function startGame() {
   closeModal('resetModal');
-  const names = [...document.querySelectorAll('.player-name-input')].map(i=>i.value.trim()).filter(Boolean);
-  if (names.length === 0) { alert('Mindestens einen Spieler eingeben!'); return; }
+  const playerInputs = [...document.querySelectorAll('.player-setup-row')]
+    .map(row => ({
+      name: row.querySelector('.player-name-input').value.trim(),
+      talstation: row.querySelector('.player-talstation-input').value.trim()
+    }))
+    .filter(p => p.name);
+  if (playerInputs.length === 0) { alert('Mindestens einen Spieler eingeben!'); return; }
   const rounds = parseInt(document.getElementById('setupRounds').value)||20;
   const startH = parseInt(document.getElementById('setupStartTime').value)||8;
-  state.players = names.map((n,i)=>({
-    name:n, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false
+  state.players = playerInputs.map((p,i)=>({
+    name:p.name, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false, talstation:p.talstation
   }));
   state.totalRounds = rounds;
   state.startHour = startH;
