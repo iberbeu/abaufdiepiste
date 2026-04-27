@@ -195,7 +195,7 @@ function addPlayerField(name, talstation) {
   row.innerHTML = `
     <div class="player-setup-row-main">
       <div class="player-color-dot"></div>
-      <input type="text" class="form-input player-name-input" value="${esc(name||'Spieler '+(idx+1))}" placeholder="Name">
+      <input type="text" class="form-input player-name-input" value="${esc(name||'Spieler '+(idx+1))}">
       <button class="btn btn-danger btn-setup-remove" onclick="this.closest('.player-setup-row').remove()">✕</button>
     </div>
     <div class="player-setup-talstation">
@@ -204,6 +204,14 @@ function addPlayerField(name, talstation) {
   `;
   setupList.appendChild(row);
   row.querySelector('.player-color-dot').style.background = PLAYER_COLORS[idx];
+  const nameInput = row.querySelector('.player-name-input');
+  const slotDefault = () => 'Spieler ' + ([...setupList.children].indexOf(nameInput.closest('.player-setup-row')) + 1);
+  nameInput.addEventListener('focus', () => {
+    if (nameInput.value === slotDefault()) nameInput.value = '';
+  });
+  nameInput.addEventListener('blur', () => {
+    if (!nameInput.value.trim()) nameInput.value = slotDefault();
+  });
 }
 
 function startGame() {
