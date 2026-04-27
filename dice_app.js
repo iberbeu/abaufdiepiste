@@ -22,7 +22,7 @@ const EVENT_FACES = [
   { sym:'helikopter',  img:'img/event_helikopter.png',  label:'Helikopter',  cls:'warning', text:'Helikopter: Transport ins nächste Tal – neu starten! 🚁' },
   { sym:'schneesturm', img:'img/event_schneesturm.png', label:'Schneesturm', cls:'danger',  text:'Schneesturm: Nur halbe Punkte für diese Abfahrt! ❄' },
   { sym:'pulverschnee',img:'img/event_pulverschnee.png',label:'Pulverschnee',cls:'success', text:'Pulverschnee: +5 Bonuspunkte! 🎉' },
-  { sym:'unfall',      img:'img/event_unfall.png',      label:'Unfall',      cls:'danger',  text:'Unfall: Keine Abfahrt möglich – Zug aussetzen. Joker einsetzbar!' },
+  { sym:'unfall',      img:'img/event_unfall.png',      label:'Unfall',      cls:'danger',  text:'Unfall: Keine Abfahrt möglich – Zug aussetzen' },
   { sym:'sonne',       img:'img/event_sonne.png',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
 ];
 const DESCENT_DICE = {
