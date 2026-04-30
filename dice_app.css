@@ -654,6 +654,16 @@
   /* Punktverlauf scrollable container */
   #punktverlaufContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
+  /* Punktverlauf shared cell classes */
+  .punktverlauf-time-cell { white-space: nowrap; color: var(--muted); font-size: 0.82rem; }
+  .punktverlauf-cell  { text-align: center; }
+  .punktverlauf-pts   { font-weight: 600; }
+  .punktverlauf-delta { font-size: 0.75rem; margin-left: 3px; }
+  .punktverlauf-pending { text-align: center; color: var(--muted); }
+
+  /* Punktverlauf live (in-progress) row — overrides nth-child(even) via higher specificity (0,2,2 vs 0,1,2) */
+  .score-table tr.punktverlauf-live-row td { background: var(--summit-white); font-style: italic; }
+
   /* descentEventBanner spacing */
   #descentEventBanner { font-size: 0.85rem; margin-bottom: 12px; }
 

@@ -1496,7 +1496,10 @@ function updatePunktverlauf() {
 
   if (card) card.style.display = '';
 
-  if (snapshots.length === 0) {
+  const showLiveRow = state.gameStarted && !state.gameFinished;
+  const hasData     = snapshots.length > 0 || showLiveRow;
+
+  if (!hasData) {
     head.innerHTML = '';
     body.innerHTML = '<tr><td style="text-align:center;color:var(--muted);font-size:0.85rem;padding:16px 0;">Noch keine Runden gespielt – der Punktverlauf erscheint hier nach der ersten Runde.</td></tr>';
     return;
@@ -1509,24 +1512,38 @@ function updatePunktverlauf() {
     ).join('') +
     '</tr>';
 
-  // One row per completed round snapshot
-  body.innerHTML = snapshots.map((snap, idx) => {
+  const makePtsCell = (pts, delta) => {
+    const deltaStr   = delta >= 0 ? `+${delta}` : `${delta}`;
+    const deltaColor = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--piste-red)' : 'var(--muted)';
+    return `<td class="punktverlauf-cell"><span class="punktverlauf-pts">${pts}</span><span class="punktverlauf-delta" style="color:${deltaColor};">(${deltaStr})</span></td>`;
+  };
+
+  // Completed round rows
+  let rows = snapshots.map((snap, idx) => {
     const prevSnap = snapshots[idx - 1];
     const cells = players.map(p => {
       const total = snap.points.find(e => e.name === p.name)?.pts ?? 0;
-      const prev  = prevSnap
-        ? (prevSnap.points.find(e => e.name === p.name)?.pts ?? 0)
-        : 0;
-      const delta = total - prev;
-      const deltaStr = delta >= 0 ? `+${delta}` : `${delta}`;
-      const deltaColor = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--piste-red)' : 'var(--muted)';
-      return `<td style="text-align:center;">
-        <span style="font-weight:600;">${total}</span>
-        <span style="font-size:0.75rem;color:${deltaColor};margin-left:3px;">(${deltaStr})</span>
-      </td>`;
+      const prev  = prevSnap ? (prevSnap.points.find(e => e.name === p.name)?.pts ?? 0) : 0;
+      return makePtsCell(total, total - prev);
     }).join('');
-    return `<tr><td style="white-space:nowrap;color:var(--muted);font-size:0.82rem;">${snap.time}</td>${cells}</tr>`;
+    return `<tr><td class="punktverlauf-time-cell">${snap.time}</td>${cells}</tr>`;
   }).join('');
+
+  // In-progress row for the current (incomplete) round
+  if (showLiveRow) {
+    const lastSnap  = snapshots[snapshots.length - 1];
+    const playedSet = new Set(state.playedThisRound || []);
+    const liveCells = players.map((p, i) => {
+      if (playedSet.has(i)) {
+        const prevPts = lastSnap ? (lastSnap.points.find(e => e.name === p.name)?.pts ?? 0) : 0;
+        return makePtsCell(p.points, p.points - prevPts);
+      }
+      return `<td class="punktverlauf-pending">…</td>`;
+    }).join('');
+    rows += `<tr class="punktverlauf-live-row"><td class="punktverlauf-time-cell">${gameTime()}</td>${liveCells}</tr>`;
+  }
+
+  body.innerHTML = rows;
 }
 
 // ═══════════════════════════════════════
