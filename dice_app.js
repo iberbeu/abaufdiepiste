@@ -165,6 +165,7 @@ let state = {
   diceRolled: false,       // true once any dice have been rolled this turn — locks action switching and fresh re-rolls
   pauseSelection: null,   // 'restaurant' | 'bar' | null — pending pause choice; confirmed only on "Zug beenden"
   gameFinished: false,    // true once all rounds are completed — blocks Zug tab
+  notificationsShown: [], // IDs of one-shot round-event notifications already shown this game
 };
 
 // ═══════════════════════════════════════
@@ -239,6 +240,7 @@ function startGame() {
   state.playedThisRound = [];
   state.diceRolled = false;
   state.pauseSelection = null;
+  state.notificationsShown = [];
   resetTransportState();
   saveState();
   updateAll();
@@ -453,7 +455,7 @@ function setAction(a) {
     const p = currentPlayer();
     document.getElementById('pauseCurrentTime').textContent = gameTime();
     const h = gameTimeHour();
-    const inWindow = h >= 11 && h <= 12.5;
+    const inWindow = isInLunchWindow(h);
     const alreadyDone = p ? p.pauseDone : false;
 
     document.getElementById('pauseTimeWarning').style.display = (!inWindow && !alreadyDone) ? '' : 'none';
@@ -1153,7 +1155,9 @@ function confirmDescentPoints() {
   const ohneBefugnisRed = ohneBefugnisResult === false;
   const extraPts = extraaktivitaetPending !== null ? extraaktivitaetPending : 0;
 
+  const _prevLevelDescent = getLevel(p.points);
   p.points += total + extraPts;
+  checkLevelUp(p, _prevLevelDescent);
   const schneesturmActive = ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent;
   const histLine = parts.length > 0
     ? `${p.name}: Abfahrt [${parts.join(', ')}]${schneesturmActive?' (Schneesturm ÷2)':''}${state.jokerUsedOnEvent && ev?.sym==='schneesturm'?' (Joker: Schneesturm abgewendet)':''}${ev?.sym==='pulverschnee'?' (+5 Pulverschnee)':''}${ohneBefugnisRed?' (Ohne Befugnis: negativ)':''}${extraPts > 0 ? ' + Extraaktivität +12':''} → ${(total + extraPts) >= 0 ? '+' : ''}${total + extraPts} Punkte`
@@ -1273,7 +1277,9 @@ function addSighting() {
   p.sightings++;
   // Points: 5, 10, 15, 20, 25 ...
   const pts = p.sightings * 5;
+  const _prevLevelSight = getLevel(p.points);
   p.points += pts;
+  checkLevelUp(p, _prevLevelSight);
   saveState();
   updateAll();
   updateSightingsDisplay();
@@ -1323,7 +1329,9 @@ function adjustPoints(sign) {
   if (!p) return;
   const val = parseInt(document.getElementById('manualPoints').value)||0;
   const delta = sign * val;
+  const _prevLevelAdj = getLevel(p.points);
   p.points += delta;
+  checkLevelUp(p, _prevLevelAdj);
   saveState();
   updateAll();
   const label = delta >= 0 ? `+${delta}` : `${delta}`;
@@ -1363,11 +1371,16 @@ function updateCoinsDisplay() {
 // ═══════════════════════════════════════
 // PAUSE
 // ═══════════════════════════════════════
+const LUNCH_START_H = 11;   // 11:00
+const LUNCH_END_H   = 12.5; // 12:30
+function isInLunchWindow(h)   { return h >= LUNCH_START_H && h <= LUNCH_END_H; }
+function isLunchWindowPast(h) { return h > LUNCH_END_H; }
+
 function selectPause(type) {
   const p = currentPlayer();
   if (!p) return;
   const h = gameTimeHour();
-  if (!(h >= 11 && h <= 12.5)) return;
+  if (!isInLunchWindow(h)) return;
   if (p.pauseDone) return;
 
   state.pauseSelection = type;
@@ -1394,10 +1407,115 @@ function confirmPause() {
   if (!p || !state.pauseSelection) return;
   const type = state.pauseSelection;
   const pts = type === 'restaurant' ? 15 : 7;
+  const _prevLevelPause = getLevel(p.points);
   p.points += pts;
+  checkLevelUp(p, _prevLevelPause);
   p.pauseDone = true;
   addHistory(`${p.name}: Mittagspause (${type === 'restaurant' ? 'Restaurant' : 'Bar'}) → +${pts} Punkte`);
   saveState();
+}
+
+// ═══════════════════════════════════════
+// ROUND EVENT NOTIFICATIONS (FEAT-16)
+// ═══════════════════════════════════════
+const _notifQueue = [];
+let _notifShowing = false;
+
+function _drainNotifQueue() {
+  if (_notifQueue.length === 0) { _notifShowing = false; return; }
+  _notifShowing = true;
+  const { title, bodyHtml, onMount } = _notifQueue.shift();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.innerHTML = `<div class="modal">
+    <h2>${title}</h2>
+    ${bodyHtml}
+    <div class="btn-row"><button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();drainNotifQueue()">OK</button></div>
+  </div>`;
+  document.body.appendChild(overlay);
+  if (onMount) onMount(overlay);
+}
+
+function drainNotifQueue() {
+  _notifShowing = false;
+  _drainNotifQueue();
+}
+
+function _queueNotif(title, bodyHtml, onMount) {
+  _notifQueue.push({ title, bodyHtml, onMount });
+  if (!_notifShowing) _drainNotifQueue();
+}
+
+function checkRoundNotifications() {
+  if (!Array.isArray(state.notificationsShown)) state.notificationsShown = [];
+  const h = gameTimeHour();
+
+  if (!state.notificationsShown.includes('lunch_open') && isInLunchWindow(h)) {
+    state.notificationsShown.push('lunch_open');
+    _queueNotif('🍽 Mittagspause offen!',
+      '<p>Das Mittagspausenfenster ist jetzt offen (11:00 – 12:30). Wer möchte, kann jetzt eine Pause einlegen.</p>');
+  }
+
+  if (!state.notificationsShown.includes('lunch_close') && isLunchWindowPast(h)) {
+    state.notificationsShown.push('lunch_close');
+    _queueNotif('⏰ Mittagspause geschlossen',
+      '<p>Das Mittagspausenfenster (11:00 – 12:30) ist vorbei. Pausen sind nicht mehr möglich.</p>');
+  }
+
+  const remaining = state.totalRounds - state.round + 1;
+  if (!state.notificationsShown.includes('three_rounds') && remaining > 0 && remaining <= 3 && state.totalRounds > 3) {
+    state.notificationsShown.push('three_rounds');
+    const roundWord = remaining === 1 ? 'Runde' : 'Runden';
+    const rows = state.players.map((p, idx) =>
+      `<tr>
+        <td><span class="notif-player-dot" data-pidx="${idx}"></span>${esc(p.name)}</td>
+        <td>${p.talstation ? esc(p.talstation) : '<em class="text-muted-sm">Nicht angegeben</em>'}</td>
+      </tr>`
+    ).join('');
+    _queueNotif(
+      `⛷ Nur noch ${remaining} ${roundWord}!`,
+      `<p>Zeit, zur Talstation zurückzukehren.</p>
+       <table class="notif-talstation-table">
+         <thead><tr><th>Spieler</th><th>Talstation</th></tr></thead>
+         <tbody>${rows}</tbody>
+       </table>`,
+      overlay => {
+        state.players.forEach((p, idx) => {
+          const dot = overlay.querySelector(`.notif-player-dot[data-pidx="${idx}"]`);
+          if (dot) dot.style.background = p.color;
+        });
+      }
+    );
+  }
+}
+
+// ═══════════════════════════════════════
+// LEVEL-UP CELEBRATION (FEAT-17)
+// ═══════════════════════════════════════
+const _LEVEL_ORDER = ['anfaenger', 'fortgeschritten', 'profi'];
+const _LEVEL_ICONS = { anfaenger: '🔴', fortgeschritten: '⚫', profi: '🟡' };
+const _LEVEL_LABELS = { anfaenger: 'Anfänger', fortgeschritten: 'Fortgeschritten', profi: 'Profi' };
+
+function checkLevelUp(p, prevLevel) {
+  const newLevel = getLevel(p.points);
+  if (_LEVEL_ORDER.indexOf(newLevel) > _LEVEL_ORDER.indexOf(prevLevel)) {
+    showLevelUpCelebration(p, newLevel);
+  }
+}
+
+function showLevelUpCelebration(p, newLevel) {
+  const toast = document.createElement('div');
+  toast.className = 'levelup-toast';
+  toast.innerHTML = `
+    <div class="levelup-toast-content">
+      <span class="levelup-toast-icon">${_LEVEL_ICONS[newLevel]}</span>
+      <div class="levelup-toast-text">
+        <strong>${esc(p.name)}</strong>
+        <span>Level Up! ${_LEVEL_LABELS[newLevel]}</span>
+      </div>
+    </div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3200);
 }
 
 // ═══════════════════════════════════════
@@ -1426,6 +1544,7 @@ function endTurn() {
       points: state.players.map(p => ({ name: p.name, pts: p.points }))
     });
     state.round++;
+    checkRoundNotifications();
     if (state.round > state.totalRounds) {
       state.round = state.totalRounds;
       showGameEnd();
@@ -1601,9 +1720,10 @@ function saveState() {
       history:            state.history,
       gameStarted:        state.gameStarted,
       playedThisRound:    state.playedThisRound || [],
-      diceRolled:       state.diceRolled || false,
-      roundSnapshots:   state.roundSnapshots || [],
-      gameFinished:            state.gameFinished || false,
+      diceRolled:          state.diceRolled || false,
+      roundSnapshots:      state.roundSnapshots || [],
+      gameFinished:        state.gameFinished || false,
+      notificationsShown:  state.notificationsShown || [],
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
@@ -1624,6 +1744,7 @@ function loadState() {
     if (typeof state.diceRolled !== 'boolean') state.diceRolled = false;
     if (!Array.isArray(state.roundSnapshots)) state.roundSnapshots = [];
     if (typeof state.gameFinished !== 'boolean') state.gameFinished = false;
+    if (!Array.isArray(state.notificationsShown)) state.notificationsShown = [];
     state.players.forEach(p => { delete p.skipNextTurn; });
     return true;
   } catch (e) {
@@ -1665,4 +1786,5 @@ Object.assign(window, {
   openManualAdjustConfirm, confirmOpenManualAdjust,
   addPlayerField, confirmStart, closeModal, startGame,
   handlePrimaryAction,
+  drainNotifQueue,
 });
