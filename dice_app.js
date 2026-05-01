@@ -1307,11 +1307,27 @@ function updateSightingsDisplay() {
     return;
   }
   let html = '';
+  // All × buttons call the same removeSighting() — sequential scoring means
+  // removing any sighting is equivalent to removing the last one (deducts n×5).
   for (let i=1; i<=p.sightings; i++) {
     const pts = i * 5;
-    html += `<span class="sighting-pill">🏔 #${i}: +${pts} Pkt</span>`;
+    html += `<span class="sighting-pill">🏔 #${i}: +${pts} Pkt<button class="sighting-remove" onclick="removeSighting()" aria-label="Entfernen">×</button></span>`;
   }
   el.innerHTML = html;
+}
+
+function removeSighting() {
+  const p = currentPlayer();
+  if (!p || p.sightings === 0) return;
+  const removedIndex = p.sightings;
+  const pts = removedIndex * 5;
+  p.points -= pts;
+  p.sightings--;
+  // Level-ups are permanent — no level-down on undo, only points are reversed.
+  saveState();
+  updateAll();
+  updateSightingsDisplay();
+  addHistory(`${p.name}: Sehenswürdigkeit #${removedIndex} rückgängig → −${pts} Punkte`);
 }
 
 function openManualAdjustConfirm() {
@@ -1788,7 +1804,7 @@ Object.assign(window, {
   rollOhneBefugnisInline, confirmDescentPoints, clearSlopeSelection,
   toggleAccordion, rollRGInTurn,
   selectPause,
-  addSighting, adjustPoints, adjustCoins,
+  addSighting, removeSighting, adjustPoints, adjustCoins,
   openManualAdjustConfirm, confirmOpenManualAdjust,
   addPlayerField, confirmStart, closeModal, startGame,
   handlePrimaryAction,

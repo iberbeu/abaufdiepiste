@@ -614,7 +614,9 @@
   .levelup-toast-text span   { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
 
   .section-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
-  .sighting-pill { background: #DDF0F0; color: #1F5F60; padding: 3px 9px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; margin: 2px; display: inline-block; }
+  .sighting-pill { background: #DDF0F0; color: #1F5F60; padding: 3px 9px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; margin: 2px; display: inline-flex; align-items: center; gap: 4px; }
+  .sighting-remove { background: none; border: none; color: #1F5F60; cursor: pointer; font-size: 0.85rem; font-weight: 700; line-height: 1; opacity: 0.55; padding: 4px 6px; }
+  .sighting-remove:hover { opacity: 1; }
   .btn--mt-8 { margin-top: 8px; }
   .btn--sm { font-size: 0.8rem; }
 
