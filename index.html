@@ -9,13 +9,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dice_app.css">
 </head>
-<body>
+<body class="hints-hidden">
 
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header>
   <div>
     <h1><img src="img/logo_abaufdiepiste.png" alt="" class="header-logo-img"> Ab auf die Piste</h1>
-    <div id="roundLabel" class="header-sub">Runde 1 von 20</div>
+    <div class="header-sub-row">
+      <div id="roundLabel" class="header-sub">Runde 1 von 20</div>
+      <button id="btnToggleHints" class="btn-hints-toggle" onclick="toggleHints()">ⓘ</button>
+    </div>
   </div>
   <div class="header-player-info">
     <div class="clock" id="gameClock">08:00</div>
@@ -57,7 +60,7 @@
   <div id="sectionBergauf" style="display:none">
     <div class="card">
       <div class="card-title">Beförderungswürfel <span id="rollCountLabel" class="label-sub">(Wurf 1 von 2)</span></div>
-      <div class="held-hint">Tippe auf einen Würfel, um ihn zu behalten ★</div>
+      <div class="held-hint info-hint">Tippe auf einen Würfel, um ihn zu behalten ★</div>
       <div class="dice-row" id="transportDiceRow"></div>
       <div class="roll-count-dots">
         <div class="roll-dot" id="rollDot1"></div>
@@ -202,7 +205,7 @@
         <span id="labelExtraaktivitaet"><span id="extraaktivitaetTitle">🏂 Extraaktivität</span><span id="extraaktivitaetHint" class="accordion-trigger-hint" style="display:none"></span></span><span class="accordion-chevron" id="chevronExtraaktivitaet">▸</span>
       </button>
       <div class="accordion-body" id="bodyExtraaktivitaet" style="display:none">
-        <p class="section-hint">
+        <p class="section-hint info-hint">
           Nur für Fortgeschrittene &amp; Profis. Grün = +12 Punkte · Rot = 0 Punkte.
         </p>
         <div class="dice-row">
@@ -221,7 +224,7 @@
   <div id="sectionPause" style="display:none">
     <div class="card">
       <div class="card-title">Mittagspause</div>
-      <p class="section-hint">
+      <p class="section-hint info-hint">
         Erlaubt zwischen 11:00 und 12:30 Uhr (aktuelle Zeit: <span id="pauseCurrentTime">—</span>).
         Nur in Restaurant oder Bar.
       </p>
@@ -237,7 +240,7 @@
   <!-- Sehenswürdigkeit quick-register -->
   <div class="card card--mt-8">
     <div class="card-title">Sehenswürdigkeit passiert</div>
-    <p class="section-hint">Erste: +5 · Zweite: +10 · Dritte: +15 · Danach +5 mehr</p>
+    <p class="section-hint info-hint">Erste: +5 · Zweite: +10 · Dritte: +15 · Danach +5 mehr</p>
     <div id="sightingsDisplay"></div>
     <div class="btn-row btn-row--flush">
       <button class="btn btn-success" onclick="addSighting()">🏔 Sehenswürdigkeit eintragen</button>
@@ -342,7 +345,7 @@
       <span class="accordion-chevron" id="chevronManuell">▸</span>
     </button>
     <div class="accordion-body" id="bodyManuell" style="display:none">
-      <p class="section-hint">Punkte manuell anpassen</p>
+      <p class="section-hint info-hint">Punkte manuell anpassen</p>
       <div class="input-row">
         <input type="number" id="manualPoints" class="form-input input-pts" placeholder="±Pts" value="5">
         <button class="btn btn-success" onclick="adjustPoints(1)">+ Addieren</button>
@@ -350,7 +353,7 @@
       </div>
       <div id="manualResult"></div>
       <hr class="section-hr">
-      <p class="section-hint">Münzen &amp; Joker (aktueller Spieler)</p>
+      <p class="section-hint info-hint">Münzen &amp; Joker (aktueller Spieler)</p>
       <div class="stat-row">
         <span class="stat-label">🃏 Joker-Münzen</span>
         <div class="coin-control">
@@ -397,7 +400,7 @@
         <option value="9">09:00</option>
       </select>
     </div>
-    <div class="setup-note">Standard: 20 Runden, 08:00–17:30 Uhr, je Runde 30 Min.</div>
+    <div class="setup-note info-hint">Standard: 20 Runden, 08:00–17:30 Uhr, je Runde 30 Min.</div>
   </div>
 
   <div class="btn-row">

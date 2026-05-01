@@ -1303,7 +1303,7 @@ function updateSightingsDisplay() {
   if (!p) return;
   const el = document.getElementById('sightingsDisplay');
   if (p.sightings === 0) {
-    el.innerHTML = '<span class="text-muted-sm">Noch keine passiert.</span>';
+    el.innerHTML = '<span class="text-muted-sm info-hint">Noch keine passiert.</span>';
     return;
   }
   let html = '';
@@ -1729,6 +1729,7 @@ function closeModal(id) {
 // PERSISTENCE (localStorage)
 // ═══════════════════════════════════════
 const STORAGE_KEY = 'abaufdiepiste_state';
+const HINTS_KEY   = 'hintsVisible'; // UI preference only — not part of game state
 
 function saveState() {
   try {
@@ -1779,10 +1780,24 @@ function clearSavedState() {
   try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
 }
 
+// ─── Hints toggle (FEAT-20) ───────────────────────────────────────────────
+function applyHintsState() {
+  const shown = localStorage.getItem(HINTS_KEY) === '1';
+  document.body.classList.toggle('hints-hidden', !shown);
+  document.getElementById('btnToggleHints')?.classList.toggle('active', shown);
+}
+
+function toggleHints() {
+  const shown = localStorage.getItem(HINTS_KEY) === '1';
+  localStorage.setItem(HINTS_KEY, shown ? '0' : '1');
+  applyHintsState();
+}
+
 // ═══════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════
 initDefaultPlayers();
+applyHintsState();
 const restored = loadState();
 if (restored && state.gameStarted) {
   // Resume saved game
@@ -1809,4 +1824,5 @@ Object.assign(window, {
   addPlayerField, confirmStart, closeModal, startGame,
   handlePrimaryAction,
   drainNotifQueue,
+  toggleHints,
 });

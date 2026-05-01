@@ -55,7 +55,14 @@
   header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 7px; }
   .header-logo-img { height: 28px; width: 28px; object-fit: contain; border-radius: 5px; flex-shrink: 0; }
   header .clock { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .header-sub { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
+  .header-sub { font-size: 0.75rem; opacity: 0.8; }
+  .header-sub-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .btn-hints-toggle {
+    background: none; border: none; cursor: pointer; padding: 6px;
+    color: rgba(255,255,255,0.55); font-size: 0.9rem; line-height: 1;
+    transition: color 0.2s; -webkit-tap-highlight-color: transparent;
+  }
+  .btn-hints-toggle.active { color: rgba(255,255,255,0.9); }
   .header-player-info { text-align: right; }
   .header-player-row {
     display: flex; align-items: center; justify-content: flex-end;
@@ -723,3 +730,6 @@
 
   /* Card with reduced top gap — used after bare section divs that have no bottom margin */
   .card--mt-8 { margin-top: 8px; }
+
+  /* FEAT-20: info-hint visibility toggle */
+  body.hints-hidden .info-hint { display: none; }
