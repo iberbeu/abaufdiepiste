@@ -1125,12 +1125,35 @@ function rollOhneBefugnisInline() {
       resEl.textContent = '✅ Grün – normale Punkte werden eingetragen.';
     } else {
       resEl.className = 'result-box danger';
-      resEl.textContent = '✗ Rot – Punkte werden als negative Werte eingetragen!';
+      const jokerBtn = p && p.joker > 0
+        ? `<button class="btn btn-warn btn--mt-8 btn--sm" onclick="useJokerOnOhneBefugnis()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
+        : '';
+      resEl.innerHTML = `✗ Rot – Punkte werden als negative Werte eingetragen!${jokerBtn}`;
     }
     addHistory(`${p.name}: Ohne Befugnis → ${isGreen ? 'GRÜN → normale Punkte' : 'ROT → negative Punkte'}`);
     updateDescentPreview();
     updateOhneBefugnisUI();
   }, ROLL_DURATION);
+}
+
+function useJokerOnOhneBefugnis() {
+  const resEl = document.getElementById('ohneBefugnisInlineResult');
+  if (resEl) { const btn = resEl.querySelector('button'); if (btn) btn.disabled = true; }
+  const p = currentPlayer();
+  if (!p || p.joker < 1) return;
+  p.joker--;
+  ohneBefugnisResult = true;
+  addHistory(`${p.name}: Joker eingesetzt – Ohne Befugnis Strafe abgewendet`);
+  checkCoinLimit(p);
+  updateCoinsDisplay();
+  if (resEl) {
+    resEl.className = 'result-box success';
+    resEl.textContent = '🃏 Joker eingesetzt – Strafe abgewendet, normale Punkte!';
+  }
+  renderDescentEventBanner();
+  updateDescentPreview();
+  updateOhneBefugnisUI();
+  updateAll();
 }
 
 function confirmDescentPoints() {
@@ -1815,7 +1838,7 @@ if (restored && state.gameStarted) {
 Object.assign(window, {
   showTab, setAction,
   rollTransportDice, resetTransportDice,
-  rollBothDice, useJokerOnEvent,
+  rollBothDice, useJokerOnEvent, useJokerOnOhneBefugnis,
   rollOhneBefugnisInline, confirmDescentPoints, clearSlopeSelection,
   toggleAccordion, rollRGInTurn,
   selectPause,

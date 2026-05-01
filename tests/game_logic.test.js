@@ -265,6 +265,31 @@ describe('calcDescentPoints — Ohne Befugnis (red result negates)', () => {
   });
 });
 
+describe('calcDescentPoints — Ohne Befugnis joker rescue (FEAT-19)', () => {
+  it('joker rescue (result flips true) gives same positive total as a natural green roll', () => {
+    const sel = { blue: 0, red: 0, black: 1, yellow: 0 }; // base=6
+    const { total: natural } = calcDescentPoints(sel, noEvent, false, true);
+    // joker rescue sets ohneBefugnisResult=true — mechanically identical
+    const { total: rescued } = calcDescentPoints(sel, noEvent, false, true);
+    expect(natural).toBe(6);
+    expect(rescued).toBe(6);
+  });
+
+  it('schneesturm active + joker rescue: points are halved but NOT negated', () => {
+    // 1×black=6 → halved by schneesturm=3 → ohneBefugnisResult=true → still +3
+    const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
+    const { total } = calcDescentPoints(sel, 'schneesturm', false, true);
+    expect(total).toBe(3);
+  });
+
+  it('without rescue (red) schneesturm halves then negates', () => {
+    // 1×black=6 → halved=3 → negated=-3  (contrast with rescued case above)
+    const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
+    const { total } = calcDescentPoints(sel, 'schneesturm', false, false);
+    expect(total).toBe(-3);
+  });
+});
+
 describe('calcDescentPoints — combined modifiers', () => {
   it('schneesturm + pulverschnee cannot coexist, but stacking logic is correct', () => {
     // If both were active (impossible in practice), schneesturm halves first, then +5 is added
