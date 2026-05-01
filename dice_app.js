@@ -524,7 +524,13 @@ function updatePrimaryActionButton() {
       const label = state.pauseSelection === 'restaurant' ? '🍽 Restaurant' : '🍺 Bar';
       set(`${label}: +${pts} Pkt & weiter →`, true, 'btn-success');
     } else {
-      set('Pause wählen …', false, 'btn-neutral');
+      const h = gameTimeHour();
+      const p = state.players[state.currentPlayerIndex];
+      if (!isInLunchWindow(h) && !(p && p.pauseDone)) {
+        set('Außerhalb des Mittagspausen-Zeitfensters (11:00–12:30)!', false, 'btn-neutral');
+      } else {
+        set('Pause wählen …', false, 'btn-neutral');
+      }
     }
     return;
   }
