@@ -224,13 +224,12 @@ function startGame() {
     }))
     .filter(p => p.name);
   if (playerInputs.length === 0) { alert('Mindestens einen Spieler eingeben!'); return; }
-  const rounds = parseInt(document.getElementById('setupRounds').value)||20;
-  const startH = parseInt(document.getElementById('setupStartTime').value)||8;
+  const rounds = Math.min(20, Math.max(10, parseInt(document.getElementById('setupRounds').value)||20));
   state.players = playerInputs.map((p,i)=>({
     name:p.name, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false, talstation:p.talstation
   }));
   state.totalRounds = rounds;
-  state.startHour = startH;
+  state.startHour = 8;
   state.round = 1;
   state.currentPlayerIndex = 0;
   state.history = [];
@@ -1793,6 +1792,7 @@ function loadState() {
     // Backwards compatibility: fields may be missing in older saves
     if (!Array.isArray(state.playedThisRound)) state.playedThisRound = [];
     state.diceRolled = false; // never restore mid-turn lock — transient turn state is not persisted
+    state.startHour = 8; // always 8 since BUG-13; override any legacy save that stored a different value
     if (!Array.isArray(state.roundSnapshots)) state.roundSnapshots = [];
     if (typeof state.gameFinished !== 'boolean') state.gameFinished = false;
     if (!Array.isArray(state.notificationsShown)) state.notificationsShown = [];

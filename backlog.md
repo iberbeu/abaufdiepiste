@@ -6,7 +6,6 @@ Bugs and missing features identified by audit on 2026-04-05. Each item reference
 
 | ID | Area | Description | Rule | Estimate |
 |----|------|-------------|------|----------|
-| BUG-12 | Bergauf | Having three dice with the same transport is a joker, however, you can only use it in combination with another die showing the transport you want to use. This means that if I get 3x gondel and 3x Skilift, they are not 2 jokers that I can use as "Sessellift" for example, as I need another die with a Sessellift,, which I did not get.. | Rules | ~1k |
 | BUG-13 | Rounds | It is currently possible to set 100 rounds (Anzahl Runde) for the game. As each round is 30 minutes, you end up finishing the day at 23:00, which is not realistic as skiresorts close earlier. Limit the number of rounds to max 20 and min 10. Each round must still take 30 minutes. Remove the option to select the starting time too. It will always start at 8:00. This way it is simpler   | Rules | ~1k |
 
 
