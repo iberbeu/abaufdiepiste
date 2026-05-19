@@ -238,9 +238,18 @@ function startGame() {
   state.gameStarted = true;
   state.gameFinished = false;
   state.playedThisRound = [];
+  state.action = null;
   state.diceRolled = false;
+  state.descentRolled = false;
+  state.eventRolled = false;
+  state.descentValue = 0;
+  state.eventIndex = -1;
+  state.jokerUsedOnEvent = false;
   state.pauseSelection = null;
   state.notificationsShown = [];
+  ohneBefugnisResult = null;
+  extraaktivitaetPending = null;
+  slopeSelection = { blue: 0, red: 0, black: 0, yellow: 0 };
   resetTransportState();
   saveState();
   updateAll();
@@ -1763,7 +1772,6 @@ function saveState() {
       history:            state.history,
       gameStarted:        state.gameStarted,
       playedThisRound:    state.playedThisRound || [],
-      diceRolled:          state.diceRolled || false,
       roundSnapshots:      state.roundSnapshots || [],
       gameFinished:        state.gameFinished || false,
       notificationsShown:  state.notificationsShown || [],
@@ -1784,7 +1792,7 @@ function loadState() {
     Object.assign(state, saved);
     // Backwards compatibility: fields may be missing in older saves
     if (!Array.isArray(state.playedThisRound)) state.playedThisRound = [];
-    if (typeof state.diceRolled !== 'boolean') state.diceRolled = false;
+    state.diceRolled = false; // never restore mid-turn lock — transient turn state is not persisted
     if (!Array.isArray(state.roundSnapshots)) state.roundSnapshots = [];
     if (typeof state.gameFinished !== 'boolean') state.gameFinished = false;
     if (!Array.isArray(state.notificationsShown)) state.notificationsShown = [];
