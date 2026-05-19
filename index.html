@@ -56,6 +56,16 @@
     </div>
   </div>
 
+  <!-- GRATIS FAHRT — shown only when current player has gratis coins -->
+  <div class="card card--mt-8" id="cardGratisFahrt" style="display:none">
+    <div class="card-title">Gratis Fahrt <span id="gratisFahrtDisplay" class="text-muted-sm"></span></div>
+    <p class="section-hint info-hint">Extra Bergauffahrt ohne Würfeln – verbraucht eine Gratisfahrt-Münze.</p>
+    <div class="btn-row btn-row--flush">
+      <button class="btn btn-primary" onclick="useGratisFahrt()">🎟 Gratis Fahrt nutzen</button>
+    </div>
+    <div id="gratisFahrtFeedback"></div>
+  </div>
+
   <!-- BERGAUF: Transport dice -->
   <div id="sectionBergauf" style="display:none">
     <div class="card">

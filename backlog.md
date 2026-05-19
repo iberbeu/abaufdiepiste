@@ -6,7 +6,6 @@ Bugs and missing features identified by audit on 2026-04-05. Each item reference
 
 | ID | Area | Description | Rule | Estimate |
 |----|------|-------------|------|----------|
-| BUG-13 | Rounds | It is currently possible to set 100 rounds (Anzahl Runde) for the game. As each round is 30 minutes, you end up finishing the day at 23:00, which is not realistic as skiresorts close earlier. Limit the number of rounds to max 20 and min 10. Each round must still take 30 minutes. Remove the option to select the starting time too. It will always start at 8:00. This way it is simpler   | Rules | ~1k |
 
 
 ### Missing Features
@@ -21,7 +20,7 @@ Bugs and missing features identified by audit on 2026-04-05. Each item reference
 | ~~FEAT-7~~ | ~~UX~~ | ~~Resolved~~ — Pause buttons are now disabled outside 11:00–12:30 and after `pauseDone = true`. Contextual warning banners shown for each case. | — | — |
 | ~~FEAT-9~~ | ~~UX~~ | ~~Resolved~~ — `descentPtsAccumulated` removed from state object and both reset sites. | — | — |
 | ~~FEAT-10~~ | ~~Architecture~~ | ~~Resolved~~ — `dice_app.js` now imports from `game_logic.js` via ES modules (`type="module"` in `index.html`). Duplicated constants (`TRANSPORT_SYMBOLS`, `TRANSPORT_NAMES`, `SLOPE_PTS`) and functions (`getLevel`, `levelLabel`) removed. `gameTime`, `gameTimeHour`, `getAllowedSlopes`, `calcDescentTotal`, and `confirmDescentPoints` delegate to `game_logic.js`. `Object.assign(window, …)` block at the bottom of `dice_app.js` restores global bindings for HTML onclick handlers. | — | — |
-| **FEAT-11 (CRITICAL)** | **Sonder / Coins** | **Gratis Fahrt Münze usable as extra Bergauf.** A Gratis Fahrt Münze allows an extra Bergauf action in any round, regardless of whether Bergauf or Bergab was already taken. This is currently not implemented at all. Needs a new UI entry point (e.g. a button in Sonder tab or inline in Zug), a new turn-sub-state tracking that a Gratis Fahrt was used this round, and correct coin deduction. Must not conflict with the dice-roll lock (`diceRolled`). | Rules | ~3k |
+| ~~FEAT-11~~ | ~~Sonder / Coins~~ | ~~Resolved~~ — "🎟 Gratis Fahrt nutzen" card shown in Zug tab whenever `p.gratis > 0`. Tapping deducts 1 coin, logs to history, shows brief feedback. No dice rolling. Available before or after main action; not blocked by `diceRolled`. Multiple uses per turn (limited by coin count). | — | — |
 | ~~FEAT-12~~ | ~~UX / Setup~~ | ~~Resolved~~ — `addPlayerField()` attaches focus/blur listeners. Focus clears the field if the value equals the live slot default ("Spieler N"); blur restores it if left empty. Slot position is read live from the DOM so removing an earlier row doesn't corrupt the restored default. | — | — |
 | ~~FEAT-13~~ | ~~Punkte / Sehenswürdigkeiten~~ | ~~Resolved~~ — Each sighting pill now has a `×` button. All buttons call `removeSighting()` which deducts `p.sightings×5` and decrements the count (removing any pill is equivalent to removing the last, since scoring is sequential). Level-ups are permanent; only points are reversed. | — | — |
 | ~~FEAT-14~~ | ~~Zug / Punkte~~ | ~~Resolved~~ — Sehenswürdigkeit quick-register card added to Zug tab. Manual point adjustment + Münzen & Joker tracker moved into a collapsed "Anpassungen" accordion at the bottom of Punkte tab, guarded by a confirmation modal. Sonder tab removed entirely. | — | — |

@@ -367,6 +367,7 @@ function updateAll() {
   if (document.getElementById('tab-scores').classList.contains('active')) updateScoreboard();
   // Sightings display is now in the Zug tab — always update it
   updateSightingsDisplay();
+  updateGratisFahrtCard();
 }
 
 // ═══════════════════════════════════════
@@ -838,11 +839,13 @@ function rollBothDice() {
       addHistory(`${p.name}: Sonne → +1 Joker (${p.joker} total)`);
       checkCoinLimit(p);
       updateCoinsDisplay();
+      updateGratisFahrtCard();
     } else if (ev.sym === 'fahrt') {
       p.gratis++;
       addHistory(`${p.name}: +1 Fahrt → +1 Gratisfahrt-Münze (${p.gratis} total)`);
       checkCoinLimit(p);
       updateCoinsDisplay();
+      updateGratisFahrtCard();
     }
     // Pulverschnee bonus is applied at confirmation time via ev.sym check
 
@@ -1300,6 +1303,36 @@ function rollRGInTurn(context) {
       updatePrimaryActionButton();
     }, ROLL_DURATION);
   }
+}
+
+// ═══════════════════════════════════════
+// GRATIS FAHRT (FEAT-11)
+// ═══════════════════════════════════════
+function useGratisFahrt() {
+  const p = currentPlayer();
+  if (!p || p.gratis < 1) return;
+  p.gratis--;
+  addHistory(`${p.name}: Gratisfahrt-Münze eingesetzt`);
+  saveState();
+  updateAll();
+  const feedback = document.getElementById('gratisFahrtFeedback');
+  if (feedback) {
+    const msg = document.createElement('div');
+    msg.className = 'result-box success result-box--mt-8';
+    msg.textContent = '✓ Gratis Fahrt eingesetzt!';
+    feedback.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
+  }
+}
+
+function updateGratisFahrtCard() {
+  const p = currentPlayer();
+  const card = document.getElementById('cardGratisFahrt');
+  if (!card) return;
+  const count = p ? p.gratis : 0;
+  card.style.display = count > 0 ? '' : 'none';
+  const display = document.getElementById('gratisFahrtDisplay');
+  if (display) display.textContent = `(${count})`;
 }
 
 // ═══════════════════════════════════════
@@ -1853,4 +1886,5 @@ Object.assign(window, {
   handlePrimaryAction,
   drainNotifQueue,
   toggleHints,
+  useGratisFahrt,
 });
