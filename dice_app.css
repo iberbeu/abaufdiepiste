@@ -63,6 +63,8 @@
     transition: color 0.2s; -webkit-tap-highlight-color: transparent;
   }
   .btn-hints-toggle.active { color: rgba(255,255,255,0.9); }
+  /* FEAT-20: info-hint visibility toggle */
+  body.hints-hidden .info-hint { display: none; }
   .header-player-info { text-align: right; }
   .header-player-row {
     display: flex; align-items: center; justify-content: flex-end;
@@ -106,6 +108,14 @@
     font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: 1px; color: var(--muted); margin-bottom: 12px;
   }
+  .label-sub    { font-weight: 400; color: var(--muted); }
+
+  /* Small descriptive paragraph inside a card or accordion body */
+  .section-hint { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+
+  /* Card with reduced top gap */
+  .card--mt-8 { margin-top: 8px; }
+  .section-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 
   /* ── PLAYER CARDS ── */
   .player-strip {
@@ -144,6 +154,8 @@
     display: flex; flex-wrap: wrap; gap: 10px;
     justify-content: center; margin: 12px 0;
   }
+  .die-wrapper  { text-align: center; }
+  .die-legend   { font-size: 0.72rem; color: var(--muted); margin-top: 5px; }
   /* The .die wrapper is a pure 3D scene — perspective only, no visual box.
      All visual styling (gradient/border/shadow) lives on the individual
      .die-face elements so every die matches rolling_die_example.html:
@@ -203,6 +215,8 @@
   #rgDieOhneBefugnisInline .die-face-left   { transform: rotateY(-90deg)  translateZ(26px); }
   #rgDieOhneBefugnisInline .die-face-top    { transform: rotateX(90deg)   translateZ(26px); }
   #rgDieOhneBefugnisInline .die-face-bottom { transform: rotateX(-90deg)  translateZ(26px); }
+  /* Inline Ohne-Befugnis die — smaller 52px variant */
+  #rgDieOhneBefugnisInline { width: 52px; height: 52px; flex-shrink: 0; }
   .die:active .die-cube { transform: scale(0.93); }
   /* Held indicator — border/glow applied to the faces so it wraps the cube itself */
   .die.held .die-face {
@@ -308,6 +322,20 @@
   }
 
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+  .btn-row--flush   { margin-top: 0; }
+  .btn-row--column  { flex-direction: column; gap: 8px; }
+  .btn--mt-8 { margin-top: 8px; }
+  .btn--sm { font-size: 0.8rem; }
+
+  /* Coin/Joker +/− control row */
+  .coin-control { display: flex; align-items: center; gap: 10px; }
+  .coin-count { font-size: 1.2rem; }
+  .btn-coin {
+    padding: 10px 16px;
+    font-size: 1rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
 
   /* ── RESULT BOX ── */
   .result-box {
@@ -319,6 +347,9 @@
   .result-box.warning { background: #FBE8E2; border-color: var(--alpenglühen); color: #8C2610; }
   .result-box.danger  { background: #ffebee; border-color: var(--piste-red);   color: #c62828; }
   .result-box.info    { background: #DDF0F0; border-color: var(--glacier-teal); color: #1F5F60; }
+  .result-box--flush-top { margin: 0 0 8px; }
+  .result-box--mt-8  { margin-top: 8px; }
+  .result-box--mt-10 { margin-top: 10px; }
 
   /* ── ACCORDION CARDS (Extraaktivität / Ohne Befugnis) ── */
   .accordion-card {
@@ -339,6 +370,10 @@
     padding: 0 16px 16px;
     border-top: 1px solid var(--border);
   }
+  /* Small muted text block (symbol legend, inline hint, etc.) */
+  .text-muted-sm { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+  /* Add top spacing only when used as a block after another element */
+  .accordion-body .text-muted-sm { margin-top: 6px; }
   #cardExtraaktivitaet .accordion-trigger { color: var(--glacier-teal); }
   #cardOhneBefugnis    .accordion-trigger { color: var(--alpenglühen); }
 
@@ -370,6 +405,31 @@
   .score-table tr.current-player td { background: #DDF0F0; font-weight: 700; }
   .score-pts { font-size: 1rem; font-weight: 800; }
 
+  /* Schlusswertung text block */
+  .penalty-text { font-size: 0.85rem; line-height: 1.7; color: var(--muted); }
+
+  /* Punktverlauf scrollable container */
+  #punktverlaufContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Punktverlauf shared cell classes */
+  .punktverlauf-time-cell { white-space: nowrap; color: var(--muted); font-size: 0.82rem; }
+  .punktverlauf-cell  { text-align: center; }
+  .punktverlauf-pts   { font-weight: 600; }
+  .punktverlauf-delta { font-size: 0.75rem; margin-left: 3px; }
+  .punktverlauf-pending { text-align: center; color: var(--muted); }
+  .punktverlauf-cell--clickable { cursor: pointer; }
+  .punktverlauf-cell--clickable:active { background: #e8e8e8; }
+  .punktverlauf-delta--positive { color: var(--green); }
+  .punktverlauf-delta--negative { color: var(--piste-red); }
+  .punktverlauf-delta--zero     { color: var(--muted); }
+
+  /* Punktverlauf live (in-progress) row — overrides nth-child(even) via higher specificity (0,2,2 vs 0,1,2) */
+  .score-table tr.punktverlauf-live-row td { background: var(--summit-white); font-style: italic; }
+
+  /* Round-detail popup */
+  .round-detail-list  { margin: 0; padding: 0 0 0 1.2rem; font-size: 0.9rem; line-height: 1.7; }
+  .round-detail-empty { font-size: 0.9rem; color: var(--muted); margin-bottom: 14px; }
+
   /* ── TRANSPORT SYMBOLS ── */
   .symbol-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
@@ -380,6 +440,12 @@
     text-align: center; font-size: 0.78rem; color: var(--muted); cursor: default;
   }
   .symbol-cell .sym { width: 48px; height: 48px; display: block; margin: 0 auto 4px; object-fit: contain; }
+
+  /* ── SIGHTINGS ── */
+  .sighting-pill { background: #DDF0F0; color: #1F5F60; padding: 3px 9px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; margin: 2px; display: inline-flex; align-items: center; gap: 4px; }
+  .sighting-remove { background: none; border: none; color: #1F5F60; cursor: pointer; font-size: 0.85rem; font-weight: 700; line-height: 1; opacity: 0.55; padding: 4px 6px; }
+  .sighting-remove:hover { opacity: 1; }
+  #sightingsDisplay { margin-bottom: 10px; }
 
   /* ── HELD INDICATOR ── */
   .held-hint {
@@ -395,6 +461,18 @@
     outline: none; transition: border-color 0.2s;
   }
   .form-input:focus { border-color: var(--glacier-teal); }
+
+  /* Setup info note */
+  .setup-note { font-size: 0.8rem; color: var(--muted); }
+
+  /* Row for manual point input + buttons */
+  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* Narrow number input for point entry */
+  .input-pts { width: 90px; }
+
+  /* Manual result feedback line */
+  #manualResult { margin-top: 8px; font-size: 0.85rem; color: var(--muted); }
 
   /* ── PLAYER SETUP ── */
   .player-setup-row { margin-bottom: 12px; }
@@ -534,6 +612,28 @@
     color: var(--red);
   }
 
+  /* Descent points preview line */
+  .descent-points-preview {
+    font-size: 0.9rem; font-weight: 700;
+    color: var(--glacier-teal);
+    min-height: 24px;
+    margin: 10px 0 4px;
+    text-align: center;
+  }
+
+  /* Ohne-Befugnis inline die + roll button row */
+  .ohne-befugnis-roll-row {
+    display: flex; align-items: center;
+    gap: 12px; justify-content: center;
+    margin: 8px 0;
+  }
+
+  /* descentEventBanner spacing */
+  #descentEventBanner { font-size: 0.85rem; margin-bottom: 12px; }
+
+  /* descentPointsCard top spacing */
+  #descentPointsCard { margin-top: 16px; }
+
   /* ── STICKY FOOTER ── */
   .sticky-footer {
     position: fixed;
@@ -555,7 +655,7 @@
   .footer-sublabel {
     text-align: center;
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: var(--muted);
     margin: 4px 0 0;
     white-space: nowrap;
   }
@@ -620,126 +720,3 @@
   .levelup-toast-text { display: flex; flex-direction: column; }
   .levelup-toast-text strong { font-size: 0.95rem; color: var(--text); }
   .levelup-toast-text span   { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
-
-  .section-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
-  .sighting-pill { background: #DDF0F0; color: #1F5F60; padding: 3px 9px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; margin: 2px; display: inline-flex; align-items: center; gap: 4px; }
-  .sighting-remove { background: none; border: none; color: #1F5F60; cursor: pointer; font-size: 0.85rem; font-weight: 700; line-height: 1; opacity: 0.55; padding: 4px 6px; }
-  .sighting-remove:hover { opacity: 1; }
-  .btn--mt-8 { margin-top: 8px; }
-  .btn--sm { font-size: 0.8rem; }
-
-  /* ── UI-5: EXTRACTED INLINE STYLES ──
-     All classes below were previously inline style="" attributes in index.html.
-     New HTML must use these classes — no inline styles allowed (see CLAUDE.md). */
-
-  /* btn-row modifiers */
-  .btn-row--flush   { margin-top: 0; }
-  .btn-row--column  { flex-direction: column; gap: 8px; }
-
-  /* Die label below each die ("Abfahrt", "Ereignis") */
-  .die-wrapper  { text-align: center; }
-  .die-legend   { font-size: 0.72rem; color: var(--muted); margin-top: 5px; }
-
-  /* Muted sub-label inline with a card-title (e.g. roll count, dice label) */
-  .label-sub    { font-weight: 400; color: var(--muted); }
-
-  /* Small descriptive paragraph inside a card or accordion body */
-  .section-hint { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
-
-  /* Small muted text block (symbol legend, inline hint, etc.) */
-  .text-muted-sm { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
-  /* Add top spacing only when used as a block after another element (e.g. symbol legend in accordion) */
-  .accordion-body .text-muted-sm { margin-top: 6px; }
-
-  /* Descent points preview line */
-  .descent-points-preview {
-    font-size: 0.9rem; font-weight: 700;
-    color: var(--glacier-teal);
-    min-height: 24px;
-    margin: 10px 0 4px;
-    text-align: center;
-  }
-
-  /* Ohne-Befugnis inline die + roll button row */
-  .ohne-befugnis-roll-row {
-    display: flex; align-items: center;
-    gap: 12px; justify-content: center;
-    margin: 8px 0;
-  }
-
-  /* Ohne-Befugnis result-box: flush top margin, keep bottom gap */
-  .result-box--flush-top { margin: 0 0 8px; }
-
-  /* Row for manual point input + buttons */
-  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-
-  /* Narrow number input for point entry */
-  .input-pts { width: 90px; }
-
-  /* Coin/Joker +/− control row */
-  .coin-control { display: flex; align-items: center; gap: 10px; }
-
-  /* Coin count value display */
-  .coin-count { font-size: 1.2rem; }
-
-  /* Coin +/− buttons — touch-friendly square size */
-  .btn-coin {
-    padding: 10px 16px;
-    font-size: 1rem;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  /* Schlusswertung text block */
-  .penalty-text { font-size: 0.85rem; line-height: 1.7; color: var(--muted); }
-
-  /* Setup info note */
-  .setup-note { font-size: 0.8rem; color: var(--muted); }
-
-
-  /* Sightings display spacing */
-  #sightingsDisplay { margin-bottom: 10px; }
-
-  /* Manual result feedback line */
-  #manualResult { margin-top: 8px; font-size: 0.85rem; color: var(--muted); }
-
-  /* Inline Ohne-Befugnis die — smaller 52px variant */
-  #rgDieOhneBefugnisInline { width: 52px; height: 52px; flex-shrink: 0; }
-
-  /* Punktverlauf scrollable container */
-  #punktverlaufContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-  /* Punktverlauf shared cell classes */
-  .punktverlauf-time-cell { white-space: nowrap; color: var(--muted); font-size: 0.82rem; }
-  .punktverlauf-cell  { text-align: center; }
-  .punktverlauf-pts   { font-weight: 600; }
-  .punktverlauf-delta { font-size: 0.75rem; margin-left: 3px; }
-  .punktverlauf-pending { text-align: center; color: var(--muted); }
-  .punktverlauf-cell--clickable { cursor: pointer; }
-  .punktverlauf-cell--clickable:active { background: #e8e8e8; }
-  .punktverlauf-delta--positive { color: var(--green); }
-  .punktverlauf-delta--negative { color: var(--piste-red); }
-  .punktverlauf-delta--zero     { color: var(--muted); }
-
-  /* Round-detail popup */
-  .round-detail-list  { margin: 0; padding: 0 0 0 1.2rem; font-size: 0.9rem; line-height: 1.7; }
-  .round-detail-empty { font-size: 0.9rem; color: var(--muted); margin-bottom: 14px; }
-
-  /* Punktverlauf live (in-progress) row — overrides nth-child(even) via higher specificity (0,2,2 vs 0,1,2) */
-  .score-table tr.punktverlauf-live-row td { background: var(--summit-white); font-style: italic; }
-
-  /* descentEventBanner spacing */
-  #descentEventBanner { font-size: 0.85rem; margin-bottom: 12px; }
-
-  /* result-box top-margin variants */
-  .result-box--mt-8  { margin-top: 8px; }
-  .result-box--mt-10 { margin-top: 10px; }
-
-  /* descentPointsCard top spacing */
-  #descentPointsCard { margin-top: 16px; }
-
-  /* Card with reduced top gap — used after bare section divs that have no bottom margin */
-  .card--mt-8 { margin-top: 8px; }
-
-  /* FEAT-20: info-hint visibility toggle */
-  body.hints-hidden .info-hint { display: none; }
