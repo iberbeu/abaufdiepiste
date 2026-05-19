@@ -535,8 +535,8 @@ function updatePrimaryActionButton() {
     } else {
       const h = gameTimeHour();
       const p = state.players[state.currentPlayerIndex];
-      if (!isInLunchWindow(h) && !(p && p.pauseDone)) {
-        set('Außerhalb des Mittagspausen-Zeitfensters (11:00–12:30)!', false, 'btn-neutral');
+      if (!isInLunchWindow(h) || (p && p.pauseDone)) {
+        set('Andere Aktion wählen …', false, 'btn-neutral');
       } else {
         set('Pause wählen …', false, 'btn-neutral');
       }
@@ -559,7 +559,7 @@ function updatePrimaryActionButton() {
     // Check if Ohne-Befugnis roll is still required
     const confirmBtn = document.getElementById('btnConfirmDescent');
     if (confirmBtn && confirmBtn.disabled && confirmBtn.textContent.startsWith('⚠')) {
-      set('Erst Rot/Grün würfeln', false, 'btn-warn');
+      set('Erst Rot/Grün würfeln', false, 'btn-danger');
       return;
     }
     // Compute point total (descent pts + any pending Extraaktivität pts)
