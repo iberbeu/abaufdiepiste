@@ -105,12 +105,19 @@ describe('analyzeTransportSymbols — Joker (wildcard)', () => {
     expect(results[0].message).toContain('Skilift');
   });
 
-  it('two triplets → wildcard2 (completely free choice)', () => {
-    // 3× gondel + 3× skilift — two jokers → any transport
+  it('two triplets → two independent wildcard1s, each needing the other as target', () => {
+    // 3× gondel + 3× skilift — each triplet is a joker combinable only with the other symbol;
+    // no wildcard2 and no spurious valid entries from double-counting the triplet dice.
     const syms = ['gondel', 'gondel', 'gondel', 'skilift', 'skilift', 'skilift'];
     const results = analyzeTransportSymbols(syms);
-    expect(results).toHaveLength(1);
-    expect(results[0].type).toBe('wildcard2');
+    expect(results).toHaveLength(2);
+    expect(results.some(r => r.type === 'wildcard2')).toBe(false);
+    const wc = results.filter(r => r.type === 'wildcard1');
+    expect(wc).toHaveLength(2);
+    const gondelWc = wc.find(r => r.message.includes('Gondel'));
+    expect(gondelWc.message).toContain('Skilift');
+    const skiliftWc = wc.find(r => r.message.includes('Skilift'));
+    expect(skiliftWc.message).toContain('Gondel');
   });
 
   it('triplet + pair → wildcard1 AND valid pair both reported', () => {

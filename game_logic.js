@@ -89,8 +89,8 @@ export function gameTimeHour(startHour, round) {
  *
  * @param {string[]} syms  — array of 6 symbol strings (from TRANSPORT_SYMBOLS)
  * @returns {Array<{ type: string, message: string }>}
- *   Each entry: type 'helicopter' | 'wildcard1' | 'wildcard2' | 'valid' | 'invalid'
- *   Triplet + pair → two entries (wildcard1 first, then valid).
+ *   Each entry: type 'helicopter' | 'wildcard1' | 'valid' | 'invalid'
+ *   Triplet + non-triplet pair → two entries (wildcard1 first, then valid).
  */
 export function analyzeTransportSymbols(syms) {
   const counts = {};
@@ -109,42 +109,39 @@ export function analyzeTransportSymbols(syms) {
   // Each triplet (count ≥ 3) is a wildcard: substitutes for 1× of any other symbol already present.
   const triplets = Object.entries(counts).filter(([, c]) => c >= 3);
 
-  if (triplets.length >= 2) {
-    // Two wildcards → completely free transport choice
-    const names = triplets.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)]);
-    results.push({
-      type: 'wildcard2',
-      message: `3× ${names[0]} + 3× ${names[1]} – 2 Joker: Beliebiges Transportmittel erlaubt!`,
-    });
-  } else if (triplets.length === 1) {
-    const [tripletKey] = triplets[0];
-    const tripletName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(tripletKey)];
+  if (triplets.length > 0) {
+    const tripletKeys = new Set(triplets.map(([k]) => k));
 
-    // Remaining counts after consuming the 3 dice used as wildcard
-    const remaining = { ...counts };
-    remaining[tripletKey] -= 3;
-    if (remaining[tripletKey] <= 0) delete remaining[tripletKey];
+    for (const [tripletKey] of triplets) {
+      const tripletName = TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(tripletKey)];
 
-    // Valid targets: any OTHER symbol with ≥1 remaining die (wildcard + 1× = pair)
-    const targets = Object.entries(remaining)
-      .filter(([key, c]) => key !== tripletKey && c >= 1)
-      .map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)]);
+      // Remaining counts after consuming the 3 dice used as wildcard
+      const remaining = { ...counts };
+      remaining[tripletKey] -= 3;
+      if (remaining[tripletKey] <= 0) delete remaining[tripletKey];
 
-    results.push({
-      type: 'wildcard1',
-      message: targets.length > 0
-        ? `3× ${tripletName} – Joker! Kombinierbar mit: ${targets.join(', ')}`
-        : `3× ${tripletName} – Joker, aber keine weiteren Symbole zum Kombinieren.`,
-    });
+      // Valid targets: any OTHER symbol with ≥1 remaining die (wildcard + 1× = pair)
+      const targets = Object.entries(remaining)
+        .filter(([key, c]) => key !== tripletKey && c >= 1)
+        .map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)]);
 
-    // Also report any regular pairs in the remaining dice
-    const pairs = Object.entries(remaining).filter(([, c]) => c >= 2);
-    if (pairs.length > 0) {
-      const lines = pairs.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)] + ' (2×)');
       results.push({
-        type: 'valid',
-        message: 'Gültige Beförderung: ' + lines.join('  +  '),
+        type: 'wildcard1',
+        message: targets.length > 0
+          ? `3× ${tripletName} – Joker! Kombinierbar mit: ${targets.join(', ')}`
+          : `3× ${tripletName} – Joker, aber keine weiteren Symbole zum Kombinieren.`,
       });
+
+      // Report standalone pairs from remaining dice, but skip symbols that are themselves jokers
+      // (those dice are already represented by their own wildcard1 entry).
+      const pairs = Object.entries(remaining).filter(([key, c]) => c >= 2 && !tripletKeys.has(key));
+      if (pairs.length > 0) {
+        const lines = pairs.map(([key]) => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(key)] + ' (2×)');
+        results.push({
+          type: 'valid',
+          message: 'Gültige Beförderung: ' + lines.join('  +  '),
+        });
+      }
     }
   } else {
     // No triplets — check for regular pairs only

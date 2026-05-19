@@ -711,10 +711,7 @@ function analyzeTransport() {
   let hasWildcard = false;
 
   for (const r of results) {
-    if (r.type === 'wildcard2') {
-      lines.push('🎯 ' + r.message);
-      hasGood = true;
-    } else if (r.type === 'wildcard1') {
+    if (r.type === 'wildcard1') {
       lines.push('🃏 ' + r.message);
       hasWildcard = true;
     } else if (r.type === 'valid') {
