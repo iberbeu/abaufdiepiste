@@ -7,6 +7,7 @@ import {
   analyzeTransportSymbols,
   calcDescentPoints,
   sightseeingBonus,
+  calcAbschlusswertungResult,
   TRANSPORT_SYMBOLS,
   SLOPE_PTS,
 } from '../game_logic.js';
@@ -356,5 +357,112 @@ describe('sightseeingBonus', () => {
     for (let i = 0; i < 10; i++) {
       expect(sightseeingBonus(i)).toBe((i + 1) * 5);
     }
+  });
+});
+
+// ─── Abschlusswertung (FEAT-22) ───────────────────────────────────────────────
+
+const noSel = { blue: 0, red: 0, black: 0, yellow: 0 };
+
+describe('calcAbschlusswertungResult — talstation reached', () => {
+  it('no penalties when talstation reached', () => {
+    const r = calcAbschlusswertungResult(true, noSel, 0, 0, 0);
+    expect(r.penaltyItems).toHaveLength(0);
+    expect(r.penaltyTotal).toBe(0);
+  });
+
+  it('coin bonus applies even when no penalties', () => {
+    const r = calcAbschlusswertungResult(true, noSel, 0, 0, 2);
+    expect(r.coinBonus).toBe(10);
+    expect(r.netDelta).toBe(10);
+  });
+
+  it('zero coins → zero bonus', () => {
+    const r = calcAbschlusswertungResult(true, noSel, 0, 0, 0);
+    expect(r.coinBonus).toBe(0);
+    expect(r.netDelta).toBe(0);
+  });
+});
+
+describe('calcAbschlusswertungResult — talstation not reached (penalties)', () => {
+  it('always includes −15 base penalty', () => {
+    const r = calcAbschlusswertungResult(false, noSel, 0, 0, 0);
+    expect(r.penaltyItems[0].label).toBe('Talstation nicht erreicht');
+    expect(r.penaltyItems[0].amount).toBe(-15);
+    expect(r.penaltyTotal).toBe(-15);
+  });
+
+  it('blue slope penalty: floor(crossings × 2 / 2) per crossing', () => {
+    const sel = { blue: 3, red: 0, black: 0, yellow: 0 };
+    const r = calcAbschlusswertungResult(false, sel, 0, 0, 0);
+    const slopeItem = r.penaltyItems.find(it => it.label.startsWith('Blaue'));
+    expect(slopeItem.amount).toBe(-3); // floor(3×2/2) = 3
+  });
+
+  it('red slope penalty: floor(crossings × 4 / 2)', () => {
+    const sel = { blue: 0, red: 2, black: 0, yellow: 0 };
+    const r = calcAbschlusswertungResult(false, sel, 0, 0, 0);
+    const slopeItem = r.penaltyItems.find(it => it.label.startsWith('Rote'));
+    expect(slopeItem.amount).toBe(-4); // floor(2×4/2) = 4
+  });
+
+  it('black slope penalty: floor(crossings × 6 / 2)', () => {
+    const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
+    const r = calcAbschlusswertungResult(false, sel, 0, 0, 0);
+    const slopeItem = r.penaltyItems.find(it => it.label.startsWith('Schwarze'));
+    expect(slopeItem.amount).toBe(-3); // floor(1×6/2) = 3
+  });
+
+  it('yellow slope penalty: floor(crossings × 8 / 2)', () => {
+    const sel = { blue: 0, red: 0, black: 0, yellow: 2 };
+    const r = calcAbschlusswertungResult(false, sel, 0, 0, 0);
+    const slopeItem = r.penaltyItems.find(it => it.label.startsWith('Gelbe'));
+    expect(slopeItem.amount).toBe(-8); // floor(2×8/2) = 8
+  });
+
+  it('each transport back adds one −5 item', () => {
+    const r = calcAbschlusswertungResult(false, noSel, 3, 0, 0);
+    const transports = r.penaltyItems.filter(it => it.label === 'Beförderung zurück');
+    expect(transports).toHaveLength(3);
+    transports.forEach(it => expect(it.amount).toBe(-5));
+  });
+
+  it('each extra talstation adds one −5 item', () => {
+    const r = calcAbschlusswertungResult(false, noSel, 0, 2, 0);
+    const extraTs = r.penaltyItems.filter(it => it.label === 'Zusätzliche Talstation');
+    expect(extraTs).toHaveLength(2);
+    extraTs.forEach(it => expect(it.amount).toBe(-5));
+  });
+
+  it('penaltyTotal sums all items', () => {
+    const sel = { blue: 0, red: 1, black: 0, yellow: 0 };
+    // -15 (base) + -2 (red×1, floor(4/2)) + -5 (1 transport) = -22
+    const r = calcAbschlusswertungResult(false, sel, 1, 0, 0);
+    expect(r.penaltyTotal).toBe(-22);
+  });
+
+  it('netDelta = penaltyTotal + coinBonus', () => {
+    const sel = { blue: 0, red: 1, black: 0, yellow: 0 };
+    // penaltyTotal = -22, coinBonus = 2×5 = 10 → netDelta = -12
+    const r = calcAbschlusswertungResult(false, sel, 1, 0, 2);
+    expect(r.netDelta).toBe(-12);
+  });
+
+  it('coins can make netDelta positive (many coins, few penalties)', () => {
+    // -15 only, 4 coins (+20) → netDelta = +5
+    const r = calcAbschlusswertungResult(false, noSel, 0, 0, 4);
+    expect(r.netDelta).toBe(5);
+  });
+
+  it('zero transport and zero extra talstationen → only base −15', () => {
+    const r = calcAbschlusswertungResult(false, noSel, 0, 0, 0);
+    expect(r.penaltyItems).toHaveLength(1);
+    expect(r.netDelta).toBe(-15);
+  });
+
+  it('skips slope colours with 0 crossings', () => {
+    const r = calcAbschlusswertungResult(false, noSel, 0, 0, 0);
+    const slopeItems = r.penaltyItems.filter(it => it.label.includes('Piste'));
+    expect(slopeItems).toHaveLength(0);
   });
 });

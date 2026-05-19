@@ -242,3 +242,59 @@ export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, oh
 export function sightseeingBonus(previousSightings) {
   return (previousSightings + 1) * 5;
 }
+
+// ─── Abschlusswertung (end-game scoring) ─────────────────────────────────────
+
+/**
+ * Calculates the end-game score adjustment for one player.
+ * Penalties apply only if the player did not reach their Talstation.
+ * Each remaining coin/joker gives +5 points regardless.
+ *
+ * @param {boolean} talstationReached
+ * @param {{blue:number,red:number,black:number,yellow:number}} slopeSelection  crossings per colour
+ * @param {number} transportCount   number of additional transports taken to return
+ * @param {number} extraTalstationen  number of additional Talstationen used
+ * @param {number} totalCoins  p.joker + p.gratis — each gives +5 pts
+ * @returns {{
+ *   penaltyItems: {label:string, amount:number}[],
+ *   penaltyTotal: number,
+ *   coinBonus: number,
+ *   netDelta: number
+ * }}
+ */
+export function calcAbschlusswertungResult(
+  talstationReached,
+  slopeSelection,
+  transportCount,
+  extraTalstationen,
+  totalCoins
+) {
+  const penaltyItems = [];
+
+  if (!talstationReached) {
+    penaltyItems.push({ label: 'Talstation nicht erreicht', amount: -15 });
+
+    const colorLabels = { blue: 'Blaue Piste', red: 'Rote Piste', black: 'Schwarze Piste', yellow: 'Gelbe Piste' };
+    ['blue', 'red', 'black', 'yellow'].forEach(c => {
+      const k = (slopeSelection && slopeSelection[c]) || 0;
+      if (k > 0) {
+        const halfPts = Math.floor(k * SLOPE_PTS[c] / 2);
+        penaltyItems.push({ label: `${colorLabels[c]} ×${k}`, amount: -halfPts });
+      }
+    });
+
+    for (let i = 0; i < transportCount; i++) {
+      penaltyItems.push({ label: 'Beförderung zurück', amount: -5 });
+    }
+
+    for (let i = 0; i < extraTalstationen; i++) {
+      penaltyItems.push({ label: 'Zusätzliche Talstation', amount: -5 });
+    }
+  }
+
+  const penaltyTotal = penaltyItems.reduce((sum, item) => sum + item.amount, 0);
+  const coinBonus    = totalCoins * 5;
+  const netDelta     = penaltyTotal + coinBonus;
+
+  return { penaltyItems, penaltyTotal, coinBonus, netDelta };
+}

@@ -4,6 +4,7 @@ import {
   gameTime as _gameTime, gameTimeHour as _gameTimeHour,
   analyzeTransportSymbols,
   calcDescentPoints,
+  calcAbschlusswertungResult,
 } from './game_logic.js';
 
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
@@ -226,7 +227,7 @@ function startGame() {
   if (playerInputs.length === 0) { alert('Mindestens einen Spieler eingeben!'); return; }
   const rounds = Math.min(20, Math.max(10, parseInt(document.getElementById('setupRounds').value)||20));
   state.players = playerInputs.map((p,i)=>({
-    name:p.name, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false, talstation:p.talstation
+    name:p.name, color:PLAYER_COLORS[i], points:0, joker:0, gratis:0, sightings:0, pauseDone:false, talstation:p.talstation, schlussgewertungDone:false
   }));
   state.totalRounds = rounds;
   state.startHour = 8;
@@ -368,6 +369,7 @@ function updateAll() {
   // Sightings display is now in the Zug tab — always update it
   updateSightingsDisplay();
   updateGratisFahrtCard();
+  updateAbschlusswertungCard();
 }
 
 // ═══════════════════════════════════════
@@ -1771,6 +1773,315 @@ function showRoundDetail(round, pidx) {
 }
 
 // ═══════════════════════════════════════
+// ABSCHLUSSWERTUNG WIZARD (FEAT-22)
+// ═══════════════════════════════════════
+// Per-player guided questionnaire shown after game end.
+// Flow per player: talstation step → (if Nein) penalties step → summary step.
+// Progress is persisted via p.schlussgewertungDone; wizard can be restarted.
+
+let _aws = null;
+// When active: { overlay, playerIdx, step, talstationReached,
+//               slopeSelection, transportCount, extraTalstationen }
+
+function startAbschlusswertung() {
+  if (!state.gameFinished) return;
+  const nextIdx = state.players.findIndex(p => !p.schlussgewertungDone);
+  if (nextIdx === -1) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  document.body.appendChild(overlay);
+
+  _aws = {
+    overlay,
+    playerIdx: nextIdx,
+    step: 'talstation',
+    talstationReached: null,
+    slopeSelection: { blue: 0, red: 0, black: 0, yellow: 0 },
+    transportCount: 0,
+    extraTalstationen: 0,
+  };
+  _awsRenderCurrent();
+}
+
+function _awsRenderCurrent() {
+  if (!_aws) return;
+  if      (_aws.step === 'talstation') _awsRenderTalstation();
+  else if (_aws.step === 'penalties')  _awsRenderPenalties();
+  else if (_aws.step === 'summary')    _awsRenderSummary();
+}
+
+function _awsPlayerHeader(p) {
+  return `<div class="aws-player-header">
+    <span class="notif-player-dot" style="background:${p.color}"></span>
+    <strong>${esc(p.name)}</strong>
+    <span class="text-muted-sm">${p.points} Pkt</span>
+  </div>`;
+}
+
+function _awsRenderTalstation() {
+  const p = state.players[_aws.playerIdx];
+  const tsLabel = p.talstation
+    ? `<strong>${esc(p.talstation)}</strong>`
+    : 'die Talstation';
+  _aws.overlay.innerHTML = `<div class="modal">
+    ${_awsPlayerHeader(p)}
+    <h2>Schlusswertung</h2>
+    <p>Hast du ${tsLabel} erreicht?</p>
+    <div class="btn-row">
+      <button class="btn btn-danger" onclick="awsTalstationAnswer(false)">✗ Nein</button>
+      <button class="btn btn-success" onclick="awsTalstationAnswer(true)">✓ Ja</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-neutral btn--sm" onclick="awsClose()">Abbrechen</button>
+    </div>
+  </div>`;
+}
+
+function awsTalstationAnswer(reached) {
+  if (!_aws) return;
+  _aws.talstationReached = reached;
+  _aws.slopeSelection    = { blue: 0, red: 0, black: 0, yellow: 0 };
+  _aws.transportCount    = 0;
+  _aws.extraTalstationen = 0;
+  _aws.step = reached ? 'summary' : 'penalties';
+  _awsRenderCurrent();
+}
+
+function _awsRenderPenalties() {
+  const p = state.players[_aws.playerIdx];
+  const slopes = [
+    { c: 'blue',   badge: '🔵 Blau',    halfPts: 1 },
+    { c: 'red',    badge: '🔴 Rot',     halfPts: 2 },
+    { c: 'black',  badge: '⚫ Schwarz', halfPts: 3 },
+    { c: 'yellow', badge: '🟡 Gelb',    halfPts: 4 },
+  ];
+  const slopeRows = slopes.map(({ c, badge, halfPts }) => {
+    const boxes = [1,2,3,4,5,6].map(v => {
+      const active = _aws.slopeSelection[c] === v ? ' kbox-active' : '';
+      return `<button class="kbox${active}" onclick="awsKboxClick('${c}',${v})">${v}</button>`;
+    }).join('');
+    return `<div class="aws-slope-row">
+      <div class="slope-label">
+        <span class="slope-badge slope-${c}">${badge}</span>
+        <span class="slope-pts-label">−${halfPts} Pkt/Kreuzung</span>
+      </div>
+      <div class="aws-kreuzung-boxes">${boxes}</div>
+    </div>`;
+  }).join('');
+
+  _aws.overlay.innerHTML = `<div class="modal">
+    ${_awsPlayerHeader(p)}
+    <h2>Rückweg</h2>
+    <p class="section-hint">Welche Pisten hast du für den Rückweg genutzt? (Halbe Punkte als Abzug)</p>
+    ${slopeRows}
+    <div id="aws-penalty-preview" class="aws-penalty-preview">Keine zusätzlichen Strafen</div>
+    <hr class="section-hr">
+    <div class="stat-row">
+      <span class="stat-label">Beförderungsmittel zurück</span>
+      <div class="coin-control">
+        <button class="btn btn-neutral btn-coin" onclick="awsAdjust('transport',-1)">−</button>
+        <span id="aws-transport-count" class="stat-value coin-count">${_aws.transportCount}</span>
+        <button class="btn btn-neutral btn-coin" onclick="awsAdjust('transport',1)">+</button>
+      </div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Zusätzliche Talstationen</span>
+      <div class="coin-control">
+        <button class="btn btn-neutral btn-coin" onclick="awsAdjust('extraTalstationen',-1)">−</button>
+        <span id="aws-extra-ts" class="stat-value coin-count">${_aws.extraTalstationen}</span>
+        <button class="btn btn-neutral btn-coin" onclick="awsAdjust('extraTalstationen',1)">+</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-neutral btn--sm" onclick="awsBackTo('talstation')">← Zurück</button>
+      <button class="btn btn-primary" onclick="awsPenaltiesNext()">Weiter →</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-neutral btn--sm" onclick="awsClose()">Abbrechen</button>
+    </div>
+  </div>`;
+  _awsUpdatePenaltyPreview();
+}
+
+function awsKboxClick(color, val) {
+  if (!_aws) return;
+  _aws.slopeSelection[color] = (_aws.slopeSelection[color] === val) ? 0 : val;
+  _awsRenderPenalties(); // re-renders with updated kbox states
+}
+
+function awsAdjust(field, delta) {
+  if (!_aws) return;
+  if (field === 'transport') {
+    _aws.transportCount = Math.max(0, _aws.transportCount + delta);
+    const el = document.getElementById('aws-transport-count');
+    if (el) el.textContent = _aws.transportCount;
+  } else if (field === 'extraTalstationen') {
+    _aws.extraTalstationen = Math.max(0, _aws.extraTalstationen + delta);
+    const el = document.getElementById('aws-extra-ts');
+    if (el) el.textContent = _aws.extraTalstationen;
+  }
+  _awsUpdatePenaltyPreview();
+}
+
+function _awsUpdatePenaltyPreview() {
+  const el = document.getElementById('aws-penalty-preview');
+  if (!el || !_aws) return;
+  const { penaltyItems, penaltyTotal } = calcAbschlusswertungResult(
+    false, _aws.slopeSelection, _aws.transportCount, _aws.extraTalstationen, 0
+  );
+  // Exclude the fixed -15 Talstation penalty; show only what the user is choosing
+  const variable = penaltyItems.filter(it => it.label !== 'Talstation nicht erreicht');
+  if (variable.length === 0) {
+    el.textContent = 'Keine zusätzlichen Strafen';
+    el.style.color = 'var(--muted)';
+  } else {
+    const parts = variable.map(it => `${esc(it.label)}: ${it.amount} Pkt`);
+    const varTotal = variable.reduce((sum, it) => sum + it.amount, 0);
+    el.innerHTML = parts.join(' · ') + ` → <b>${varTotal} Pkt</b>`;
+    el.style.color = 'var(--alpenglühen)';
+  }
+}
+
+function awsPenaltiesNext() {
+  if (!_aws) return;
+  _aws.step = 'summary';
+  _awsRenderSummary();
+}
+
+function _awsRenderSummary() {
+  const p = state.players[_aws.playerIdx];
+  const totalCoins = p.joker + p.gratis;
+  const { penaltyItems, penaltyTotal, coinBonus, netDelta } = calcAbschlusswertungResult(
+    _aws.talstationReached,
+    _aws.slopeSelection,
+    _aws.transportCount,
+    _aws.extraTalstationen,
+    totalCoins
+  );
+
+  let penaltyHtml = '';
+  if (penaltyItems.length === 0) {
+    penaltyHtml = '<p>Keine Strafen — Talstation erreicht! 🎉</p>';
+  } else {
+    const rows = penaltyItems.map(it =>
+      `<div class="aws-penalty-item">
+        <span>${esc(it.label)}</span>
+        <span class="aws-penalty-amount">${it.amount} Pkt</span>
+      </div>`
+    ).join('');
+    penaltyHtml = `<div class="aws-penalty-list">
+      ${rows}
+      <div class="aws-penalty-total">
+        <span>Strafen gesamt</span>
+        <span>${penaltyTotal} Pkt</span>
+      </div>
+    </div>`;
+  }
+
+  let coinHtml = '';
+  if (totalCoins > 0) {
+    const breakdown = (p.joker > 0 && p.gratis > 0)
+      ? `${p.joker} Joker + ${p.gratis} Gratisfahrt`
+      : p.joker > 0 ? `${p.joker} Joker` : `${p.gratis} Gratisfahrt`;
+    coinHtml = `<div class="aws-coin-bonus">🪙 ${breakdown} → +${coinBonus} Pkt</div>`;
+  }
+
+  const netClass = netDelta >= 0 ? 'success' : 'danger';
+  const netSign  = netDelta > 0 ? '+' : '';
+  const backStep = _aws.talstationReached ? 'talstation' : 'penalties';
+
+  _aws.overlay.innerHTML = `<div class="modal">
+    ${_awsPlayerHeader(p)}
+    <h2>Schlusswertung</h2>
+    ${penaltyHtml}
+    ${coinHtml}
+    <div class="result-box ${netClass}">
+      <strong>Gesamt: ${netSign}${netDelta} Punkte</strong>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-neutral btn--sm" onclick="awsBackTo('${backStep}')">← Zurück</button>
+      <button class="btn btn-success" onclick="awsConfirm()">✓ Übernehmen</button>
+    </div>
+  </div>`;
+}
+
+function awsBackTo(step) {
+  if (!_aws) return;
+  _aws.step = step;
+  _awsRenderCurrent();
+}
+
+function awsConfirm() {
+  if (!_aws) return;
+  const p = state.players[_aws.playerIdx];
+  const totalCoins = p.joker + p.gratis;
+  const { penaltyTotal, coinBonus, netDelta } = calcAbschlusswertungResult(
+    _aws.talstationReached,
+    _aws.slopeSelection,
+    _aws.transportCount,
+    _aws.extraTalstationen,
+    totalCoins
+  );
+
+  const prevLevel = getLevel(p.points);
+  p.points += netDelta;
+  checkLevelUp(p, prevLevel);
+  p.joker  = 0;
+  p.gratis = 0;
+  p.schlussgewertungDone = true;
+
+  const histParts = [];
+  if (!_aws.talstationReached) histParts.push('Talstation nicht erreicht');
+  if (penaltyTotal < 0) histParts.push(`${penaltyTotal} Strafpunkte`);
+  if (coinBonus > 0)    histParts.push(`+${coinBonus} Münzenbonus`);
+  const detail  = histParts.length > 0 ? ` (${histParts.join(', ')})` : '';
+  const netSign = netDelta > 0 ? '+' : '';
+  addHistory(`${p.name}: Schlusswertung${detail} → ${netSign}${netDelta} Punkte`);
+  saveState();
+
+  // Advance to next undone player
+  const nextIdx = state.players.findIndex((pl, i) => i > _aws.playerIdx && !pl.schlussgewertungDone);
+  if (nextIdx !== -1) {
+    _aws.playerIdx        = nextIdx;
+    _aws.step             = 'talstation';
+    _aws.talstationReached = null;
+    _aws.slopeSelection   = { blue: 0, red: 0, black: 0, yellow: 0 };
+    _aws.transportCount   = 0;
+    _aws.extraTalstationen = 0;
+    _awsRenderCurrent();
+  } else {
+    _aws.overlay.remove();
+    _aws = null;
+    updateAll();
+  }
+}
+
+function awsClose() {
+  if (!_aws) return;
+  _aws.overlay.remove();
+  _aws = null;
+  updateAbschlusswertungCard();
+}
+
+function updateAbschlusswertungCard() {
+  const container = document.getElementById('abschlusswertungTrigger');
+  if (!container) return;
+  if (!state.gameFinished) {
+    container.innerHTML = '';
+    return;
+  }
+  const allDone = state.players.length > 0 && state.players.every(p => p.schlussgewertungDone);
+  if (allDone) {
+    container.innerHTML = '<div class="result-box success aws-trigger-done">✓ Schlusswertung abgeschlossen.</div>';
+    return;
+  }
+  const doneCount = state.players.filter(p => p.schlussgewertungDone).length;
+  const progress  = doneCount > 0 ? ` (${doneCount}/${state.players.length} erledigt)` : '';
+  container.innerHTML = `<button class="btn btn-primary btn-full aws-trigger-btn" onclick="startAbschlusswertung()">📋 Schlusswertung starten${progress} →</button>`;
+}
+
+// ═══════════════════════════════════════
 // SCOREBOARD
 // ═══════════════════════════════════════
 function updateScoreboard() {
@@ -1851,7 +2162,10 @@ function loadState() {
     if (!Array.isArray(state.roundSnapshots)) state.roundSnapshots = [];
     if (typeof state.gameFinished !== 'boolean') state.gameFinished = false;
     if (!Array.isArray(state.notificationsShown)) state.notificationsShown = [];
-    state.players.forEach(p => { delete p.skipNextTurn; });
+    state.players.forEach(p => {
+      delete p.skipNextTurn;
+      if (typeof p.schlussgewertungDone === 'undefined') p.schlussgewertungDone = false;
+    });
     return true;
   } catch (e) {
     console.warn('Could not load state:', e);
@@ -1910,4 +2224,10 @@ Object.assign(window, {
   toggleHints,
   useGratisFahrt,
   showRoundDetail,
+  // Abschlusswertung wizard (FEAT-22)
+  startAbschlusswertung,
+  awsTalstationAnswer,
+  awsKboxClick, awsAdjust,
+  awsPenaltiesNext,
+  awsBackTo, awsConfirm, awsClose,
 });

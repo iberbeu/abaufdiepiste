@@ -676,6 +676,44 @@
   .modal p { font-size: 0.9rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
   .modal .btn-row { justify-content: flex-end; }
 
+  /* ── ABSCHLUSSWERTUNG WIZARD (FEAT-22) ── */
+  .aws-trigger-btn  { margin-bottom: 12px; }
+  .aws-trigger-done { margin-bottom: 8px; }
+
+  .aws-player-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px; padding: 8px 10px;
+    background: var(--bg); border-radius: 8px;
+  }
+
+  .aws-slope-row { margin-bottom: 10px; }
+
+  .aws-kreuzung-boxes { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+  .aws-penalty-preview {
+    margin: 8px 0 4px; font-size: 0.85rem; min-height: 20px;
+  }
+
+  .aws-penalty-list  { margin-bottom: 10px; }
+
+  .aws-penalty-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem;
+  }
+
+  .aws-penalty-amount { font-weight: 600; color: var(--alpenglühen); }
+
+  .aws-penalty-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0 4px; font-weight: 700; font-size: 0.9rem;
+  }
+
+  .aws-coin-bonus {
+    margin: 8px 0; padding: 8px 12px;
+    background: rgba(76,175,80,0.12); border-radius: 8px;
+    font-size: 0.88rem; font-weight: 500;
+  }
+
   /* ── ROUND NOTIFICATIONS (FEAT-16) ── */
   .notif-player-dot {
     display: inline-block; width: 9px; height: 9px;
