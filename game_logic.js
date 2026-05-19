@@ -175,10 +175,12 @@ export function analyzeTransportSymbols(syms) {
  * @param {string|null} eventSym    — EVENT_FACES[n].sym, or null
  * @param {boolean} jokerUsedOnEvent
  * @param {boolean|null} ohneBefugnisResult — null=not rolled, true=green, false=red
+ * @param {string[]} allowedSlopes  — colours the player may use (e.g. ['blue','red'] for Anfänger)
  * @returns {{ total: number, basePoints: number, parts: string[], bonusText: string }}
  */
-export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, ohneBefugnisResult) {
-  let basePoints = 0;
+export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, ohneBefugnisResult, allowedSlopes = ['blue', 'red', 'black', 'yellow']) {
+  let allowedBase = 0;
+  let forbiddenBase = 0;
   const parts = [];
 
   ['blue', 'red', 'black', 'yellow'].forEach(c => {
@@ -187,24 +189,43 @@ export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, oh
       const pts = k * SLOPE_PTS[c];
       const label = { blue: 'Blau', red: 'Rot', black: 'Schwarz', yellow: 'Gelb' }[c];
       parts.push(`${label} ×${k} = ${pts}`);
-      basePoints += pts;
+      if (!allowedSlopes.includes(c)) {
+        forbiddenBase += pts;
+      } else {
+        allowedBase += pts;
+      }
     }
   });
 
-  let total = basePoints;
+  const basePoints = allowedBase + forbiddenBase;
+  let total;
   let bonusText = '';
 
-  if (eventSym === 'schneesturm' && !jokerUsedOnEvent) {
-    total = Math.floor(total / 2);
-    bonusText = ' (÷2 Schneesturm)';
-  }
-  if (eventSym === 'pulverschnee' && basePoints > 0) {
-    total += 5;
-    bonusText = ' (+5 Pulverschnee)';
-  }
   if (ohneBefugnisResult === false) {
-    total = -total;
+    // Schneesturm halves only the allowed portion; forbidden penalty applies in full.
+    let allowedTotal = allowedBase;
+    if (eventSym === 'schneesturm' && !jokerUsedOnEvent) {
+      allowedTotal = Math.floor(allowedTotal / 2);
+      bonusText = ' (÷2 Schneesturm)';
+    }
+    // Pulverschnee bonus only when the player has at least one legitimate slope:
+    // skiing only on forbidden pistes with a red penalty earns no powder bonus.
+    if (eventSym === 'pulverschnee' && allowedBase > 0) {
+      allowedTotal += 5;
+      bonusText = ' (+5 Pulverschnee)';
+    }
+    total = allowedTotal - forbiddenBase;
     bonusText += ' (Ohne Befugnis: negativ)';
+  } else {
+    total = basePoints;
+    if (eventSym === 'schneesturm' && !jokerUsedOnEvent) {
+      total = Math.floor(total / 2);
+      bonusText = ' (÷2 Schneesturm)';
+    }
+    if (eventSym === 'pulverschnee' && basePoints > 0) {
+      total += 5;
+      bonusText = ' (+5 Pulverschnee)';
+    }
   }
 
   return { total, basePoints, parts, bonusText };

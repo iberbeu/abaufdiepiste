@@ -1051,7 +1051,7 @@ function updateKboxAvailability() {
 // Delegates pure calculation to game_logic.js; reads module-level state here.
 function calcDescentTotal() {
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
-  return calcDescentPoints(slopeSelection, ev?.sym ?? null, state.jokerUsedOnEvent, ohneBefugnisResult);
+  return calcDescentPoints(slopeSelection, ev?.sym ?? null, state.jokerUsedOnEvent, ohneBefugnisResult, getAllowedSlopes());
 }
 
 function updateDescentPreview() {
