@@ -1669,7 +1669,7 @@ function showGameEnd() {
 // HISTORY
 // ═══════════════════════════════════════
 function addHistory(text) {
-  state.history.unshift({ time: gameTime(), text });
+  state.history.unshift({ time: gameTime(), text, round: state.round, playerIdx: state.currentPlayerIndex });
   saveState();
   updateHistory();
 }
@@ -1714,19 +1714,19 @@ function updatePunktverlauf() {
     ).join('') +
     '</tr>';
 
-  const makePtsCell = (pts, delta) => {
+  const makePtsCell = (pts, delta, round, pidx) => {
     const deltaStr   = delta >= 0 ? `+${delta}` : `${delta}`;
-    const deltaColor = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--piste-red)' : 'var(--muted)';
-    return `<td class="punktverlauf-cell"><span class="punktverlauf-pts">${pts}</span><span class="punktverlauf-delta" style="color:${deltaColor};">(${deltaStr})</span></td>`;
+    const deltaClass = delta > 0 ? 'punktverlauf-delta--positive' : delta < 0 ? 'punktverlauf-delta--negative' : 'punktverlauf-delta--zero';
+    return `<td class="punktverlauf-cell punktverlauf-cell--clickable" onclick="showRoundDetail(${round},${pidx})"><span class="punktverlauf-pts">${pts}</span><span class="punktverlauf-delta ${deltaClass}">(${deltaStr})</span></td>`;
   };
 
   // Completed round rows
   let rows = snapshots.map((snap, idx) => {
     const prevSnap = snapshots[idx - 1];
-    const cells = players.map(p => {
+    const cells = players.map((p, pidx) => {
       const total = snap.points.find(e => e.name === p.name)?.pts ?? 0;
       const prev  = prevSnap ? (prevSnap.points.find(e => e.name === p.name)?.pts ?? 0) : 0;
-      return makePtsCell(total, total - prev);
+      return makePtsCell(total, total - prev, snap.round, pidx);
     }).join('');
     return `<tr><td class="punktverlauf-time-cell">${snap.time}</td>${cells}</tr>`;
   }).join('');
@@ -1738,7 +1738,7 @@ function updatePunktverlauf() {
     const liveCells = players.map((p, i) => {
       if (playedSet.has(i)) {
         const prevPts = lastSnap ? (lastSnap.points.find(e => e.name === p.name)?.pts ?? 0) : 0;
-        return makePtsCell(p.points, p.points - prevPts);
+        return makePtsCell(p.points, p.points - prevPts, state.round, i);
       }
       return `<td class="punktverlauf-pending">…</td>`;
     }).join('');
@@ -1746,6 +1746,28 @@ function updatePunktverlauf() {
   }
 
   body.innerHTML = rows;
+}
+
+function showRoundDetail(round, pidx) {
+  const p = state.players[pidx];
+  if (!p) return;
+  const entries = state.history
+    .filter(h => h.round === round && h.playerIdx === pidx && h.text.includes('Punkte'))
+    .reverse();
+  const bodyHtml = entries.length > 0
+    ? '<ul class="round-detail-list">' +
+      entries.map(h => `<li>${esc(h.text.replace(/^[^:]+:\s*/, ''))}</li>`).join('') +
+      '</ul>'
+    : '<p class="round-detail-empty">Keine Details verfügbar.</p>';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.innerHTML = `<div class="modal">
+    <h2><span class="notif-player-dot"></span>${esc(p.name)} – Runde ${round}</h2>
+    ${bodyHtml}
+    <div class="btn-row"><button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">OK</button></div>
+  </div>`;
+  overlay.querySelector('h2 .notif-player-dot').style.background = p.color;
+  document.body.appendChild(overlay);
 }
 
 // ═══════════════════════════════════════
@@ -1887,4 +1909,5 @@ Object.assign(window, {
   drainNotifQueue,
   toggleHints,
   useGratisFahrt,
+  showRoundDetail,
 });

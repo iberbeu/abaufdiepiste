@@ -570,6 +570,7 @@
   .modal {
     background: white; border-radius: var(--radius); padding: 22px;
     max-width: 400px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    max-height: 80vh; overflow-y: auto;
   }
   .modal h2 { font-size: 1.1rem; margin-bottom: 12px; }
   .modal p { font-size: 0.9rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
@@ -714,6 +715,15 @@
   .punktverlauf-pts   { font-weight: 600; }
   .punktverlauf-delta { font-size: 0.75rem; margin-left: 3px; }
   .punktverlauf-pending { text-align: center; color: var(--muted); }
+  .punktverlauf-cell--clickable { cursor: pointer; }
+  .punktverlauf-cell--clickable:active { background: #e8e8e8; }
+  .punktverlauf-delta--positive { color: var(--green); }
+  .punktverlauf-delta--negative { color: var(--piste-red); }
+  .punktverlauf-delta--zero     { color: var(--muted); }
+
+  /* Round-detail popup */
+  .round-detail-list  { margin: 0; padding: 0 0 0 1.2rem; font-size: 0.9rem; line-height: 1.7; }
+  .round-detail-empty { font-size: 0.9rem; color: var(--muted); margin-bottom: 14px; }
 
   /* Punktverlauf live (in-progress) row — overrides nth-child(even) via higher specificity (0,2,2 vs 0,1,2) */
   .score-table tr.punktverlauf-live-row td { background: var(--summit-white); font-style: italic; }
