@@ -17,7 +17,7 @@ const TRANSPORT_IMGS    = {
   kleingondel:'img/transport_kleingondel.png',
   skilift:    'img/transport_skilift.png',
   sesselbahn: 'img/transport_sesselbahn.png',
-  gondel:     'img/transport_gondel.svg',
+  gondel:     'img/transport_gondel.png',
   zug:        'img/transport_zug.png',
 };
 const EVENT_FACES = [
