@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>v2 Design System</title>
+<link rel="stylesheet" href="v2_tokens.css">
+<link rel="stylesheet" href="v2_components.css">
+<link rel="stylesheet" href="design_system.css">
+</head>
+<body>
+<!-- UI-12.3 living style guide. Not part of the app; open it on a phone to review. -->
+<main class="ds">
+
+  <h1 class="ds__title">Design System · App v2</h1>
+  <p class="ds__intro">Dark mode, chunky and playful. Every component of the new app on one page.</p>
+
+  <!-- ─────────── COLOURS ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Farben · Rollen</h2>
+    <div class="ds-swatches">
+      <div class="ds-swatch ds-swatch--primary"><span>Primär</span><code>Alpenglühen</code></div>
+      <div class="ds-swatch ds-swatch--secondary"><span>Sekundär</span><code>Glacier Teal</code></div>
+      <div class="ds-swatch ds-swatch--joker"><span>Joker</span><code>Sonnen-Gelb</code></div>
+      <div class="ds-swatch ds-swatch--surface"><span>Fläche</span><code>Alpine Night</code></div>
+      <div class="ds-swatch ds-swatch--positive"><span>Plus</span><code>#4CC38A</code></div>
+      <div class="ds-swatch ds-swatch--negative"><span>Minus</span><code>#FF8A7A</code></div>
+    </div>
+    <h2 class="ds__h2">Pisten (nur für Pisten)</h2>
+    <div class="ds-swatches">
+      <div class="ds-swatch ds-swatch--blue"><span>Blau</span></div>
+      <div class="ds-swatch ds-swatch--red"><span>Rot</span></div>
+      <div class="ds-swatch ds-swatch--black"><span>Schwarz</span></div>
+      <div class="ds-swatch ds-swatch--yellow"><span>Gelb</span></div>
+    </div>
+    <h2 class="ds__h2">Spielerfarben</h2>
+    <div class="ds-row">
+      <span class="avatar player-1">A</span>
+      <span class="avatar player-2">B</span>
+      <span class="avatar player-3">C</span>
+      <span class="avatar player-4">D</span>
+      <span class="avatar player-5">E</span>
+      <span class="avatar player-6">F</span>
+    </div>
+  </section>
+
+  <!-- ─────────── TYPE ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Schrift · Work Sans</h2>
+    <p class="ds-type ds-type--display">+10</p>
+    <p class="ds-type ds-type--xxl">4</p>
+    <p class="ds-type ds-type--xl">Anna ist dran</p>
+    <p class="ds-type ds-type--lg">2 Kreuzungen</p>
+    <p class="ds-type ds-type--md">Mittagspause offen – Restaurant oder Bar.</p>
+    <p class="ds-type ds-type--sm">4 Punkte · ab 11:00</p>
+  </section>
+
+  <!-- ─────────── ICONS ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Icons</h2>
+    <div class="ds-icons">
+      <span class="ds-icon"><span class="icon icon--menu"></span>Menü</span>
+      <span class="ds-icon"><span class="icon icon--camera"></span>Sehensw.</span>
+      <span class="ds-icon"><span class="icon icon--ticket"></span>Gratis</span>
+      <span class="ds-icon"><span class="icon icon--joker"></span>Joker</span>
+      <span class="ds-icon"><span class="icon icon--dice"></span>Extra</span>
+      <span class="ds-icon"><span class="icon icon--gondola"></span>Bergauf</span>
+      <span class="ds-icon"><span class="icon icon--skier"></span>Bergab</span>
+      <span class="ds-icon"><span class="icon icon--restaurant"></span>Restaurant</span>
+      <span class="ds-icon"><span class="icon icon--bar"></span>Bar</span>
+      <span class="ds-icon"><span class="icon icon--lock"></span>Gesperrt</span>
+      <span class="ds-icon"><span class="icon icon--warning"></span>Ohne Bef.</span>
+      <span class="ds-icon"><span class="icon icon--back"></span>Zurück</span>
+      <span class="ds-icon"><span class="icon icon--check"></span>Fertig</span>
+      <span class="ds-icon"><span class="icon icon--plus"></span>Plus</span>
+      <span class="ds-icon"><span class="icon icon--minus"></span>Minus</span>
+      <span class="ds-icon"><span class="icon icon--trophy"></span>Rangliste</span>
+    </div>
+  </section>
+
+  <!-- ─────────── TOP BAR + SCORE STRIP ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Kopfzeile + Punkte-Leiste</h2>
+    <div class="ds-frame">
+      <header class="topbar">
+        <button class="icon-btn" aria-label="Menü"><span class="icon icon--menu"></span></button>
+        <span class="topbar__time">10:30</span>
+        <div class="topbar__actions">
+          <button class="icon-btn" aria-label="Sehenswürdigkeit"><span class="icon icon--camera"></span></button>
+          <button class="icon-btn" aria-label="Gratis Fahrt"><span class="icon icon--ticket"></span><span class="icon-btn__badge">1</span></button>
+          <button class="icon-btn" aria-label="Joker"><span class="icon icon--joker"></span><span class="icon-btn__badge icon-btn__badge--joker">1</span></button>
+        </div>
+      </header>
+      <div class="score-strip">
+        <span class="score-chip is-current player-1"><span class="avatar">A</span>47</span>
+        <span class="score-chip player-2"><span class="avatar">B</span>52</span>
+        <span class="score-chip player-3"><span class="avatar">C</span>31</span>
+        <span class="score-chip player-4"><span class="avatar">D</span>40</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── TURN START ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Zugbeginn</h2>
+    <div class="ds-frame step">
+      <div class="player-hero player-1">
+        <span class="avatar avatar--lg">A</span>
+        <span class="player-hero__name">Anna</span>
+        <span class="stars">★★☆</span>
+      </div>
+      <div class="action-list">
+        <button class="btn-action btn-action--bergauf"><span class="icon icon--lg icon--gondola"></span>Bergauf</button>
+        <button class="btn-action btn-action--bergab"><span class="icon icon--lg icon--skier"></span>Bergab</button>
+        <button class="btn-action btn-action--pause"><span class="icon icon--lg icon--restaurant"></span>Pause</button>
+        <button class="btn-action btn-action--pause is-locked"><span class="icon icon--lg icon--restaurant"></span><span>Pause<span class="btn-action__sub">ab 11:00</span></span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── DICE ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Würfel</h2>
+    <div class="ds-frame step">
+      <div class="dice-row">
+        <div class="die"><div class="die__face"><span class="die__value">4</span><span class="die__stars">★★</span></div></div>
+        <div class="die die--event">
+          <img class="die__img" src="../img/event_schneesturm.png" alt="Schneesturm">
+          <button class="die__corner die__corner--joker" aria-label="Joker einsetzen"><span class="icon icon--sm icon--joker"></span></button>
+        </div>
+      </div>
+      <div class="dice-grid">
+        <div class="die die--md"><img class="die__img" src="../img/transport_gondel.png" alt="Gondel"></div>
+        <div class="die die--md is-held"><img class="die__img" src="../img/transport_sesselbahn.png" alt="Sesselbahn"></div>
+        <div class="die die--md is-held"><img class="die__img" src="../img/transport_sesselbahn.png" alt="Sesselbahn"></div>
+        <div class="die die--md"><img class="die__img" src="../img/transport_skilift.png" alt="Skilift"></div>
+        <div class="die die--md"><img class="die__img" src="../img/transport_fussweg.png" alt="Fussweg"></div>
+        <div class="die die--md"><img class="die__img" src="../img/transport_zug.png" alt="Zug"></div>
+      </div>
+      <span class="result-line result-line--good"><span class="icon icon--sm icon--check"></span>2× Sesselbahn</span>
+      <span class="result-line result-line--bad">Liftschlange – nächste Runde</span>
+    </div>
+  </section>
+
+  <!-- ─────────── SLOPE TILES ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Pisten-Kacheln</h2>
+    <div class="ds-frame step">
+      <div class="crossings">
+        <span class="crossings__label">2 Kreuzungen</span>
+        <span class="crossings__dots"><span class="dot is-used"></span><span class="dot"></span></span>
+      </div>
+      <div class="slope-grid">
+        <div class="slope-tile slope-tile--blue is-empty">
+          <button class="slope-tile__plus" aria-label="Blau plus"><span class="icon icon--plus"></span></button>
+          <span class="slope-tile__name">Blau</span><span class="slope-tile__pts">2 Punkte</span>
+          <button class="slope-tile__minus" aria-label="Blau minus"><span class="icon icon--minus"></span></button>
+        </div>
+        <div class="slope-tile slope-tile--red is-selected">
+          <button class="slope-tile__plus" aria-label="Rot plus"><span class="icon icon--plus"></span></button>
+          <span class="slope-tile__name">Rot</span><span class="slope-tile__pts">4 Punkte</span>
+          <button class="slope-tile__minus" aria-label="Rot minus"><span class="icon icon--minus"></span></button>
+          <span class="slope-tile__count">1</span>
+        </div>
+        <div class="slope-tile slope-tile--black is-empty">
+          <button class="slope-tile__plus" aria-label="Schwarz plus"><span class="icon icon--plus"></span></button>
+          <span class="slope-tile__name">Schwarz</span><span class="slope-tile__pts">6 Punkte</span>
+          <button class="slope-tile__minus" aria-label="Schwarz minus"><span class="icon icon--minus"></span></button>
+        </div>
+        <div class="slope-tile slope-tile--yellow is-empty is-forbidden">
+          <button class="slope-tile__plus" aria-label="Gelb plus"><span class="icon icon--plus"></span></button>
+          <span class="slope-tile__name">Gelb</span><span class="slope-tile__pts">8 Punkte</span>
+          <button class="slope-tile__minus" aria-label="Gelb minus"><span class="icon icon--minus"></span></button>
+          <span class="slope-tile__flag"><span class="icon icon--warning"></span></span>
+        </div>
+      </div>
+      <div class="ds-row">
+        <button class="round-option" aria-label="Extraaktivität"><span class="icon icon--dice"></span></button>
+        <button class="round-option is-done-good" aria-label="Extraaktivität geschafft"><span class="icon icon--dice"></span></button>
+        <button class="round-option is-done-bad" aria-label="Extraaktivität nicht geschafft"><span class="icon icon--dice"></span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── BUTTONS ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Haupt-Knopf</h2>
+    <div class="ds-frame step">
+      <button class="btn-primary">+10 →</button>
+      <button class="btn-primary btn-primary--secondary">Nochmal würfeln</button>
+      <button class="btn-primary btn-primary--negative">−8 →</button>
+      <button class="btn-primary" disabled>Weiter →</button>
+      <button class="btn-text">Fertig</button>
+    </div>
+  </section>
+
+  <!-- ─────────── SHEET ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Sheet (von unten)</h2>
+    <div class="ds-frame ds-frame--sheet">
+      <div class="sheet">
+        <span class="sheet__title">Ohne Befugnis</span>
+        <p class="sheet__text">Der Entscheidungswürfel entscheidet.</p>
+        <div class="sheet__actions">
+          <button class="btn-primary"><span class="icon icon--dice"></span>Würfeln</button>
+          <button class="btn-text">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── EVENT CARD + BURST ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Ereignis-Karte + Punkte</h2>
+    <div class="ds-frame">
+      <div class="event-card ds-event-card">
+        <span class="icon icon--lg icon--restaurant"></span>
+        <span class="event-card__title">Mittagspause offen!</span>
+        <span class="event-card__text">Bis 12:30 – Restaurant +15, Bar +7</span>
+        <button class="btn-primary">OK</button>
+      </div>
+      <div class="ds-row">
+        <span class="points-burst">+10</span>
+        <span class="points-burst points-burst--negative">−8</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

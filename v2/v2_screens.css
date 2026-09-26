@@ -1,0 +1,40 @@
+/* ═══════════════════════════════════════════════════════════════
+   App v2 — screen-specific layout. Shared components live in v2_components.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── HOME ── */
+.home { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-5); padding-bottom: var(--space-6); }
+.home__logo { width: 112px; height: 112px; border-radius: var(--radius-lg); }
+.home__title { font-size: var(--fs-xl); font-weight: var(--fw-display); margin-bottom: var(--space-4); }
+
+/* ── TURN END ── */
+.turn-end { display: grid; place-items: center; }
+.turn-end__check { color: var(--positive); --icon: 72px; animation: burst var(--dur-slow) var(--ease-spring); }
+
+/* ── ROUND EVENT: Talstation list ── */
+.talstation-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
+.talstation-list__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-weight: var(--fw-label);
+  text-align: left;
+}
+.talstation-list__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--player); }
+.talstation-list__place { color: var(--text-muted); }
+
+/* ── PLACEHOLDER (temporary, until each real screen exists) ── */
+.placeholder { justify-content: center; text-align: center; padding-bottom: var(--space-6); }
+.placeholder__tag {
+  padding: var(--space-1) var(--space-3);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+.placeholder__title { font-size: var(--fs-xl); font-weight: var(--fw-display); }
+.placeholder__task { color: var(--text-dim); font-size: var(--fs-sm); }

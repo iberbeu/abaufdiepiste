@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="880" viewBox="0 0 860 880" font-family="Segoe UI, Arial, sans-serif">
+  <!-- UI-12.1 mockup v3 (final): dark mode, minimal information. Colours are placeholders. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#23355c"/>
+      <stop offset="100%" stop-color="#0d1526"/>
+    </radialGradient>
+    <!-- shared top bar + score strip (identical on every screen) -->
+    <g id="chrome">
+      <text x="30" y="54" font-size="22" fill="#8fa0bf">☰</text>
+      <text x="180" y="54" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">10:30</text>
+      <g font-size="18" opacity="0.9">
+        <text x="248" y="55">📷</text>
+        <text x="278" y="55">🎟</text><circle cx="298" cy="38" r="7" fill="#3A8A8C"/><text x="295" y="42" font-size="10" fill="#fff" font-weight="700">2</text>
+        <text x="308" y="55">🃏</text><circle cx="328" cy="38" r="7" fill="#F59C3C"/><text x="325" y="42" font-size="10" fill="#fff" font-weight="700">1</text>
+      </g>
+      <g font-size="13" font-weight="700">
+        <rect x="30" y="76" width="82" height="32" rx="16" fill="#E8431A"/>
+        <circle cx="47" cy="92" r="11" fill="#fff"/><text x="47" y="97" text-anchor="middle" font-size="12" fill="#E8431A">A</text>
+        <text x="84" y="97" text-anchor="middle" fill="#fff">47</text>
+        <circle cx="136" cy="92" r="11" fill="#3A8A8C"/><text x="136" y="97" text-anchor="middle" font-size="12" fill="#fff">B</text>
+        <text x="153" y="97" fill="#8fa0bf">52</text>
+        <circle cx="197" cy="92" r="11" fill="#9b7be0"/><text x="197" y="97" text-anchor="middle" font-size="12" fill="#fff">C</text>
+        <text x="214" y="97" fill="#8fa0bf">31</text>
+        <circle cx="258" cy="92" r="11" fill="#F59C3C"/><text x="258" y="97" text-anchor="middle" font-size="12" fill="#fff">D</text>
+        <text x="275" y="97" fill="#8fa0bf">40</text>
+      </g>
+    </g>
+  </defs>
+  <rect width="860" height="880" fill="#dfe4ea"/>
+  <text x="215" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#1B2B4B">1 · Zugbeginn</text>
+  <text x="645" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#1B2B4B">2 · Bergab (nach dem Wurf)</text>
+
+  <!-- ═════════════ SCREEN 1: TURN START ═════════════ -->
+  <g transform="translate(35,50)">
+    <rect width="360" height="780" rx="36" fill="#000"/>
+    <rect x="10" y="10" width="340" height="760" rx="28" fill="url(#glow)"/>
+    <use href="#chrome"/>
+
+    <circle cx="180" cy="210" r="58" fill="#E8431A" opacity="0.18"/>
+    <circle cx="180" cy="210" r="45" fill="#E8431A"/>
+    <text x="180" y="227" text-anchor="middle" font-size="44" fill="#fff" font-weight="800">A</text>
+    <text x="180" y="308" text-anchor="middle" font-size="32" font-weight="800" fill="#fff">Anna</text>
+    <text x="180" y="336" text-anchor="middle" font-size="18" fill="#F59C3C">★★☆</text>
+
+    <rect x="30" y="410" width="300" height="88" rx="26" fill="#3A8A8C"/>
+    <rect x="30" y="492" width="300" height="6" rx="3" fill="#2a6567"/>
+    <text x="72" y="467" font-size="38">🚡</text>
+    <text x="132" y="465" font-size="28" font-weight="800" fill="#fff">Bergauf</text>
+
+    <rect x="30" y="514" width="300" height="88" rx="26" fill="#E8431A"/>
+    <rect x="30" y="596" width="300" height="6" rx="3" fill="#a92f10"/>
+    <text x="72" y="571" font-size="38">⛷️</text>
+    <text x="132" y="569" font-size="28" font-weight="800" fill="#fff">Bergab</text>
+
+    <!-- Pause: always there, locked outside 11:00–12:30 -->
+    <rect x="30" y="618" width="300" height="88" rx="26" fill="#1f2a40" stroke="#34425e" stroke-width="2"/>
+    <text x="72" y="675" font-size="38" opacity="0.35">🍽</text>
+    <text x="132" y="664" font-size="28" font-weight="800" fill="#5d6b86">Pause</text>
+    <text x="132" y="686" font-size="13" fill="#5d6b86">🔒 ab 11:00</text>
+  </g>
+
+  <!-- ═════════════ SCREEN 2: BERGAB ═════════════ -->
+  <g transform="translate(465,50)">
+    <rect width="360" height="780" rx="36" fill="#000"/>
+    <rect x="10" y="10" width="340" height="760" rx="28" fill="url(#glow)"/>
+    <use href="#chrome"/>
+
+    <!-- dice -->
+    <rect x="84" y="128" width="84" height="84" rx="18" fill="#fff"/>
+    <text x="126" y="180" text-anchor="middle" font-size="40" font-weight="800" fill="#1B2B4B">4</text>
+    <text x="126" y="201" text-anchor="middle" font-size="12" fill="#F59C3C">★★</text>
+    <rect x="192" y="128" width="84" height="84" rx="18" fill="#dcecf7"/>
+    <text x="234" y="186" text-anchor="middle" font-size="40">❄️</text>
+    <circle cx="274" cy="130" r="15" fill="#F59C3C" stroke="#0d1526" stroke-width="3"/>
+    <text x="274" y="136" text-anchor="middle" font-size="14">🃏</text>
+
+    <text x="180" y="256" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">2 Kreuzungen</text>
+    <circle cx="168" cy="276" r="6" fill="#fff"/><circle cx="192" cy="276" r="6" fill="#fff"/>
+
+    <!-- slope tiles: top half = +, bottom half = −, badge = count, big number = points per crossing -->
+    <g font-weight="800">
+      <!-- Blau: 0 selected -->
+      <rect x="30" y="298" width="144" height="136" rx="24" fill="#2F6FDB"/>
+      <text x="102" y="326" text-anchor="middle" font-size="24" fill="#fff">+</text>
+      <text x="102" y="364" text-anchor="middle" font-size="18" fill="#fff">Blau</text>
+      <text x="102" y="388" text-anchor="middle" font-size="14" fill="#fff" opacity="0.85">2 Punkte</text>
+      <text x="102" y="424" text-anchor="middle" font-size="24" fill="#fff" opacity="0.3">−</text>
+
+      <!-- Rot: 1 selected -->
+      <rect x="186" y="298" width="144" height="136" rx="24" fill="#D93A3A" stroke="#fff" stroke-width="3"/>
+      <text x="258" y="326" text-anchor="middle" font-size="24" fill="#fff">+</text>
+      <text x="258" y="364" text-anchor="middle" font-size="18" fill="#fff">Rot</text>
+      <text x="258" y="388" text-anchor="middle" font-size="14" fill="#fff" opacity="0.85">4 Punkte</text>
+      <text x="258" y="424" text-anchor="middle" font-size="24" fill="#fff">−</text>
+      <circle cx="316" cy="312" r="15" fill="#fff"/><text x="316" y="318" text-anchor="middle" font-size="15" fill="#D93A3A">1</text>
+
+      <!-- Schwarz: 1 selected -->
+      <rect x="30" y="446" width="144" height="136" rx="24" fill="#2b2f36" stroke="#fff" stroke-width="3"/>
+      <text x="102" y="474" text-anchor="middle" font-size="24" fill="#fff">+</text>
+      <text x="102" y="512" text-anchor="middle" font-size="18" fill="#fff">Schwarz</text>
+      <text x="102" y="536" text-anchor="middle" font-size="14" fill="#fff" opacity="0.85">6 Punkte</text>
+      <text x="102" y="572" text-anchor="middle" font-size="24" fill="#fff">−</text>
+      <circle cx="160" cy="460" r="15" fill="#fff"/><text x="160" y="466" text-anchor="middle" font-size="15" fill="#1B2B4B">1</text>
+
+      <!-- Gelb: not allowed at ★★ → faded, ⚠ -->
+      <g opacity="0.45">
+        <rect x="186" y="446" width="144" height="136" rx="24" fill="#E8C21A"/>
+        <text x="258" y="474" text-anchor="middle" font-size="24" fill="#1B2B4B">+</text>
+        <text x="258" y="512" text-anchor="middle" font-size="18" fill="#1B2B4B">Gelb</text>
+        <text x="258" y="536" text-anchor="middle" font-size="14" fill="#1B2B4B">8 Punkte</text>
+        <text x="258" y="572" text-anchor="middle" font-size="24" fill="#1B2B4B" opacity="0.4">−</text>
+      </g>
+      <text x="314" y="470" text-anchor="middle" font-size="17">⚠️</text>
+    </g>
+
+    <circle cx="180" cy="626" r="24" fill="none" stroke="#8fa0bf" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="180" y="634" text-anchor="middle" font-size="20">🎲</text>
+
+    <rect x="30" y="676" width="300" height="64" rx="26" fill="#E8431A"/>
+    <rect x="30" y="734" width="300" height="6" rx="3" fill="#a92f10"/>
+    <text x="180" y="716" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">+10  →</text>
+  </g>
+
+  <text x="430" y="852" text-anchor="middle" font-size="11" fill="#3b4a63">Pisten-Kachel: obere Hälfte antippen = +1 Kreuzung · untere Hälfte = −1 · Zahl in der Ecke = gewählte Kreuzungen · „4 Punkte“ = pro Kreuzung</text>
+  <text x="430" y="868" text-anchor="middle" font-size="11" fill="#3b4a63">⚠ = ohne Befugnis (Entscheidungswürfel) · 🃏 auf dem Würfel = Joker einsetzen · 🎲 = Extraaktivität · Pause immer sichtbar, ausserhalb 11:00–12:30 gesperrt</text>
+</svg>

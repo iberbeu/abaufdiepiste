@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1526">
+<title>Ab auf die Piste</title>
+<link rel="icon" type="image/png" href="../img/logo_abaufdiepiste.png">
+<link rel="preload" href="fonts/work_sans_latin_800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="v2_tokens.css">
+<link rel="stylesheet" href="v2_components.css">
+<link rel="stylesheet" href="v2_screens.css">
+<!-- DEV ONLY — remove before shipping -->
+<link rel="stylesheet" href="v2_dev_fixtures.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar" id="topbar" hidden>
+    <button class="icon-btn" id="btnMenu" aria-label="Menü"><span class="icon icon--menu"></span></button>
+    <span class="topbar__time" id="topbarTime"></span>
+    <div class="topbar__actions">
+      <button class="icon-btn" id="btnSight" aria-label="Sehenswürdigkeit"><span class="icon icon--camera"></span></button>
+      <button class="icon-btn" id="btnGratis" aria-label="Gratis Fahrt"><span class="icon icon--ticket"></span><span class="icon-btn__badge" id="gratisCount" hidden></span></button>
+      <button class="icon-btn" id="btnJoker" aria-label="Joker"><span class="icon icon--joker"></span><span class="icon-btn__badge icon-btn__badge--joker" id="jokerCount" hidden></span></button>
+    </div>
+  </header>
+  <div class="score-strip" id="scoreStrip" hidden></div>
+  <main class="outlet" id="outlet"></main>
+</div>
+
+<!-- ══════════════ TEMPLATES (cloned by the screen modules) ══════════════ -->
+
+<template id="tpl-score-chip">
+  <span class="score-chip"><span class="avatar"></span><span class="score-chip__points"></span></span>
+</template>
+
+<template id="tpl-home">
+  <section class="screen home">
+    <img class="home__logo" src="../img/logo_abaufdiepiste.png" alt="">
+    <h1 class="home__title">Ab auf die Piste</h1>
+    <div class="action-list">
+      <button class="btn-action btn-action--bergab" data-ref="continue" hidden>
+        <span>Weiterspielen<span class="btn-action__sub" data-ref="continueSub"></span></span>
+      </button>
+      <button class="btn-action btn-action--bergauf" data-ref="newGame">Neues Spiel</button>
+      <button class="btn-action btn-action--pause" data-ref="punkteblock">Punkteblock</button>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-turn_end">
+  <section class="screen turn-end">
+    <span class="points-burst" data-ref="burst"></span>
+    <span class="turn-end__check" data-ref="check" hidden><span class="icon icon--check"></span></span>
+  </section>
+</template>
+
+<template id="tpl-round_event">
+  <section class="screen event-card">
+    <span class="icon icon--lg" data-ref="icon"></span>
+    <h1 class="event-card__title" data-ref="title"></h1>
+    <p class="event-card__text" data-ref="text"></p>
+    <ul class="talstation-list" data-ref="talstationen" hidden></ul>
+    <button class="btn-primary" data-ref="ok">OK</button>
+  </section>
+</template>
+
+<template id="tpl-talstation-row">
+  <li class="talstation-list__row"><span class="talstation-list__dot"></span><span data-ref="name"></span><span class="talstation-list__place" data-ref="talstation"></span></li>
+</template>
+
+<template id="tpl-placeholder">
+  <section class="screen step placeholder">
+    <p class="placeholder__tag">Platzhalter · <span data-ref="id"></span></p>
+    <h1 class="placeholder__title" data-ref="title"></h1>
+    <p class="placeholder__task" data-ref="task"></p>
+    <div class="action-list" data-ref="links"></div>
+  </section>
+</template>
+
+<template id="tpl-placeholder-link">
+  <button class="btn-primary btn-primary--secondary"></button>
+</template>
+
+<script type="module" src="v2_main.js"></script>
+<!-- DEV ONLY — remove before shipping -->
+<script type="module" src="v2_dev_fixtures.js"></script>
+</body>
+</html>

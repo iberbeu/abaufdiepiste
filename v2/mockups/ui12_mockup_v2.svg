@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="880" viewBox="0 0 860 880" font-family="Segoe UI, Arial, sans-serif">
+  <!-- UI-12.1 quick mockup v2: dark by default, minimal information per screen. Colours are placeholders. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#23355c"/>
+      <stop offset="100%" stop-color="#0d1526"/>
+    </radialGradient>
+  </defs>
+  <rect width="860" height="880" fill="#dfe4ea"/>
+  <text x="215" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#1B2B4B">1 · Zugbeginn</text>
+  <text x="645" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#1B2B4B">2 · Bergab (nach dem Wurf)</text>
+
+  <!-- ═════════════ SCREEN 1: TURN START ═════════════ -->
+  <g transform="translate(35,50)">
+    <rect width="360" height="780" rx="36" fill="#000"/>
+    <rect x="10" y="10" width="340" height="760" rx="28" fill="url(#glow)"/>
+
+    <!-- top bar: menu · time · quick icons (bare icons, no boxes) -->
+    <text x="30" y="54" font-size="22" fill="#8fa0bf">☰</text>
+    <text x="180" y="54" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">10:30</text>
+    <g font-size="18" opacity="0.9">
+      <text x="248" y="55">📷</text>
+      <text x="278" y="55">🎟</text><circle cx="298" cy="38" r="7" fill="#3A8A8C"/><text x="295" y="42" font-size="10" fill="#fff" font-weight="700">2</text>
+      <text x="308" y="55">🃏</text><circle cx="328" cy="38" r="7" fill="#F59C3C"/><text x="325" y="42" font-size="10" fill="#fff" font-weight="700">1</text>
+    </g>
+
+    <!-- score strip: dots + points only -->
+    <g font-size="13" font-weight="700">
+      <rect x="36" y="76" width="74" height="30" rx="15" fill="#E8431A"/>
+      <text x="73" y="96" text-anchor="middle" fill="#fff">A · 47</text>
+      <circle cx="134" cy="91" r="6" fill="#3A8A8C"/><text x="146" y="96" fill="#8fa0bf">52</text>
+      <circle cx="190" cy="91" r="6" fill="#9b7be0"/><text x="202" y="96" fill="#8fa0bf">31</text>
+      <circle cx="246" cy="91" r="6" fill="#F59C3C"/><text x="258" y="96" fill="#8fa0bf">40</text>
+    </g>
+
+    <!-- hero -->
+    <circle cx="180" cy="230" r="62" fill="#E8431A" opacity="0.18"/>
+    <circle cx="180" cy="230" r="48" fill="#E8431A"/>
+    <text x="180" y="248" text-anchor="middle" font-size="46" fill="#fff" font-weight="800">A</text>
+    <text x="180" y="336" text-anchor="middle" font-size="32" font-weight="800" fill="#fff">Anna</text>
+    <text x="180" y="364" text-anchor="middle" font-size="18" fill="#F59C3C">★★☆</text>
+
+    <!-- only the actions that are possible right now -->
+    <rect x="30" y="470" width="300" height="96" rx="26" fill="#3A8A8C"/>
+    <rect x="30" y="560" width="300" height="6" rx="3" fill="#2a6567"/>
+    <text x="72" y="532" font-size="40">🚡</text>
+    <text x="132" y="530" font-size="28" font-weight="800" fill="#fff">Bergauf</text>
+
+    <rect x="30" y="584" width="300" height="96" rx="26" fill="#E8431A"/>
+    <rect x="30" y="674" width="300" height="6" rx="3" fill="#a92f10"/>
+    <text x="72" y="646" font-size="40">⛷️</text>
+    <text x="132" y="644" font-size="28" font-weight="800" fill="#fff">Bergab</text>
+  </g>
+
+  <!-- ═════════════ SCREEN 2: BERGAB ═════════════ -->
+  <g transform="translate(465,50)">
+    <rect width="360" height="780" rx="36" fill="#000"/>
+    <rect x="10" y="10" width="340" height="760" rx="28" fill="url(#glow)"/>
+
+    <text x="30" y="54" font-size="22" fill="#8fa0bf">☰</text>
+    <text x="180" y="54" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">10:30</text>
+    <g font-size="18" opacity="0.9">
+      <text x="248" y="55">📷</text>
+      <text x="278" y="55">🎟</text><circle cx="298" cy="38" r="7" fill="#3A8A8C"/><text x="295" y="42" font-size="10" fill="#fff" font-weight="700">2</text>
+      <text x="308" y="55">🃏</text><circle cx="328" cy="38" r="7" fill="#F59C3C"/><text x="325" y="42" font-size="10" fill="#fff" font-weight="700">1</text>
+    </g>
+    <g font-size="13" font-weight="700">
+      <rect x="36" y="76" width="74" height="30" rx="15" fill="#E8431A"/>
+      <text x="73" y="96" text-anchor="middle" fill="#fff">A · 47</text>
+      <circle cx="134" cy="91" r="6" fill="#3A8A8C"/><text x="146" y="96" fill="#8fa0bf">52</text>
+      <circle cx="190" cy="91" r="6" fill="#9b7be0"/><text x="202" y="96" fill="#8fa0bf">31</text>
+      <circle cx="246" cy="91" r="6" fill="#F59C3C"/><text x="258" y="96" fill="#8fa0bf">40</text>
+    </g>
+
+    <!-- dice: the result, nothing else -->
+    <rect x="76" y="140" width="92" height="92" rx="20" fill="#fff"/>
+    <text x="122" y="196" text-anchor="middle" font-size="44" font-weight="800" fill="#1B2B4B">4</text>
+    <text x="122" y="220" text-anchor="middle" font-size="13" fill="#F59C3C">★★</text>
+    <rect x="192" y="140" width="92" height="92" rx="20" fill="#dcecf7"/>
+    <text x="238" y="202" text-anchor="middle" font-size="44">❄️</text>
+    <!-- joker lives ON the die it applies to -->
+    <circle cx="282" cy="142" r="15" fill="#F59C3C" stroke="#0d1526" stroke-width="3"/>
+    <text x="282" y="148" text-anchor="middle" font-size="14">🃏</text>
+
+    <!-- the one number that matters: crossings left -->
+    <text x="180" y="290" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">2 Kreuzungen</text>
+    <circle cx="168" cy="310" r="6" fill="#fff"/><circle cx="192" cy="310" r="6" fill="#fff"/>
+
+    <!-- slopes: 2x2 tap tiles (tap = +1, tap badge = −1) -->
+    <g font-weight="800">
+      <rect x="30" y="340" width="144" height="110" rx="24" fill="#2F6FDB" opacity="0.35"/>
+      <text x="102" y="404" text-anchor="middle" font-size="22" fill="#fff" opacity="0.7">Blau</text>
+
+      <rect x="186" y="340" width="144" height="110" rx="24" fill="#D93A3A"/>
+      <text x="258" y="404" text-anchor="middle" font-size="22" fill="#fff">Rot</text>
+      <circle cx="318" cy="352" r="17" fill="#fff"/><text x="318" y="358" text-anchor="middle" font-size="15" fill="#D93A3A">1</text>
+
+      <rect x="30" y="462" width="144" height="110" rx="24" fill="#2b2f36" stroke="#5a6272" stroke-width="2"/>
+      <text x="102" y="526" text-anchor="middle" font-size="22" fill="#fff">Schwarz</text>
+      <circle cx="162" cy="474" r="17" fill="#fff"/><text x="162" y="480" text-anchor="middle" font-size="15" fill="#1B2B4B">1</text>
+
+      <rect x="186" y="462" width="144" height="110" rx="24" fill="#E8C21A" opacity="0.25"/>
+      <text x="258" y="526" text-anchor="middle" font-size="22" fill="#fff" opacity="0.6">Gelb</text>
+      <text x="316" y="484" text-anchor="middle" font-size="16">⚠</text>
+    </g>
+
+    <!-- optional extra: a single small icon, labelled -->
+    <circle cx="180" cy="626" r="24" fill="none" stroke="#8fa0bf" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="180" y="634" text-anchor="middle" font-size="20">🎲</text>
+
+    <rect x="30" y="676" width="300" height="64" rx="26" fill="#E8431A"/>
+    <rect x="30" y="734" width="300" height="6" rx="3" fill="#a92f10"/>
+    <text x="180" y="716" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">+10  →</text>
+  </g>
+
+  <!-- what was removed -->
+  <text x="430" y="852" text-anchor="middle" font-size="11" fill="#3b4a63">Weggelassen: Namen der Mitspieler, Runde, Untertitel, Erklärtexte, Punktwerte der Pisten, −/+-Knöpfe, Pause (erscheint nur 11:00–12:30).</text>
+  <text x="430" y="868" text-anchor="middle" font-size="11" fill="#3b4a63">Piste antippen = +1 Kreuzung · Zahl antippen = −1 · ⚠ = ohne Befugnis · 🃏 auf dem Würfel = Joker einsetzen · 🎲 = Extraaktivität</text>
+</svg>

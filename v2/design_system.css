@@ -1,0 +1,70 @@
+/* Layout of the style guide page only (design_system.html). Not used by the app. */
+
+.ds { max-width: 440px; margin: 0 auto; padding: var(--space-5) var(--gutter) var(--space-7); }
+.ds__title { font-size: var(--fs-xl); font-weight: var(--fw-display); }
+.ds__intro { color: var(--text-muted); margin-top: var(--space-2); }
+.ds__section { margin-top: var(--space-6); }
+.ds__h2 {
+  margin: var(--space-4) 0 var(--space-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-label);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ds-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4); }
+
+.ds-frame {
+  padding: var(--space-4);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ds-frame--sheet { padding: 0; overflow: hidden; }
+.ds-frame--sheet .sheet { position: static; animation: none; }
+.ds-event-card { min-height: 0; padding: var(--space-5) 0; }
+
+.ds-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.ds-swatch {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 72px;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-label);
+  color: #fff;
+}
+.ds-swatch code { font-size: var(--fs-xs); opacity: 0.8; font-family: inherit; }
+.ds-swatch--primary   { background: var(--primary); }
+.ds-swatch--secondary { background: var(--secondary); }
+.ds-swatch--joker     { background: var(--joker); color: var(--text-on-light); }
+.ds-swatch--surface   { background: var(--surface); border: 1px solid var(--line); }
+.ds-swatch--positive  { background: var(--positive); color: var(--text-on-light); }
+.ds-swatch--negative  { background: var(--negative); color: var(--text-on-light); }
+.ds-swatch--blue      { background: var(--piste-blue); }
+.ds-swatch--red       { background: var(--piste-red); }
+.ds-swatch--black     { background: var(--piste-black); border: 1px solid #5a6272; }
+.ds-swatch--yellow    { background: var(--piste-yellow); color: var(--text-on-light); }
+
+.ds-type { margin-bottom: var(--space-2); }
+.ds-type--display { font-size: var(--fs-display); font-weight: var(--fw-display); line-height: 1; }
+.ds-type--xxl     { font-size: var(--fs-xxl); font-weight: var(--fw-display); line-height: 1; }
+.ds-type--xl      { font-size: var(--fs-xl); font-weight: var(--fw-display); }
+.ds-type--lg      { font-size: var(--fs-lg); font-weight: var(--fw-display); }
+.ds-type--md      { font-size: var(--fs-md); }
+.ds-type--sm      { font-size: var(--fs-sm); font-weight: var(--fw-label); color: var(--text-muted); }
+
+.ds-icons { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4) var(--space-2); }
+.ds-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.ds-icon .icon { color: var(--text); }

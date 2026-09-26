@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════
+   App v2 — design tokens (UI-12.3)
+   Dark mode is the default and only theme.
+   Rules:
+   - Piste colours (--piste-*) are for pistes only — never for buttons, levels or players.
+   - Sonnen-Gelb (--joker) is reserved for the Joker coin layer.
+   - Player colours avoid all four piste colours.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Font: Work Sans, self-hosted (offline + no visitor IPs sent to Google) ── */
+@font-face { font-family: 'Work Sans'; font-weight: 500; font-style: normal; font-display: swap; src: url('fonts/work_sans_latin_500.woff2') format('woff2'); }
+@font-face { font-family: 'Work Sans'; font-weight: 600; font-style: normal; font-display: swap; src: url('fonts/work_sans_latin_600.woff2') format('woff2'); }
+@font-face { font-family: 'Work Sans'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/work_sans_latin_700.woff2') format('woff2'); }
+@font-face { font-family: 'Work Sans'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/work_sans_latin_800.woff2') format('woff2'); }
+
+:root {
+  color-scheme: dark;
+
+  /* ── Brand palette (brand/CLAUDE.md) ── */
+  --alpine-night:  #1B2B4B;
+  --summit-white:  #F5F5F0;
+  --alpengluehen:  #E8431A;
+  --glacier-teal:  #3A8A8C;
+  --sonnen-gelb:   #F59C3C;
+  --rock-grey:     #6B7280;
+
+  /* ── Surfaces (dark) ── */
+  --bg-top:          #23355c;
+  --bg-bottom:       #0d1526;
+  --bg:              radial-gradient(120% 80% at 50% 0%, var(--bg-top) 0%, var(--bg-bottom) 100%);
+  --surface:         var(--alpine-night);   /* cards, sheets */
+  --surface-raised:  #22355a;               /* elements on a surface */
+  --surface-sunken:  #1f2a40;               /* locked / inactive tiles */
+  --line:            #34425e;
+  --scrim:           rgba(5, 10, 20, 0.6);  /* behind sheets */
+
+  /* ── Text ── */
+  --text:        var(--summit-white);
+  --text-muted:  #8fa0bf;
+  --text-dim:    #5d6b86;
+  --text-on-light: var(--alpine-night);
+
+  /* ── Roles ── */
+  --primary:          var(--alpengluehen);  /* main button, Bergab */
+  --primary-shade:    #a92f10;
+  --secondary:        var(--glacier-teal);  /* Bergauf, secondary actions */
+  --secondary-shade:  #2a6567;
+  --joker:            var(--sonnen-gelb);
+  --level-star:       #FFC978;              /* Fahrniveau stars — lighter amber, deliberately not the Joker token */
+  --gratis:           var(--glacier-teal);
+  --positive:         #4CC38A;
+  --negative:         #FF8A7A;
+  --focus:            #8fd3ff;
+
+  /* ── Piste colours (pistes only). Tuned for white text on dark. ── */
+  --piste-blue:    #2F6FDB;
+  --piste-red:     #D93A3A;
+  --piste-black:   #2b2f36;
+  --piste-yellow:  #F0C040;   /* dark text on it */
+
+  /* ── Player colours (6, none of them a piste colour) ── */
+  --player-1: #E8431A;  /* Alpenglühen */
+  --player-2: #3FA9AB;  /* Glacier teal, lifted for dark */
+  --player-3: #9B7BE0;  /* Violet */
+  --player-4: #4CC38A;  /* Mint */
+  --player-5: #E86FB0;  /* Pink */
+  --player-6: #C9A27A;  /* Sand */
+
+  /* ── Dice faces ── */
+  --die-light:   #ffffff;
+  --die-event:   #dcecf7;
+  --die-text:    var(--alpine-night);
+
+  /* ── Typography (Work Sans only; tabular numbers for scores and time) ── */
+  --font: 'Work Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-xs:      12px;   /* badges */
+  --fs-sm:      14px;   /* secondary labels */
+  --fs-md:      16px;   /* body */
+  --fs-lg:      20px;   /* tile names, sheet titles */
+  --fs-xl:      28px;   /* action buttons, headlines */
+  --fs-xxl:     40px;   /* die numbers */
+  --fs-display: 56px;   /* avatar initial, final score */
+  --fw-regular: 500;
+  --fw-label:   600;
+  --fw-number:  700;
+  --fw-display: 800;
+
+  /* ── Spacing (4-pt scale) ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --gutter:  var(--space-4);
+
+  /* ── Shape ── */
+  --radius-sm:   10px;
+  --radius-md:   18px;
+  --radius-lg:   26px;
+  --radius-pill: 999px;
+  --press-depth: 6px;    /* chunky 3D bottom edge of buttons */
+
+  /* ── Sizes ── */
+  --tap-min:     48px;   /* smallest touch target */
+  --icon:        24px;
+  --die-lg:      84px;
+  --die-md:      64px;
+  --die-sm:      52px;
+  --avatar-sm:   22px;
+  --avatar-lg:   96px;
+  --app-max:     480px;  /* portrait content width on large screens */
+
+  /* ── Motion ── */
+  --ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:     120ms;
+  --dur:          250ms;
+  --dur-slow:     400ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; }
+}
