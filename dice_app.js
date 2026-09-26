@@ -42,11 +42,18 @@ function dieImg(src, alt, cover = false) {
   return `<img src="${src}" alt="${alt}" style="width:100%;height:100%;object-fit:${fit};">`;
 }
 
+// Entscheidungswürfel face: happy smiley = success, sad smiley = failure.
+function decisionFaceHTML(happy) {
+  return happy
+    ? dieImg('img/entscheidung_froehlich.svg', 'Fröhlicher Smiley')
+    : dieImg('img/entscheidung_traurig.svg', 'Trauriger Smiley');
+}
+
 // 3D die cube helpers — unified roll animation shared by every die in the app.
 // Based on rolling_die_example.html: spins to a random target face (one of 6)
 // using smoothstep easing over 500ms. The final result is placed on that
 // target face just before the animation ends, so every die — transport, event,
-// descent, Rot/Grün — rolls with the same look and feel.
+// descent, Entscheidung — rolls with the same look and feel.
 const ROLL_DURATION = 500; // ms — animation duration (matches example)
 const FACE_NAMES    = ['front','back','right','left','top','bottom'];
 
@@ -495,7 +502,7 @@ function setAction(a) {
 //   - Bergauf: rolled:                   "Zug beenden →"     [enabled, green]
 //   - Bergab: not yet rolled:            "Erst würfeln …"    [disabled, neutral]
 //   - Bergab: rolled, Unfall/Helikopter: "Bestätigen & weiter →" [enabled, orange]
-//   - Bergab: rolled, OhneBefugnis pending: "Erst Rot/Grün würfeln" [disabled, warn]
+//   - Bergab: rolled, OhneBefugnis pending: "Erst Entscheidungswürfel würfeln" [disabled, warn]
 //   - Bergab: rolled, crossings chosen:  "X Punkte & weiter →" [enabled, green]
 //   - Bergab: rolled, no slope chosen:   "Weiter (0 Punkte) →" [enabled, muted-green]
 //   - Pause: no option chosen:           "Pause wählen …"    [disabled]
@@ -563,7 +570,7 @@ function updatePrimaryActionButton() {
     // Check if Ohne-Befugnis roll is still required
     const confirmBtn = document.getElementById('btnConfirmDescent');
     if (confirmBtn && confirmBtn.disabled && confirmBtn.textContent.startsWith('⚠')) {
-      set('Erst Rot/Grün würfeln', false, 'btn-danger');
+      set('Erst Entscheidungswürfel würfeln', false, 'btn-danger');
       return;
     }
     // Compute point total (descent pts + any pending Extraaktivität pts)
@@ -769,7 +776,7 @@ function resetDescentDice() {
   state.eventIndex = -1;
   state.jokerUsedOnEvent = false;
   clearSlopeSelection();
-  resetRGAccordions();
+  resetDecisionAccordions();
   const rollBtn = document.getElementById('btnRollBothDice');
   if (rollBtn) rollBtn.disabled = false;
 }
@@ -1023,7 +1030,7 @@ function updateOhneBefugnisUI() {
     if (ohneBefugnisResult === null) {
       confirmBtn.disabled = true;
       confirmBtn.className = 'btn btn-warn';
-      confirmBtn.textContent = '⚠ Erst Rot/Grün würfeln';
+      confirmBtn.textContent = '⚠ Erst Entscheidungswürfel würfeln';
     } else {
       confirmBtn.disabled = false;
       confirmBtn.className = 'btn btn-success';
@@ -1031,10 +1038,10 @@ function updateOhneBefugnisUI() {
     }
   } else {
     rollArea.style.display = 'none';
-    // Reset the inline RG die when no forbidden slope is selected
-    const dieEl = document.getElementById('rgDieOhneBefugnisInline');
+    // Reset the inline Entscheidungswürfel when no forbidden slope is selected
+    const dieEl = document.getElementById('decisionDieOhneBefugnisInline');
     if (dieEl) {
-      dieEl.className = 'die die-rg-neutral';
+      dieEl.className = 'die die-decision';
       dieEl.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
     }
     const resEl = document.getElementById('ohneBefugnisInlineResult');
@@ -1114,9 +1121,9 @@ function clearSlopeSelection() {
   document.querySelectorAll('.kbox').forEach(b => b.classList.remove('kbox-active', 'kbox-disabled', 'kbox-forbidden-active'));
   ohneBefugnisResult = null;
   // Reset inline roll area
-  const dieInline = document.getElementById('rgDieOhneBefugnisInline');
+  const dieInline = document.getElementById('decisionDieOhneBefugnisInline');
   if (dieInline) {
-    dieInline.className = 'die die-rg-neutral';
+    dieInline.className = 'die die-decision';
     dieInline.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
   }
   const resInline = document.getElementById('ohneBefugnisInlineResult');
@@ -1130,35 +1137,31 @@ function clearSlopeSelection() {
 
 function rollOhneBefugnisInline() {
   const p = currentPlayer();
-  const isGreen = Math.random() < 0.5;
-  ohneBefugnisResult = isGreen;
+  const isHappy = Math.random() < 0.5;
+  ohneBefugnisResult = isHappy;
 
   // Disable re-roll button immediately
   const rollBtn = document.getElementById('btnRollOhneBefugnis');
   if (rollBtn) rollBtn.disabled = true;
 
-  const dieEl = document.getElementById('rgDieOhneBefugnisInline');
-  dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'}`;
-  animateDieRoll(
-    dieEl,
-    () => { const g = Math.random() < 0.5; return dieImg(g ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', g ? 'Grün' : 'Rot'); },
-    dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot')
-  );
+  const dieEl = document.getElementById('decisionDieOhneBefugnisInline');
+  dieEl.className = 'die die-decision';
+  animateDieRoll(dieEl, () => decisionFaceHTML(Math.random() < 0.5), decisionFaceHTML(isHappy));
 
   setTimeout(() => {
     const resEl = document.getElementById('ohneBefugnisInlineResult');
     resEl.style.display = '';
-    if (isGreen) {
+    if (isHappy) {
       resEl.className = 'result-box success';
-      resEl.textContent = '✅ Grün – normale Punkte werden eingetragen.';
+      resEl.textContent = '🙂 Fröhlicher Smiley – normale Punkte werden eingetragen.';
     } else {
       resEl.className = 'result-box danger';
       const jokerBtn = p && p.joker > 0
         ? `<button class="btn btn-warn btn--mt-8 btn--sm" onclick="useJokerOnOhneBefugnis()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
         : '';
-      resEl.innerHTML = `✗ Rot – Punkte werden als negative Werte eingetragen!${jokerBtn}`;
+      resEl.innerHTML = `🙁 Trauriger Smiley – Punkte werden als negative Werte eingetragen!${jokerBtn}`;
     }
-    addHistory(`${p.name}: Ohne Befugnis → ${isGreen ? 'GRÜN → normale Punkte' : 'ROT → negative Punkte'}`);
+    addHistory(`${p.name}: Ohne Befugnis → ${isHappy ? 'FRÖHLICHER SMILEY → normale Punkte' : 'TRAURIGER SMILEY → negative Punkte'}`);
     updateDescentPreview();
     updateOhneBefugnisUI();
   }, ROLL_DURATION);
@@ -1221,7 +1224,7 @@ function confirmDescentPoints() {
     : `${p.name}: Abfahrt ohne Pisten-Punkte bestätigt${extraPts > 0 ? ' + Extraaktivität +12':''}`;
   addHistory(histLine);
   if (extraaktivitaetPending !== null) {
-    addHistory(`${p.name}: Extraaktivität → ${extraPts > 0 ? 'GRÜN → +12 Punkte' : 'ROT → 0 Punkte'}`);
+    addHistory(`${p.name}: Extraaktivität → ${extraPts > 0 ? 'FRÖHLICHER SMILEY → +12 Punkte' : 'TRAURIGER SMILEY → 0 Punkte'}`);
   }
   saveState();
   updateAll();
@@ -1236,15 +1239,15 @@ function confirmDescentPoints() {
 }
 
 // ═══════════════════════════════════════
-// ROT/GRÜN ACCORDION PANELS (Zug tab – Bergab)
+// ENTSCHEIDUNGSWÜRFEL ACCORDION PANELS (Zug tab – Bergab)
 // ═══════════════════════════════════════
 
 // Tracks the result of the Ohne Befugnis roll for the current descent
-// null = not yet rolled, true = green (use positive pts), false = red (negate pts)
+// null = not yet rolled, true = happy smiley (use positive pts), false = sad smiley (negate pts)
 let ohneBefugnisResult = null;
 
 // Tracks pending Extraaktivität points — applied in confirmDescentPoints(), not at roll time
-// null = not rolled this turn, 0 = rolled red, 12 = rolled green
+// null = not rolled this turn, 0 = rolled sad smiley, 12 = rolled happy smiley
 let extraaktivitaetPending = null;
 
 function toggleAccordion(which) {
@@ -1256,27 +1259,27 @@ function toggleAccordion(which) {
   if (chevron) chevron.textContent = open ? '▸' : '▾';
 }
 
-function resetRGAccordions() {
+function resetDecisionAccordions() {
   // Close Extraaktivität panel and reset its die + result
   extraaktivitaetPending = null;
   const bodyExtra = document.getElementById('bodyExtraaktivitaet');
   if (bodyExtra) bodyExtra.style.display = 'none';
   const chevronExtra = document.getElementById('chevronExtraaktivitaet');
   if (chevronExtra) chevronExtra.textContent = '▸';
-  const rgDieExtra = document.getElementById('rgDieExtra');
-  if (rgDieExtra) {
-    rgDieExtra.className = 'die die-rg-neutral';
-    rgDieExtra.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
+  const decisionDieExtra = document.getElementById('decisionDieExtra');
+  if (decisionDieExtra) {
+    decisionDieExtra.className = 'die die-decision';
+    decisionDieExtra.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
   }
-  const rgResultExtra = document.getElementById('rgResultExtra');
-  if (rgResultExtra) rgResultExtra.style.display = 'none';
+  const decisionResultExtra = document.getElementById('decisionResultExtra');
+  if (decisionResultExtra) decisionResultExtra.style.display = 'none';
   const titleEl = document.getElementById('extraaktivitaetTitle');
   if (titleEl) titleEl.textContent = '🏂 Extraaktivität';
 
   // Reset inline Ohne-Befugnis area
-  const dieInline = document.getElementById('rgDieOhneBefugnisInline');
+  const dieInline = document.getElementById('decisionDieOhneBefugnisInline');
   if (dieInline) {
-    dieInline.className = 'die die-rg-neutral';
+    dieInline.className = 'die die-decision';
     dieInline.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
   }
   const resInline = document.getElementById('ohneBefugnisInlineResult');
@@ -1289,37 +1292,33 @@ function resetRGAccordions() {
   ohneBefugnisResult = null;
 }
 
-function rollRGInTurn(context) {
-  const isGreen = Math.random() < 0.5;
+function rollDecisionInTurn(context) {
+  const isHappy = Math.random() < 0.5;
 
   if (context === 'extraaktivitaet') {
     const rollBtn = document.getElementById('btnRollExtraaktivitaet');
     if (rollBtn) rollBtn.disabled = true;
 
-    const dieEl = document.getElementById('rgDieExtra');
+    const dieEl = document.getElementById('decisionDieExtra');
     if (!dieEl) return;
-    dieEl.className = `die ${isGreen ? 'die-rg-green' : 'die-rg-red'}`;
-    animateDieRoll(
-      dieEl,
-      () => { const g = Math.random() < 0.5; return dieImg(g ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', g ? 'Grün' : 'Rot'); },
-      dieImg(isGreen ? 'img/rg_gruen.svg' : 'img/rg_rot.svg', isGreen ? 'Grün' : 'Rot')
-    );
+    dieEl.className = 'die die-decision';
+    animateDieRoll(dieEl, () => decisionFaceHTML(Math.random() < 0.5), decisionFaceHTML(isHappy));
 
     setTimeout(() => {
-      extraaktivitaetPending = isGreen ? 12 : 0;
-      const res = document.getElementById('rgResultExtra');
+      extraaktivitaetPending = isHappy ? 12 : 0;
+      const res = document.getElementById('decisionResultExtra');
       if (res) {
         res.style.display = '';
-        if (isGreen) {
+        if (isHappy) {
           res.className = 'result-box success';
-          res.textContent = '✅ Grün – +12 Punkte werden beim Zug beenden eingetragen.';
+          res.textContent = '🙂 Fröhlicher Smiley – +12 Punkte werden beim Zug beenden eingetragen.';
         } else {
           res.className = 'result-box danger';
-          res.textContent = '✗ Rot – 0 Punkte.';
+          res.textContent = '🙁 Trauriger Smiley – 0 Punkte.';
         }
       }
       const titleEl = document.getElementById('extraaktivitaetTitle');
-      if (titleEl) titleEl.textContent = isGreen ? '🏂 Extraaktivität · ✅ +12 Pkt' : '🏂 Extraaktivität · ✗ +0 Pkt';
+      if (titleEl) titleEl.textContent = isHappy ? '🏂 Extraaktivität · 🙂 +12 Pkt' : '🏂 Extraaktivität · 🙁 +0 Pkt';
       updatePrimaryActionButton();
     }, ROLL_DURATION);
   }
@@ -2232,7 +2231,7 @@ Object.assign(window, {
   rollTransportDice, resetTransportDice,
   rollBothDice, useJokerOnEvent, useJokerOnOhneBefugnis,
   rollOhneBefugnisInline, confirmDescentPoints, clearSlopeSelection,
-  toggleAccordion, rollRGInTurn,
+  toggleAccordion, rollDecisionInTurn,
   selectPause,
   addSighting, removeSighting, adjustPoints, adjustCoins,
   openManualAdjustConfirm, confirmOpenManualAdjust,

@@ -13,7 +13,7 @@
     --piste-yellow: #f0c040;
 
     /* ── Semantic UI tokens ── */
-    --green: #4caf50;   /* success / Rot-Grün green result */
+    --green: #4caf50;   /* success (buttons, positive deltas, result boxes) */
     --bg:    var(--summit-white);
     --card:  #ffffff;
     --border: #D8D9D2;
@@ -175,7 +175,7 @@
   }
   /* ── 3D CUBE STRUCTURE ── */
   /* Shared roll animation — see animateDieRoll() in dice_app.js.
-     Every die in the app (transport, event, descent, Rot/Grün) uses this
+     Every die in the app (transport, event, descent, Entscheidung) uses this
      same cube so the roll looks and feels identical across dice. */
   .die-cube {
     width: 100%; height: 100%;
@@ -187,7 +187,7 @@
   }
   /* Each face carries its own background, border, and rounded corners —
      inherited from the colour modifier classes (.die-transport, .die-event,
-     .die-descent-*, .die-rg-*). No background on the parent wrapper, so
+     .die-descent-*, .die-decision). No background on the parent wrapper, so
      there is no flat frame behind the cube. */
 .die-face {
     position: absolute; top: 0; left: 0;
@@ -209,14 +209,14 @@
   .die-face-top    { transform: rotateX(90deg)   translateZ(32px); }
   .die-face-bottom { transform: rotateX(-90deg)  translateZ(32px); }
   /* Inline 52px variant (Ohne-Befugnis inline die) — half-size = 26px */
-  #rgDieOhneBefugnisInline .die-face-front  { transform: translateZ(26px); }
-  #rgDieOhneBefugnisInline .die-face-back   { transform: rotateY(180deg)  translateZ(26px); }
-  #rgDieOhneBefugnisInline .die-face-right  { transform: rotateY(90deg)   translateZ(26px); }
-  #rgDieOhneBefugnisInline .die-face-left   { transform: rotateY(-90deg)  translateZ(26px); }
-  #rgDieOhneBefugnisInline .die-face-top    { transform: rotateX(90deg)   translateZ(26px); }
-  #rgDieOhneBefugnisInline .die-face-bottom { transform: rotateX(-90deg)  translateZ(26px); }
+  #decisionDieOhneBefugnisInline .die-face-front  { transform: translateZ(26px); }
+  #decisionDieOhneBefugnisInline .die-face-back   { transform: rotateY(180deg)  translateZ(26px); }
+  #decisionDieOhneBefugnisInline .die-face-right  { transform: rotateY(90deg)   translateZ(26px); }
+  #decisionDieOhneBefugnisInline .die-face-left   { transform: rotateY(-90deg)  translateZ(26px); }
+  #decisionDieOhneBefugnisInline .die-face-top    { transform: rotateX(90deg)   translateZ(26px); }
+  #decisionDieOhneBefugnisInline .die-face-bottom { transform: rotateX(-90deg)  translateZ(26px); }
   /* Inline Ohne-Befugnis die — smaller 52px variant */
-  #rgDieOhneBefugnisInline { width: 52px; height: 52px; flex-shrink: 0; }
+  #decisionDieOhneBefugnisInline { width: 52px; height: 52px; flex-shrink: 0; }
   .die:active .die-cube { transform: scale(0.93); }
   /* Held indicator — border/glow applied to the faces so it wraps the cube itself */
   .die.held .die-face {
@@ -261,10 +261,12 @@
     color: var(--alpine-night);
   }
 
-  /* Rot/Grün — Alpenglühen for red, brand green for success, Rock Grey neutral */
-  .die-rg-green   .die-face { background: linear-gradient(135deg, #5cb85c, #3d8b3d); color: #ffffff; }
-  .die-rg-red     .die-face { background: linear-gradient(135deg, #f06030, var(--alpenglühen)); color: #ffffff; }
-  .die-rg-neutral .die-face { background: linear-gradient(135deg, #8a9099, var(--rock-grey)); color: var(--summit-white); }
+  /* Entscheidungswürfel — white faces; the happy/sad smiley SVG fills the surface.
+     No red/green on the die itself, the outcome is carried by the smiley. */
+  .die-decision .die-face {
+    background: #ffffff;
+    border-color: var(--border);
+  }
 
 /* ── BUTTONS ── */
   .btn {

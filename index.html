@@ -189,11 +189,11 @@
         <!-- Ohne Befugnis inline roll area — shown when forbidden slope is selected -->
         <div id="ohneBefugnisRollArea" style="display:none">
           <div class="result-box warning result-box--flush-top">
-            ⚠ Du hast eine nicht erlaubte Piste gewählt. Würfle den Rot/Grün-Würfel:
-            <br><span class="text-muted-sm">Grün = normale Punkte · Rot = negative Punkte</span>
+            ⚠ Du hast eine nicht erlaubte Piste gewählt. Würfle den Entscheidungswürfel:
+            <br><span class="text-muted-sm">🙂 Fröhlicher Smiley = normale Punkte · 🙁 Trauriger Smiley = negative Punkte</span>
           </div>
           <div class="ohne-befugnis-roll-row">
-            <div class="die die-rg-neutral" id="rgDieOhneBefugnisInline"></div>
+            <div class="die die-decision" id="decisionDieOhneBefugnisInline"></div>
             <button class="btn btn-warn" id="btnRollOhneBefugnis" onclick="rollOhneBefugnisInline()">🎲 Würfeln</button>
           </div>
           <div id="ohneBefugnisInlineResult" style="display:none"></div>
@@ -217,15 +217,15 @@
       </button>
       <div class="accordion-body" id="bodyExtraaktivitaet" style="display:none">
         <p class="section-hint info-hint">
-          Nur für Fortgeschrittene &amp; Profis. Grün = +12 Punkte · Rot = 0 Punkte.
+          Nur für Fortgeschrittene &amp; Profis. 🙂 Fröhlicher Smiley = +12 Punkte · 🙁 Trauriger Smiley = 0 Punkte.
         </p>
         <div class="dice-row">
-          <div class="die die-rg-neutral" id="rgDieExtra"></div>
+          <div class="die die-decision" id="decisionDieExtra"></div>
         </div>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btnRollExtraaktivitaet" onclick="rollRGInTurn('extraaktivitaet')">🎲 Würfeln</button>
+          <button class="btn btn-primary" id="btnRollExtraaktivitaet" onclick="rollDecisionInTurn('extraaktivitaet')">🎲 Würfeln</button>
         </div>
-        <div id="rgResultExtra" class="result-box info result-box--mt-8" style="display:none"></div>
+        <div id="decisionResultExtra" class="result-box info result-box--mt-8" style="display:none"></div>
       </div>
     </div>
 

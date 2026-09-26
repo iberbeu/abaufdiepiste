@@ -197,7 +197,7 @@ export function effectiveCrossings(descentValue, eventSym, jokerUsedOnEvent) {
  *
  * @param {Object} slopeSelection   — { blue: number, red: number, black: number, yellow: number }
  * @param {string|null} eventSym    — EVENT_FACES[n].sym, or null
- * @param {boolean|null} ohneBefugnisResult — null=not rolled, true=green, false=red
+ * @param {boolean|null} ohneBefugnisResult — null=not rolled, true=happy smiley, false=sad smiley
  * @param {string[]} allowedSlopes  — colours the player may use (e.g. ['blue','red'] for Anfänger)
  * @returns {{ total: number, basePoints: number, parts: string[], bonusText: string }}
  */
@@ -227,7 +227,7 @@ export function calcDescentPoints(slopeSelection, eventSym, ohneBefugnisResult, 
   if (ohneBefugnisResult === false) {
     let allowedTotal = allowedBase;
     // Pulverschnee bonus only when the player has at least one legitimate slope:
-    // skiing only on forbidden pistes with a red penalty earns no powder bonus.
+    // skiing only on forbidden pistes with a sad-smiley penalty earns no powder bonus.
     if (eventSym === 'pulverschnee' && allowedBase > 0) {
       allowedTotal += 5;
       bonusText = ' (+5 Pulverschnee)';

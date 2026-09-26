@@ -307,22 +307,22 @@ describe('calcDescentPoints — Pulverschnee (+5 bonus)', () => {
 
 const anfaengerSlopes = ['blue', 'red'];
 
-describe('calcDescentPoints — Ohne Befugnis (red result negates)', () => {
-  it('negates only forbidden slope on red (only forbidden slope selected)', () => {
-    // Anfänger selects 1×black (forbidden, 6pts) — red die → -6
+describe('calcDescentPoints — Ohne Befugnis (sad smiley negates)', () => {
+  it('negates only forbidden slope on sad smiley (only forbidden slope selected)', () => {
+    // Anfänger selects 1×black (forbidden, 6pts) — sad smiley → -6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
     const { total } = calcDescentPoints(sel, noEvent, false, anfaengerSlopes);
     expect(total).toBe(-6);
   });
 
-  it('keeps allowed points, negates forbidden on red (mixed selection)', () => {
-    // Anfänger selects 1×red (allowed, 4pts) + 1×black (forbidden, 6pts) — red die → 4-6=-2
+  it('keeps allowed points, negates forbidden on sad smiley (mixed selection)', () => {
+    // Anfänger selects 1×red (allowed, 4pts) + 1×black (forbidden, 6pts) — sad smiley → 4-6=-2
     const sel = { blue: 0, red: 1, black: 1, yellow: 0 };
     const { total } = calcDescentPoints(sel, noEvent, false, anfaengerSlopes);
     expect(total).toBe(-2);
   });
 
-  it('does not negate on green (ohneBefugnisResult=true)', () => {
+  it('does not negate on happy smiley (ohneBefugnisResult=true)', () => {
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
     const { total } = calcDescentPoints(sel, noEvent, true, anfaengerSlopes);
     expect(total).toBe(6);
@@ -336,13 +336,13 @@ describe('calcDescentPoints — Ohne Befugnis (red result negates)', () => {
 });
 
 describe('calcDescentPoints — Ohne Befugnis joker rescue (FEAT-19)', () => {
-  it('joker rescue (flips result to true) gives same total as natural green roll', () => {
+  it('joker rescue (flips result to true) gives same total as natural happy-smiley roll', () => {
     // 1×black=6 (forbidden for Anfänger)
-    // red (no rescue) → -6; green (natural or joker-rescued) → +6
+    // sad smiley (no rescue) → -6; happy smiley (natural or joker-rescued) → +6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total: red }     = calcDescentPoints(sel, noEvent, false, anfaengerSlopes);
+    const { total: sad }     = calcDescentPoints(sel, noEvent, false, anfaengerSlopes);
     const { total: rescued } = calcDescentPoints(sel, noEvent, true,  anfaengerSlopes);
-    expect(red).toBe(-6);
+    expect(sad).toBe(-6);
     expect(rescued).toBe(6);
   });
 
@@ -353,7 +353,7 @@ describe('calcDescentPoints — Ohne Befugnis joker rescue (FEAT-19)', () => {
     expect(total).toBe(6);
   });
 
-  it('without rescue (red): forbidden penalty is full, Schneesturm changes nothing', () => {
+  it('without rescue (sad smiley): forbidden penalty is full, Schneesturm changes nothing', () => {
     // 1×black=6 (forbidden), no allowed slopes → total = 0-6 = -6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
     const { total } = calcDescentPoints(sel, 'schneesturm', false, anfaengerSlopes);
@@ -370,23 +370,23 @@ describe('calcDescentPoints — combined modifiers', () => {
     expect(t2).toBe(13);
   });
 
-  it('schneesturm + ohneBefugnis red + mixed slopes: only the forbidden penalty applies', () => {
-    // 1×red=4 (allowed) + 1×black=6 (forbidden) — red die → 4-6 = -2
+  it('schneesturm + ohneBefugnis sad smiley + mixed slopes: only the forbidden penalty applies', () => {
+    // 1×red=4 (allowed) + 1×black=6 (forbidden) — sad smiley → 4-6 = -2
     const sel = { blue: 0, red: 1, black: 1, yellow: 0 };
     const { total } = calcDescentPoints(sel, 'schneesturm', false, anfaengerSlopes);
     expect(total).toBe(-2);
   });
 
-  it('pulverschnee + ohneBefugnis red + mixed slopes: bonus applies to allowed portion only', () => {
-    // 1×red=4 (allowed) + 1×black=6 (forbidden) — pulverschnee — red die
+  it('pulverschnee + ohneBefugnis sad smiley + mixed slopes: bonus applies to allowed portion only', () => {
+    // 1×red=4 (allowed) + 1×black=6 (forbidden) — pulverschnee — sad smiley
     // allowed: 4+5=9; forbidden: 6 → total = 9-6 = 3
     const sel = { blue: 0, red: 1, black: 1, yellow: 0 };
     const { total } = calcDescentPoints(sel, 'pulverschnee', false, anfaengerSlopes);
     expect(total).toBe(3);
   });
 
-  it('pulverschnee + ohneBefugnis red + only forbidden: no bonus (nothing to ski legitimately)', () => {
-    // 1×black=6 (all forbidden) — pulverschnee — red die
+  it('pulverschnee + ohneBefugnis sad smiley + only forbidden: no bonus (nothing to ski legitimately)', () => {
+    // 1×black=6 (all forbidden) — pulverschnee — sad smiley
     // allowedBase=0 → bonus guard blocks; total = 0-6 = -6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
     const { total } = calcDescentPoints(sel, 'pulverschnee', false, anfaengerSlopes);
