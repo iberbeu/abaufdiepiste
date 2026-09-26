@@ -5,17 +5,10 @@
 // Remove an entry here when its real screen module is added.
 // ═══════════════════════════════════════════════════════════════
 
-import { createGame, pauseStatus } from '../flow_logic.js';
-import { store, setGame } from '../v2_store.js';
+import { store } from '../v2_store.js';
 import { registerScreen, go, back } from '../v2_router.js';
 
 const PLACEHOLDERS = {
-  setup_players:    { chrome: false, title: 'Wie viele spielen?', task: 'UI-12.6', links: [['Weiter', 'setup_names'], ['Zurück', 'home']] },
-  setup_names:      { chrome: false, title: 'Namen',             task: 'UI-12.6', links: [['Weiter', 'setup_talstation']] },
-  setup_talstation: { chrome: false, title: 'Talstation',        task: 'UI-12.6', links: [['Weiter', 'setup_length']] },
-  setup_length:     { chrome: false, title: 'Spieldauer',        task: 'UI-12.6', links: [['Testspiel starten (2 Spieler)', startTestGame]] },
-
-  turn_start:       { chrome: true, title: 'Zugbeginn', task: 'UI-12.7', links: [['Bergauf', 'bergauf_roll'], ['Bergab', 'bergab_roll'], ['Pause', goPause]] },
   bergauf_roll:     { chrome: true, title: 'Bergauf · Würfeln',  task: 'UI-12.8', links: [['Würfeln', 'bergauf_result'], ['Zurück', 'turn_start']] },
   bergauf_result:   { chrome: true, title: 'Bergauf · Ergebnis', task: 'UI-12.8', links: [['Fertig', 'turn_end']] },
   bergab_roll:      { chrome: true, title: 'Bergab · Würfeln',   task: 'UI-12.9', links: [['Würfeln', 'bergab_result'], ['Zurück', 'turn_start']] },
@@ -24,20 +17,12 @@ const PLACEHOLDERS = {
 
   game_end:         { chrome: false, title: 'Skitag vorbei!',    task: 'UI-12.13', links: [['Schlusswertung starten', 'schlusswertung']] },
   schlusswertung:   { chrome: false, title: 'Schlusswertung',    task: 'UI-12.13', links: [['Weiter', 'ranking']] },
-  ranking:          { chrome: false, title: 'Rangliste',         task: 'UI-12.13', links: [['Neues Spiel', 'setup_players'], ['Zum Start', 'home']] },
+  ranking:          { chrome: false, title: 'Rangliste',         task: 'UI-12.13', links: [['Neues Spiel', () => go('setup_players', { fresh: true })], ['Zum Start', 'home']] },
 
   punkteblock:      { chrome: false, title: 'Punkteblock',       task: 'UI-12.14', links: [['Zum Start', 'home']] },
   menu:             { chrome: false, title: 'Menü',              task: 'UI-12.12', links: [['Zurück', back], ['Zum Start', 'home']] },
+  menu_scores:      { chrome: false, title: 'Punkte',            task: 'UI-12.12', links: [['Zurück', back]] },
 };
-
-function startTestGame() {
-  setGame(createGame([{ name: 'Anna', talstation: 'Dorf' }, { name: 'Ben', talstation: 'Bahnhof' }]));
-  go('turn_start');
-}
-
-function goPause() {
-  if (pauseStatus(store.game) === 'open') go('pause');
-}
 
 Object.entries(PLACEHOLDERS).forEach(([id, def]) => {
   registerScreen(id, {

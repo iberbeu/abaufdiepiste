@@ -7,6 +7,10 @@
 .home__logo { width: 112px; height: 112px; border-radius: var(--radius-lg); }
 .home__title { font-size: var(--fs-xl); font-weight: var(--fw-display); margin-bottom: var(--space-4); }
 
+/* ── TURN START: player on top, the three actions at the bottom (thumb reach) ── */
+.turn-start { padding-bottom: var(--space-4); }
+.turn-start > .action-list { margin-top: auto; }
+
 /* ── TURN END ── */
 .turn-end { display: grid; place-items: center; }
 .turn-end__check { color: var(--positive); --icon: 72px; animation: burst var(--dur-slow) var(--ease-spring); }
@@ -38,3 +42,11 @@
 }
 .placeholder__title { font-size: var(--fs-xl); font-weight: var(--fw-display); }
 .placeholder__task { color: var(--text-dim); font-size: var(--fs-sm); }
+
+/* ── SETUP WIZARD ── */
+.wizard { display: flex; flex-direction: column; align-items: center; gap: var(--space-5); padding-bottom: var(--space-4); }
+.wizard__head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; }
+.wizard__dots { display: flex; gap: var(--space-2); }
+.wizard__title { font-size: var(--fs-xl); font-weight: var(--fw-display); text-align: center; }
+.wizard__hint { color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
+.wizard__cta { margin-top: auto; }

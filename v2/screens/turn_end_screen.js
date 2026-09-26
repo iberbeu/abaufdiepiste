@@ -10,6 +10,7 @@ const PAUSE_MS = 800;
 
 registerScreen('turn_end', {
   chrome: true,
+  quickActions: false,   // the current player changes here
   mount(el, { points = 0 } = {}) {
     const burst = el.querySelector('[data-ref="burst"]');
     if (points === 0) {
@@ -24,7 +25,7 @@ registerScreen('turn_end', {
       const game = store.game;
       const { gameOver } = advanceTurn(game);
       saveGame();
-      // Unlike v1, round events are skipped on game over: with ≥10 rounds all of them
+      // Unlike v1, round events are skipped on game over: with ≥ MIN_ROUNDS (11) rounds all of them
       // have already fired earlier. Revisit if MIN_ROUNDS drops or a late event is added.
       if (gameOver) return go('game_end');
       const events = dueRoundEvents(game);

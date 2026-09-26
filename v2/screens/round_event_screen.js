@@ -13,6 +13,7 @@ const EVENTS = {
 
 registerScreen('round_event', {
   chrome: true,
+  quickActions: false,   // between turns: the current player already changed
   mount(el, { queue = [] } = {}) {
     const [id, ...rest] = queue;
     const game = store.game;

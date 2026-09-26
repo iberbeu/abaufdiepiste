@@ -5,7 +5,7 @@
 // reload, like v1's diceRolled — a reload returns to the turn start.
 // ═══════════════════════════════════════════════════════════════
 
-import { restoreGame } from './flow_logic.js';
+import { restoreGame, MIN_PLAYERS } from './flow_logic.js';
 
 const GAME_KEY = 'abaufdiepiste_v2_game';   // separate from v1's key — no save compatibility
 
@@ -36,4 +36,31 @@ export function saveGame() {
 export function setGame(game) {
   store.game = game;
   saveGame();
+}
+
+// ── Last group (FEAT-21): prefills the setup wizard ──
+// Kept apart from the game, so it survives discarding or deleting a game.
+// Names are stored as typed (empty = "Spieler N" placeholder), not as the game shows them.
+
+const GROUP_KEY = 'abaufdiepiste_v2_last_group';
+
+/** @returns {{ players: Array<{name, talstation, colorIndex}>, totalRounds: number } | null} */
+export function loadLastGroup() {
+  try {
+    const g = JSON.parse(localStorage.getItem(GROUP_KEY));
+    const ok = g && Array.isArray(g.players) && g.players.length >= MIN_PLAYERS && Number.isInteger(g.totalRounds)
+      && g.players.every(p => p && typeof p.name === 'string' && typeof p.talstation === 'string' && Number.isInteger(p.colorIndex));
+    return ok ? g : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLastGroup(players, totalRounds) {
+  try {
+    const clean = players.map(({ name, talstation, colorIndex }) => ({ name, talstation, colorIndex }));
+    localStorage.setItem(GROUP_KEY, JSON.stringify({ players: clean, totalRounds }));
+  } catch {
+    // Storage blocked: the next setup simply starts empty.
+  }
 }

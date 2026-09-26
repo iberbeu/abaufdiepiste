@@ -3,6 +3,7 @@
 import { currentTime } from '../flow_logic.js';
 import { store } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
+import { openSheet } from '../v2_sheet.js';
 
 registerScreen('home', {
   chrome: false,
@@ -18,8 +19,19 @@ registerScreen('home', {
       btnContinue.addEventListener('click', () => go(game.finished ? 'game_end' : 'turn_start'));
     }
 
-    // Discarding a running game gets a confirm sheet in UI-12.6.
-    el.querySelector('[data-ref="newGame"]').addEventListener('click', () => go('setup_players'));
+    el.querySelector('[data-ref="newGame"]').addEventListener('click', () => {
+      const startSetup = () => go('setup_players', { fresh: true });
+      if (!store.game) return startSetup();
+      // The running game is only replaced when the new one starts (setup W4), so backing out keeps it.
+      openSheet({
+        title: 'Laufendes Spiel verwerfen?',
+        text: 'Es wird ersetzt, sobald das neue Spiel startet.',
+        actions: [
+          { label: 'Neues Spiel', onClick: startSetup },
+          { label: 'Abbrechen', kind: 'text' },
+        ],
+      });
+    });
     el.querySelector('[data-ref="punkteblock"]').addEventListener('click', () => go('punkteblock'));
   },
 });

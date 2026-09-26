@@ -113,7 +113,7 @@
         <button class="btn-action btn-action--bergauf"><span class="icon icon--lg icon--gondola"></span>Bergauf</button>
         <button class="btn-action btn-action--bergab"><span class="icon icon--lg icon--skier"></span>Bergab</button>
         <button class="btn-action btn-action--pause"><span class="icon icon--lg icon--restaurant"></span>Pause</button>
-        <button class="btn-action btn-action--pause is-locked"><span class="icon icon--lg icon--restaurant"></span><span>Pause<span class="btn-action__sub">ab 11:00</span></span></button>
+        <button class="btn-action btn-action--pause is-locked"><span class="icon icon--lg icon--restaurant"></span><span>Pause<span class="btn-action__sub btn-action__lock"><span class="icon icon--sm icon--lock"></span><span>ab 11:00</span></span></span></button>
       </div>
     </div>
   </section>
@@ -191,6 +191,52 @@
       <button class="btn-primary btn-primary--negative">−8 →</button>
       <button class="btn-primary" disabled>Weiter →</button>
       <button class="btn-text">Fertig</button>
+    </div>
+  </section>
+
+  <!-- ─────────── SETUP (UI-12.6) ─────────── -->
+  <section class="ds__section">
+    <h2 class="ds__h2">Setup: Zahlen, Namen, Farben, Spieldauer</h2>
+    <div class="ds-frame">
+      <div class="number-grid">
+        <button class="number-tile">1</button>
+        <button class="number-tile is-selected">2</button>
+        <button class="number-tile">3</button>
+      </div>
+      <ol class="player-rows">
+        <li class="player-row player-1">
+          <button class="player-row__handle" aria-label="Reihenfolge ändern"><span class="icon icon--grip"></span></button>
+          <button class="avatar avatar--md">A</button>
+          <input class="text-field" type="text" value="Anna" aria-label="Name">
+        </li>
+        <li class="player-row player-3 is-dragging">
+          <button class="player-row__handle" aria-label="Reihenfolge ändern"><span class="icon icon--grip"></span></button>
+          <button class="avatar avatar--md">S</button>
+          <input class="text-field" type="text" placeholder="Spieler 2" aria-label="Name">
+        </li>
+        <li class="player-row player-2">
+          <span class="avatar avatar--md">B</span>
+          <label class="field"><span class="field__label">Ben</span><input class="text-field" type="text" placeholder="Talstation"></label>
+        </li>
+      </ol>
+      <div class="ds-row">
+        <div class="swatches">
+          <button class="swatch player-1 is-selected"><span class="swatch__initial"></span></button>
+          <button class="swatch player-2"><span class="swatch__initial">B</span></button>
+          <button class="swatch player-3"><span class="swatch__initial"></span></button>
+        </div>
+      </div>
+      <div class="choice-list">
+        <button class="choice-tile"><span class="choice-tile__title">Ganzer Tag</span><span class="choice-tile__sub">20 Runden · 08:00–17:30</span></button>
+        <div class="choice-tile is-selected">
+          <button class="choice-tile__select"><span class="choice-tile__title">Kurz</span><span class="choice-tile__sub">16 Runden · bis 15:30</span></button>
+          <div class="stepper">
+            <button class="stepper__btn" aria-label="Weniger"><span class="icon icon--minus"></span></button>
+            <span class="stepper__value">16</span>
+            <button class="stepper__btn" aria-label="Mehr"><span class="icon icon--plus"></span></button>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 

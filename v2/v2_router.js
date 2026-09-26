@@ -4,6 +4,7 @@
 // A screen is registered with:
 //   registerScreen(id, { chrome, template?, mount(el, params) })
 //   - chrome:   true → top bar + score strip are shown
+//   - quickActions: false → 📷 🎟 🃏 stay visible but inert (screens between turns)
 //   - template: id of the <template> to clone (default: `tpl-<id>` in index.html)
 //   - mount:    fills the cloned element; may return a cleanup function
 //               (called when the screen is left — clear timers there).

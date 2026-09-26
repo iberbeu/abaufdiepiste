@@ -19,20 +19,41 @@
   <header class="topbar" id="topbar" hidden>
     <button class="icon-btn" id="btnMenu" aria-label="Menü"><span class="icon icon--menu"></span></button>
     <span class="topbar__time" id="topbarTime"></span>
-    <div class="topbar__actions">
+    <div class="topbar__actions" id="quickActions">
       <button class="icon-btn" id="btnSight" aria-label="Sehenswürdigkeit"><span class="icon icon--camera"></span></button>
       <button class="icon-btn" id="btnGratis" aria-label="Gratis Fahrt"><span class="icon icon--ticket"></span><span class="icon-btn__badge" id="gratisCount" hidden></span></button>
       <button class="icon-btn" id="btnJoker" aria-label="Joker"><span class="icon icon--joker"></span><span class="icon-btn__badge icon-btn__badge--joker" id="jokerCount" hidden></span></button>
     </div>
   </header>
-  <div class="score-strip" id="scoreStrip" hidden></div>
+  <button class="score-strip" id="scoreStrip" hidden></button>
   <main class="outlet" id="outlet"></main>
 </div>
+<div id="sheetHost"></div>
 
 <!-- ══════════════ TEMPLATES (cloned by the screen modules) ══════════════ -->
 
 <template id="tpl-score-chip">
   <span class="score-chip"><span class="avatar"></span><span class="score-chip__points"></span></span>
+</template>
+
+<template id="tpl-sheet">
+  <div class="sheet-layer">
+    <div class="scrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true">
+      <h2 class="sheet__title" data-ref="title"></h2>
+      <p class="sheet__text" data-ref="text"></p>
+      <div class="sheet__body" data-ref="body"></div>
+      <div class="sheet__actions" data-ref="actions"></div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-sheet-primary">
+  <button class="btn-primary"></button>
+</template>
+
+<template id="tpl-sheet-text">
+  <button class="btn-text"></button>
 </template>
 
 <template id="tpl-home">
@@ -45,6 +66,123 @@
       </button>
       <button class="btn-action btn-action--bergauf" data-ref="newGame">Neues Spiel</button>
       <button class="btn-action btn-action--pause" data-ref="punkteblock">Punkteblock</button>
+    </div>
+  </section>
+</template>
+
+<!-- ── SETUP WIZARD (flow_spec §4) ── -->
+
+<template id="tpl-setup_players">
+  <section class="screen wizard">
+    <header class="wizard__head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <span class="wizard__dots" role="img" aria-label="Schritt 1 von 4"><span class="dot is-used"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+    </header>
+    <h1 class="wizard__title">Wie viele spielen?</h1>
+    <div class="number-grid" data-ref="numbers"></div>
+  </section>
+</template>
+
+<template id="tpl-number-tile">
+  <button class="number-tile"></button>
+</template>
+
+<template id="tpl-setup_names">
+  <section class="screen wizard">
+    <header class="wizard__head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <span class="wizard__dots" role="img" aria-label="Schritt 2 von 4"><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot"></span><span class="dot"></span></span>
+    </header>
+    <h1 class="wizard__title">Wer spielt mit?</h1>
+    <ol class="player-rows" data-ref="rows"></ol>
+    <p class="wizard__hint">Wer am wenigsten Skierfahrung hat, beginnt.</p>
+    <button class="btn-primary wizard__cta" data-ref="next">Weiter →</button>
+  </section>
+</template>
+
+<template id="tpl-name-row">
+  <li class="player-row">
+    <button class="player-row__handle" data-ref="handle" aria-label="Reihenfolge ändern (Pfeiltasten)"><span class="icon icon--grip"></span></button>
+    <button class="avatar avatar--md" data-ref="color" aria-label="Farbe wählen"></button>
+    <input class="text-field" data-ref="input" type="text" maxlength="16" autocomplete="off" autocapitalize="words" enterkeyhint="next">
+  </li>
+</template>
+
+<template id="tpl-swatches">
+  <div class="swatches"></div>
+</template>
+
+<template id="tpl-swatch">
+  <button class="swatch"><span class="swatch__initial"></span></button>
+</template>
+
+<template id="tpl-setup_talstation">
+  <section class="screen wizard">
+    <header class="wizard__head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <span class="wizard__dots" role="img" aria-label="Schritt 3 von 4"><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot"></span></span>
+    </header>
+    <h1 class="wizard__title">Wo ist eure Talstation?</h1>
+    <ol class="player-rows" data-ref="rows"></ol>
+    <button class="btn-primary wizard__cta" data-ref="next">Weiter →</button>
+    <button class="btn-text" data-ref="skip">Überspringen</button>
+  </section>
+</template>
+
+<template id="tpl-talstation-field">
+  <li class="player-row">
+    <span class="avatar avatar--md" data-ref="avatar"></span>
+    <label class="field">
+      <span class="field__label" data-ref="name"></span>
+      <input class="text-field" data-ref="input" type="text" maxlength="24" autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="Talstation">
+    </label>
+  </li>
+</template>
+
+<template id="tpl-setup_length">
+  <section class="screen wizard">
+    <header class="wizard__head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <span class="wizard__dots" role="img" aria-label="Schritt 4 von 4"><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot is-used"></span></span>
+    </header>
+    <h1 class="wizard__title">Wie lange fahrt ihr?</h1>
+    <div class="choice-list">
+      <button class="choice-tile" data-ref="full" aria-pressed="false">
+        <span class="choice-tile__title">Ganzer Tag</span>
+        <span class="choice-tile__sub" data-ref="fullSub"></span>
+      </button>
+      <div class="choice-tile" data-ref="short">
+        <button class="choice-tile__select" data-ref="shortSelect" aria-pressed="false">
+          <span class="choice-tile__title">Kurz</span>
+          <span class="choice-tile__sub" data-ref="shortSub"></span>
+        </button>
+        <div class="stepper">
+          <button class="stepper__btn" data-ref="minus" aria-label="Eine Runde weniger"><span class="icon icon--minus"></span></button>
+          <span class="stepper__value" data-ref="value"></span>
+          <button class="stepper__btn" data-ref="plus" aria-label="Eine Runde mehr"><span class="icon icon--plus"></span></button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary wizard__cta" data-ref="start">Los geht's! →</button>
+  </section>
+</template>
+
+<!-- ── TURN START (flow_spec §5) ── -->
+
+<template id="tpl-turn_start">
+  <section class="screen step step--split turn-start">
+    <div class="player-hero step__aside" data-ref="hero">
+      <span class="avatar avatar--lg" data-ref="avatar" aria-hidden="true"></span>
+      <h1 class="player-hero__name" data-ref="name"></h1>
+      <span class="stars" data-ref="stars" role="img"></span>
+    </div>
+    <div class="action-list step__main">
+      <button class="btn-action btn-action--bergauf" data-ref="bergauf"><span class="icon icon--lg icon--gondola"></span>Bergauf</button>
+      <button class="btn-action btn-action--bergab" data-ref="bergab"><span class="icon icon--lg icon--skier"></span>Bergab</button>
+      <button class="btn-action btn-action--pause" data-ref="pause">
+        <span class="icon icon--lg icon--restaurant"></span>
+        <span>Pause<span class="btn-action__sub btn-action__lock" data-ref="pauseSub" hidden><span class="icon icon--sm icon--lock"></span><span data-ref="pauseReason"></span></span></span>
+      </button>
     </div>
   </section>
 </template>

@@ -88,7 +88,7 @@ Suggested screen ids for the router: `home`, `setup_players`, `setup_names`, `se
 - No top bar / score strip here.
 
 ### SETUP W1 — "Wie viele spielen?"
-- Six big number tiles 1–6. Tap = next step. Pre-selected: last game's count.
+- Five big number tiles 2–6 (no solo game, decision 26.09.2026). Tap = next step. Pre-selected: last game's count.
 
 ### SETUP W2 — Names
 - One row per player: colour circle with initial + name field. Pre-filled from the last game (FEAT-21 behaviour); default "Spieler N" clears on focus.
@@ -101,7 +101,7 @@ Suggested screen ids for the router: `home`, `setup_players`, `setup_names`, `se
 - Primary: **Weiter →** · Secondary link: "Überspringen".
 
 ### SETUP W4 — Spieldauer
-- Two tiles: **Ganzer Tag** (20 Runden · 08:00–17:30) / **Kurz** (stepper 10–19 Runden, shows end time live).
+- Two tiles: **Ganzer Tag** (20 Runden · 08:00–17:30) / **Kurz** (stepper 11–19 Runden, preset 16, shows end time live). Minimum 11 = the day never ends before the lunch window is over (decision 26.09.2026, see `important_decisions.md`).
 - Start is always 08:00 (BUG-13 decision).
 - Primary: **Los geht's! →** → TURN START of player 1.
 
