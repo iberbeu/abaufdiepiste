@@ -9,11 +9,6 @@ import { store } from '../v2_store.js';
 import { registerScreen, go, back } from '../v2_router.js';
 
 const PLACEHOLDERS = {
-  bergauf_roll:     { chrome: true, title: 'Bergauf · Würfeln',  task: 'UI-12.8', links: [['Würfeln', 'bergauf_result'], ['Zurück', 'turn_start']] },
-  bergauf_result:   { chrome: true, title: 'Bergauf · Ergebnis', task: 'UI-12.8', links: [['Fertig', 'turn_end']] },
-  bergab_roll:      { chrome: true, title: 'Bergab · Würfeln',   task: 'UI-12.9', links: [['Würfeln', 'bergab_result'], ['Zurück', 'turn_start']] },
-  bergab_result:    { chrome: true, title: 'Bergab · Pisten',    task: 'UI-12.9', links: [['+10 (Test)', () => go('turn_end', { points: 10 })]] },
-  pause:            { chrome: true, title: 'Pause',              task: 'UI-12.10', links: [['Restaurant +15 (Test)', () => go('turn_end', { points: 15 })], ['Zurück', 'turn_start']] },
 
   game_end:         { chrome: false, title: 'Skitag vorbei!',    task: 'UI-12.13', links: [['Schlusswertung starten', 'schlusswertung']] },
   schlusswertung:   { chrome: false, title: 'Schlusswertung',    task: 'UI-12.13', links: [['Weiter', 'ranking']] },

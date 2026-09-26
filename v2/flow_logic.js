@@ -4,7 +4,10 @@
 // creating it, advancing turns and rounds, and which one-shot round events are due.
 // ═══════════════════════════════════════════════════════════════
 
-import { gameTime, gameTimeHour, sightseeingBonus } from '../game_logic.js';
+import {
+  gameTime, gameTimeHour, sightseeingBonus, TRANSPORT_SYMBOLS,
+  COIN_LIMIT, BLOCKING_EVENTS, PAUSE_POINTS, effectiveCrossings, calcDescentPoints,
+} from '../game_logic.js';
 
 export const START_HOUR = 8;          // fixed since BUG-13
 export const MAX_ROUNDS = 20;         // 08:00–17:30
@@ -79,6 +82,17 @@ export function setupDraft(lastGroup) {
     players,
     totalRounds: Math.min(MAX_ROUNDS, Math.max(MIN_ROUNDS, rounds)),
   };
+}
+
+/**
+ * Rolls every die that is not held. Returns a new array; held dice keep their face.
+ * @param {string[]} dice — current faces (any value when not rolled yet)
+ * @param {boolean[]} held
+ * @param {string[]} faces — possible faces, e.g. TRANSPORT_SYMBOLS
+ * @param {() => number} [rng] — Math.random-compatible, injectable for tests
+ */
+export function rollDice(dice, held, faces = TRANSPORT_SYMBOLS, rng = Math.random) {
+  return dice.map((face, i) => (held[i] ? face : faces[Math.floor(rng() * faces.length)]));
 }
 
 /** The name a player gets: the trimmed input, or "Spieler N" (N = 1-based position) if empty. */
@@ -192,6 +206,24 @@ export function pauseStatus(game, player = currentPlayer(game)) {
   return 'open';
 }
 
+const PAUSE_LABELS = { restaurant: 'Restaurant', bar: 'Bar' };
+
+/**
+ * The current player takes the lunch break. Mutates `game`.
+ * @param {'restaurant'|'bar'} kind
+ * @returns {number} the points awarded (0 if the pause is not possible now)
+ */
+export function takePause(game, kind) {
+  if (!(kind in PAUSE_POINTS)) throw new Error(`takePause: unknown kind ${kind}`);
+  if (pauseStatus(game) !== 'open') return 0;
+  const p = currentPlayer(game);
+  const pts = PAUSE_POINTS[kind];
+  p.points += pts;
+  p.pauseDone = true;
+  addHistory(game, `Mittagspause ${PAUSE_LABELS[kind]}: +${pts} Punkte`);
+  return pts;
+}
+
 /** Adds a history entry tagged with round and player (FEAT-23 compatible). Mutates `game`. */
 export function addHistory(game, text) {
   game.history.push({ time: currentTime(game), round: game.round, playerIdx: game.currentPlayerIndex, text });
@@ -226,6 +258,51 @@ export function removeLastSighting(game) {
 }
 
 const COIN_LABELS = { joker: 'Joker', gratis: 'Gratis Fahrt' };
+
+/**
+ * Gives the current player one coin (Sonne → Joker, +1 Fahrt → Gratis Fahrt). Mutates `game`.
+ * Coin rule: as soon as COIN_LIMIT unused coins are held, all of them are returned.
+ * @param {'joker'|'gratis'} kind
+ * @returns {{ limitHit: boolean }}
+ */
+export function gainCoin(game, kind) {
+  if (!(kind in COIN_LABELS)) throw new Error(`gainCoin: unknown coin ${kind}`);
+  const p = currentPlayer(game);
+  p[kind]++;
+  addHistory(game, `+1 ${COIN_LABELS[kind]}`);
+  if (p.joker + p.gratis < COIN_LIMIT) return { limitHit: false };
+  p.joker = 0;
+  p.gratis = 0;
+  addHistory(game, `${COIN_LIMIT} Münzen – alle zurückgegeben`);
+  return { limitHit: true };
+}
+
+/**
+ * Everything the Bergab step shows, derived from the roll and the player's choices.
+ * @param {{ descent: number, event: string, jokerOnEvent: boolean,
+ *           slopes: {blue:number, red:number, black:number, yellow:number},
+ *           ohneBefugnis: boolean|null, extra: number|null }} d
+ * @param {string[]} allowedSlopes — ALLOWED_SLOPES[level]
+ * @returns {{ blocked: boolean, maxCrossings: number, used: number, total: number, parts: string[], bonusText: string }}
+ *   parts / bonusText: from calcDescentPoints(), for the history line.
+ *   blocked: Unfall / Helikopter without Joker → no descent, 0 points (Extraaktivität included).
+ */
+export function descentTurn(d, allowedSlopes) {
+  const blocked = BLOCKING_EVENTS.includes(d.event) && !d.jokerOnEvent;
+  const used = Object.values(d.slopes).reduce((a, b) => a + b, 0);
+  if (blocked) return { blocked, maxCrossings: 0, used: 0, total: 0, parts: [], bonusText: '' };
+  // A Joker on the event averts it completely — Pulverschnee is not a Joker event, so it always stays.
+  const event = d.jokerOnEvent ? null : d.event;
+  const { total, parts, bonusText } = calcDescentPoints(d.slopes, event, d.ohneBefugnis, allowedSlopes);
+  return {
+    blocked,
+    maxCrossings: effectiveCrossings(d.descent, d.event, d.jokerOnEvent),
+    used,
+    total: total + (d.extra ?? 0),
+    parts,
+    bonusText,
+  };
+}
 
 /**
  * Spends one coin of the current player. Mutates `game`.

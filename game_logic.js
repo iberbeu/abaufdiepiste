@@ -20,6 +20,18 @@ export const TRANSPORT_NAMES = [
 
 export const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
 
+// Event die faces (v1 keeps its own presentation list in dice_app.js, same order).
+export const EVENT_SYMBOLS = ['fahrt', 'helikopter', 'schneesturm', 'pulverschnee', 'unfall', 'sonne'];
+// Events a Joker can avert (spielregeln.md: "Joker … negative Ereignisse abzuwenden").
+export const JOKER_EVENTS = ['schneesturm', 'unfall', 'helikopter'];
+// Events that stop the descent this turn unless a Joker averts them.
+export const BLOCKING_EVENTS = ['unfall', 'helikopter'];
+
+// Coins: as soon as a player holds this many unused coins (Joker + Gratis Fahrt), all are returned.
+export const COIN_LIMIT = 3;
+export const EXTRA_ACTIVITY_POINTS = 12;   // Extraaktivität, happy smiley
+export const PAUSE_POINTS = { restaurant: 15, bar: 7 };   // Mittagspause (11:00–12:30, once per game)
+
 // Face values per the rulebook (specifications/spielregeln.md, "Fahrniveaus"):
 // Anfänger = 1-star die (2, 4), Fortgeschritten = 2-star die (2, 4, 6), Profi = 3-star die (4, 6).
 // The three dice look identical; every face shows the crossing count plus the level's stars.
@@ -177,6 +189,37 @@ export function analyzeTransportSymbols(syms) {
   }
 
   return results;
+}
+
+/**
+ * Structured counterpart of analyzeTransportSymbols() for app v2: which rides a roll allows.
+ * Rules (specifications/spielregeln.md, "Lift- und Wandermechanik"):
+ *  - two identical symbols = a ride with that transport (three or more identical include a pair);
+ *  - three identical symbols can be swapped for ONE missing symbol that was rolled once,
+ *    making a pair of it (listed only for symbols that do not already have a pair);
+ *  - six identical symbols = free ride, any distance.
+ * Several pairs may be combined in one turn ("Lifte kombinieren").
+ *
+ * @param {string[]} syms — the 6 rolled symbols (from TRANSPORT_SYMBOLS)
+ * @returns {{ helicopter: string|null, pairs: string[], exchanges: Array<{ from: string, targets: string[] }> }}
+ *   Symbols are keys of TRANSPORT_SYMBOLS, in TRANSPORT_SYMBOLS order. Nothing valid = all empty.
+ */
+export function transportOptions(syms) {
+  const counts = {};
+  syms.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
+  const present = TRANSPORT_SYMBOLS.filter(s => counts[s]);
+
+  const helicopter = present.find(s => counts[s] >= 6) ?? null;
+  if (helicopter) return { helicopter, pairs: [], exchanges: [] };
+
+  const singles = present.filter(s => counts[s] === 1);
+  return {
+    helicopter: null,
+    pairs: present.filter(s => counts[s] >= 2),
+    exchanges: singles.length === 0 ? [] : present
+      .filter(s => counts[s] >= 3)
+      .map(from => ({ from, targets: singles })),
+  };
 }
 
 // ─── Descent movement ────────────────────────────────────────────────────────

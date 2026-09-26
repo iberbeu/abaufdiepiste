@@ -5,6 +5,7 @@
 import { advanceTurn, dueRoundEvents } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
+import { clearTurn } from '../turn_state.js';
 
 const PAUSE_MS = 800;
 
@@ -12,6 +13,7 @@ registerScreen('turn_end', {
   chrome: true,
   quickActions: false,   // the current player changes here
   mount(el, { points = 0 } = {}) {
+    clearTurn();
     const burst = el.querySelector('[data-ref="burst"]');
     if (points === 0) {
       burst.hidden = true;

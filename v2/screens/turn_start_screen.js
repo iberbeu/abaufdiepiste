@@ -7,6 +7,7 @@ import { currentPlayer, pauseStatus } from '../flow_logic.js';
 import { store } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
 import { initial } from '../v2_chrome.js';
+import { activeTurn } from '../turn_state.js';
 
 const PAUSE_LOCK_REASON = { before: 'ab 11:00', after: 'vorbei', done: 'schon gemacht' };
 
@@ -16,6 +17,9 @@ registerScreen('turn_start', {
     const game = store.game;
     if (!game) return go('home');
     if (game.finished) return go('game_end');
+    // Dice already rolled this turn → the action is locked, back to the dice.
+    const inProgress = activeTurn(game);
+    if (inProgress?.rolled) return go(inProgress.resume);
 
     const p = currentPlayer(game);
     const level = getLevel(p.points);

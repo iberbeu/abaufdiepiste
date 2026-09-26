@@ -47,6 +47,7 @@
   --secondary-shade:  #2a6567;
   --joker:            var(--sonnen-gelb);
   --level-star:       #FFC978;              /* Fahrniveau stars — lighter amber, deliberately not the Joker token */
+  --die-star:         #D98A1E;              /* the same stars printed on the white descent die (darker for contrast) */
   --gratis:           var(--glacier-teal);
   --positive:         #4CC38A;
   --negative:         #FF8A7A;
@@ -118,6 +119,11 @@
   --dur-fast:     120ms;
   --dur:          250ms;
   --dur-slow:     400ms;
+}
+
+/* Short portrait screens (e.g. iPhone SE, or any phone with the browser bars showing): smaller dice. */
+@media (orientation: portrait) and (max-height: 760px) {
+  :root { --die-lg: 68px; --die-md: 56px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

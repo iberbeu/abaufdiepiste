@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createGame, advanceTurn, dueRoundEvents, markEventsShown, pauseStatus,
   currentTime, roundsRemaining, restoreGame, addHistory, addSighting, removeLastSighting, spendCoin,
-  setupDraft, assignColor, moveItem, defaultName, endTime, MAX_ROUNDS, MIN_ROUNDS,
+  rollDice, gainCoin, descentTurn, takePause, setupDraft, assignColor, moveItem, defaultName, endTime, MAX_ROUNDS, MIN_ROUNDS,
 } from '../v2/flow_logic.js';
 
 const two = () => createGame([{ name: 'Anna' }, { name: 'Ben', talstation: 'Dorf' }]);
@@ -37,6 +37,22 @@ describe('createGame', () => {
     expect(() => createGame([])).toThrow();
     expect(() => createGame([{ name: 'Solo' }])).toThrow();
     expect(() => createGame(Array(7).fill({ name: 'X' }))).toThrow();
+  });
+});
+
+describe('rollDice', () => {
+  it('rolls only the dice that are not held, using the given random source', () => {
+    const faces = ['a', 'b', 'c'];
+    const values = [0, 0.5, 0.99];
+    let i = 0;
+    const rng = () => values[i++];
+    expect(rollDice(['x', 'y', 'z', 'w'], [false, true, false, false], faces, rng)).toEqual(['a', 'y', 'b', 'c']);
+  });
+
+  it('defaults to the six transport symbols', () => {
+    const dice = rollDice(Array(6).fill(null), Array(6).fill(false));
+    expect(dice).toHaveLength(6);
+    dice.forEach(d => expect(['fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug']).toContain(d));
   });
 });
 
@@ -274,5 +290,80 @@ describe('restoreGame', () => {
     const badName = two();
     badName.players[0].name = 42;
     expect(restoreGame(badName)).toBeNull();
+  });
+});
+
+describe('gainCoin', () => {
+  it('adds a coin to the current player and logs it', () => {
+    const g = two();
+    expect(gainCoin(g, 'joker')).toEqual({ limitHit: false });
+    expect(g.players[0].joker).toBe(1);
+    expect(g.history.at(-1).text).toBe('+1 Joker');
+  });
+
+  it('the third coin returns all coins (coin rule)', () => {
+    const g = two();
+    g.players[0].joker = 1;
+    g.players[0].gratis = 1;
+    expect(gainCoin(g, 'gratis')).toEqual({ limitHit: true });
+    expect(g.players[0]).toMatchObject({ joker: 0, gratis: 0 });
+    expect(g.history.map(h => h.text)).toEqual(['+1 Gratis Fahrt', '3 Münzen – alle zurückgegeben']);
+  });
+});
+
+describe('descentTurn', () => {
+  const ALL = ['blue', 'red', 'black', 'yellow'];
+  const base = { descent: 4, event: 'sonne', jokerOnEvent: false, slopes: { blue: 0, red: 0, black: 0, yellow: 0 }, ohneBefugnis: null, extra: null };
+  const turn = (over, allowed = ALL) => descentTurn({ ...base, ...over, slopes: { ...base.slopes, ...over.slopes } }, allowed);
+
+  it('sums the slopes and counts the used crossings', () => {
+    expect(turn({ slopes: { red: 1, black: 1 } })).toMatchObject({ blocked: false, maxCrossings: 4, used: 2, total: 10, parts: ['Rot ×1 = 4', 'Schwarz ×1 = 6'] });
+  });
+
+  it('Pulverschnee adds 5 once a crossing is chosen', () => {
+    expect(turn({ event: 'pulverschnee' }).total).toBe(0);
+    expect(turn({ event: 'pulverschnee', slopes: { blue: 1 } }).total).toBe(7);
+  });
+
+  it('Schneesturm halves the crossings, a Joker restores them; points stay full', () => {
+    expect(turn({ event: 'schneesturm', slopes: { red: 1 } })).toMatchObject({ maxCrossings: 2, total: 4 });
+    expect(turn({ event: 'schneesturm', jokerOnEvent: true }).maxCrossings).toBe(4);
+  });
+
+  it('Unfall / Helikopter block the descent and all points unless a Joker averts them', () => {
+    expect(turn({ event: 'unfall', slopes: { red: 1 }, extra: 12 })).toMatchObject({ blocked: true, maxCrossings: 0, used: 0, total: 0, parts: [] });
+    expect(turn({ event: 'helikopter', jokerOnEvent: true, slopes: { red: 1 } })).toMatchObject({ blocked: false, total: 4 });
+  });
+
+  it('Ohne Befugnis with a sad smiley makes forbidden slopes negative', () => {
+    expect(turn({ slopes: { red: 1, black: 1 }, ohneBefugnis: false }, ['blue', 'red'])).toMatchObject({ total: 4 - 6 });
+    expect(turn({ slopes: { red: 1, black: 1 }, ohneBefugnis: true }, ['blue', 'red'])).toMatchObject({ total: 10 });
+  });
+
+  it('adds the Extraaktivität result', () => {
+    expect(turn({ slopes: { blue: 1 }, extra: 12 }).total).toBe(14);
+    expect(turn({ extra: 0 }).total).toBe(0);
+  });
+});
+
+describe('takePause', () => {
+  it('awards Restaurant +15 / Bar +7 once, inside the lunch window', () => {
+    const g = two();
+    g.round = 7;   // 11:00
+    expect(takePause(g, 'restaurant')).toBe(15);
+    expect(g.players[0]).toMatchObject({ points: 15, pauseDone: true });
+    expect(g.history.at(-1).text).toBe('Mittagspause Restaurant: +15 Punkte');
+    expect(takePause(g, 'bar')).toBe(0);   // already done
+    advanceTurn(g);
+    expect(takePause(g, 'bar')).toBe(7);
+  });
+
+  it('refuses outside 11:00–12:30 and rejects unknown kinds', () => {
+    const g = two();
+    expect(takePause(g, 'bar')).toBe(0);   // 08:00
+    g.round = 11;                          // 13:00
+    expect(takePause(g, 'bar')).toBe(0);
+    expect(g.players[0]).toMatchObject({ points: 0, pauseDone: false });
+    expect(() => takePause(g, 'picknick')).toThrow();
   });
 });

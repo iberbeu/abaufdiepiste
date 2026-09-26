@@ -19,6 +19,25 @@ const nameInputs = () => rows().map(r => r.querySelector('input'));
 const type = (input, value) => { input.value = value; input.dispatchEvent(new Event('input', { bubbles: true })); };
 const sheet = () => document.querySelector('#sheetHost .sheet');
 const sheetButton = label => [...(sheet()?.querySelectorAll('button') ?? [])].find(b => b.textContent.startsWith(label));
+const ROLL_MS = 480;
+const playBergauf = () => {
+  clickLabel('Bergauf');
+  clickLabel('Würfeln');
+  vi.advanceTimersByTime(ROLL_MS);
+  clickLabel('Fertig');
+};
+/** Runs fn with Math.random pinned to x (x = 0.55 → event Pulverschnee; see EVENT_SYMBOLS order). */
+const withRandom = (x, fn) => {
+  const spy = vi.spyOn(Math, 'random').mockReturnValue(x);
+  try { fn(); } finally { spy.mockRestore(); }
+};
+const rollBergab = x => {
+  clickLabel('Bergab');
+  withRandom(x, () => clickLabel('Würfeln'));
+  vi.advanceTimersByTime(ROLL_MS);
+};
+const tile = color => screen().querySelector(`.slope-tile--${color}`);
+const plus = color => tile(color).querySelector('[data-ref="plus"]').click();
 const clickLabel = label => {
   const btn = [...screen().querySelectorAll('button')].find(b => b.textContent.includes(label));
   if (!btn) throw new Error(`No button "${label}" on ${title()}`);
@@ -144,12 +163,14 @@ describe('v2 app shell', () => {
     expect(store.game.players[0]).toMatchObject({ sightings: 0, points: 0 });
   });
 
-  it('tapping the scrim cancels a sheet', () => {
+  it('tapping the scrim cancels a sheet and gives focus back to the opener', () => {
+    document.getElementById('btnSight').focus();
     document.getElementById('btnSight').click();
     expect(document.querySelector('.app').inert).toBe(true);
     sheet().parentElement.querySelector('.scrim').click();
     expect(sheet()).toBeNull();
     expect(document.querySelector('.app').inert).toBe(false);
+    expect(document.activeElement).toBe(document.getElementById('btnSight'));
     expect(store.game.players[0].sightings).toBe(0);
   });
 
@@ -182,10 +203,13 @@ describe('v2 app shell', () => {
   });
 
   it('a turn ends with the burst and moves to the next player', () => {
-    clickLabel('Bergab');
-    clickLabel('Würfeln');
-    clickLabel('+10');
-    expect(screen().querySelector('.points-burst').textContent).toBe('+10');
+    rollBergab(0.55);   // Anfänger: descent 4, Pulverschnee
+    plus('red');
+    plus('red');
+    expect(ref('primary').textContent).toBe('+13 →');   // 2 × 4 + 5 Pulverschnee
+    ref('primary').click();
+    expect(screen().querySelector('.points-burst').textContent).toBe('+13');
+    expect(store.game.players[0].points).toBe(13);
     document.getElementById('btnSight').click();   // quick actions are inert between turns
     expect(sheet()).toBeNull();
     vi.advanceTimersByTime(800);
@@ -231,8 +255,54 @@ describe('v2 app shell', () => {
     store.game.players[1].pauseDone = false;
     go('turn_start');
     clickLabel('Pause');   // open → goes to the pause step
-    expect(title()).toBe('Pause');
+    expect(title()).toBe('Mittagspause');
     store.game.round = round;
+    go('turn_start');
+  });
+
+  it('Pause: choose Restaurant or Bar (the other dims), confirm → points, pauseDone, turn end', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const round = store.game.round;
+    store.game.round = 8;   // 11:30
+    const p = store.game.players[store.game.currentPlayerIndex];
+    p.pauseDone = false;
+    const before = p.points;
+    go('turn_start');
+    clickLabel('Pause');
+    expect(ref('primary').disabled).toBe(true);
+    expect(ref('primary').textContent).toBe('Restaurant oder Bar?');
+    ref('bar').click();
+    expect(ref('primary').textContent).toBe('+7 →');
+    expect(ref('restaurant').classList.contains('is-dimmed')).toBe(true);
+    expect(ref('bar').getAttribute('aria-pressed')).toBe('true');
+    ref('restaurant').click();
+    expect(ref('primary').textContent).toBe('+15 →');
+
+    ref('back').click();   // nothing booked yet
+    expect(isTurnStart()).toBe(true);
+    expect(p.pauseDone).toBe(false);
+
+    clickLabel('Pause');
+    ref('bar').click();
+    ref('primary').click();
+    expect(p).toMatchObject({ points: before + 7, pauseDone: true });
+    expect(store.game.history.at(-1).text).toBe('Mittagspause Bar: +7 Punkte');
+    expect(screen().querySelector('.points-burst').textContent).toBe('+7');
+    vi.advanceTimersByTime(800);
+    store.game.round = round;
+    go('turn_start');
+  });
+
+  it('the pause step cannot be opened once the pause is taken', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const p = store.game.players.find(pl => pl.pauseDone);
+    const idx = store.game.currentPlayerIndex;
+    store.game.currentPlayerIndex = store.game.players.indexOf(p);
+    store.game.round = 8;
+    go('pause');
+    expect(isTurnStart()).toBe(true);
+    store.game.currentPlayerIndex = idx;
+    store.game.round = 1;
     go('turn_start');
   });
 
@@ -244,6 +314,212 @@ describe('v2 app shell', () => {
     store.game.finished = false;
     go('turn_start');
     expect(isTurnStart()).toBe(true);
+  });
+
+  it('Bergauf B1: six unknown dice, back to the turn start is still possible', () => {
+    clickLabel('Bergauf');
+    expect(title()).toBe('Bergauf');
+    const dice = screen().querySelectorAll('.die');
+    expect(dice).toHaveLength(6);
+    expect([...dice].every(d => d.disabled && d.querySelector('img').src.endsWith('die_unknown.svg'))).toBe(true);
+    ref('back').click();
+    expect(isTurnStart()).toBe(true);
+  });
+
+  it('Bergauf B2: the roll animates, then shows faces, one roll dot, hold hint and a result', () => {
+    clickLabel('Bergauf');
+    clickLabel('Würfeln');
+    expect(screen().querySelectorAll('.die.is-rolling')).toHaveLength(6);
+    expect(ref('primary').disabled).toBe(true);
+    vi.advanceTimersByTime(ROLL_MS);
+    expect(screen().querySelectorAll('.die.is-rolling')).toHaveLength(0);
+    expect(screen().querySelectorAll('.roll-dots .dot.is-used')).toHaveLength(1);
+    expect(ref('hint').textContent).toBe('Antippen = behalten');
+    expect(ref('lines').children.length).toBeGreaterThan(0);
+    expect(ref('secondary').hidden).toBe(false);
+  });
+
+  it('after rolling, the action is locked: the turn start sends the player back to the dice', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    go('turn_start');
+    expect(isTurnStart()).toBe(false);
+    expect(title()).toBe('Bergauf');
+    expect(screen().querySelector('.roll-dots')).not.toBeNull();
+  });
+
+  it('no ride → "Liftschlange" and "Nochmal würfeln" first; held dice keep their face; roll 2 ends', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const { turn } = await import('../v2/turn_state.js');
+    turn.data.dice = ['fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug'];
+    turn.data.held = Array(6).fill(false);
+    go('bergauf_result');
+    expect(ref('lines').textContent).toBe('Liftschlange – nächste Runde nochmal');
+    expect(ref('primary').textContent).toBe('Nochmal würfeln');
+    expect(ref('secondary').textContent).toBe('Fertig');
+
+    screen().querySelectorAll('.die')[4].click();   // hold the Gondel
+    expect(turn.data.held[4]).toBe(true);
+    expect(screen().querySelectorAll('.die')[4].getAttribute('aria-pressed')).toBe('true');
+    ref('primary').click();
+    vi.advanceTimersByTime(ROLL_MS);
+    expect(turn.data.rolls).toBe(2);
+    expect(turn.data.dice[4]).toBe('gondel');
+    expect(screen().querySelectorAll('.roll-dots .dot.is-used')).toHaveLength(2);
+    expect(ref('secondary').hidden).toBe(true);
+    expect(ref('primary').textContent).toBe('Fertig →');
+    expect(ref('hint').hidden).toBe(true);
+    expect(screen().querySelectorAll('.die')[0].disabled).toBe(true);   // no holding after roll 2
+  });
+
+  it('Joker: tap the Joker, tap a die, pick a face → the die turns, 1 Joker is spent', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const { turn } = await import('../v2/turn_state.js');
+    const p = store.game.players[store.game.currentPlayerIndex];
+    p.joker = 1;
+    turn.data.dice = ['fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug'];
+    go('bergauf_result');
+    expect(ref('joker').hidden).toBe(false);
+    expect(ref('jokerLabel').textContent).toBe('Joker einsetzen (1)');
+    ref('joker').click();
+    expect(ref('hint').textContent).toBe('Welchen Würfel drehen?');
+    screen().querySelectorAll('.die')[5].click();   // the Zug die
+    const options = sheet().querySelectorAll('.face-option');
+    expect(options).toHaveLength(6);
+    options[4].click();   // → Gondel
+    expect(p.joker).toBe(0);
+    expect(turn.data.dice[5]).toBe('gondel');
+    expect(turn.data.jokered[5]).toBe(true);
+    expect(ref('lines').textContent).toBe('2× Gondel');
+    expect(ref('joker').hidden).toBe(true);
+    expect(document.getElementById('jokerCount').hidden).toBe(true);
+    expect(store.game.history.at(-1).text).toBe('Joker eingesetzt');
+
+    // A die turned with a Joker is final: it cannot be turned again (no second Joker on it).
+    p.joker = 1;
+    go('bergauf_result');
+    ref('joker').click();
+    const turned = screen().querySelectorAll('.die')[5];
+    expect(turned.disabled).toBe(true);
+    expect(turned.getAttribute('aria-label')).toBe('Gondel, mit Joker gedreht');
+    turned.click();
+    expect(sheet()).toBeNull();
+    ref('joker').click();   // leave pick mode
+    p.joker = 0;
+    go('bergauf_result');
+  });
+
+  it('Fertig logs the ride and ends the turn without points', () => {
+    const idx = store.game.currentPlayerIndex;
+    const entries = store.game.history.length;
+    const fertig = [...screen().querySelectorAll('button')].find(b => b.textContent.includes('Fertig'));
+    fertig.click();
+    fertig.click();   // double tap: the detached button must not log the ride again
+    expect(store.game.history.length).toBe(entries + 1);
+    expect(store.game.history.at(-1).text).toBe('Bergauf: Gondel');
+    expect(ref('check').hidden).toBe(false);
+    vi.advanceTimersByTime(800);
+    expect(isTurnStart()).toBe(true);
+    expect(store.game.currentPlayerIndex).not.toBe(idx);
+  });
+
+  it('Bergab D1: descent die shows the level stars; back is possible', () => {
+    store.game.players[store.game.currentPlayerIndex].points = 30;   // Fortgeschritten
+    clickLabel('Bergab');
+    expect(title()).toBe('Bergab');
+    expect(ref('stars').textContent).toBe('★★');
+    ref('back').click();
+    expect(isTurnStart()).toBe(true);
+  });
+
+  it('Bergab D2: crossings, tiles, cap, Ohne Befugnis with Joker, Extraaktivität, total', () => {
+    const p = store.game.players[store.game.currentPlayerIndex];
+    p.points = 30;   // Fortgeschritten: blue, red, black allowed; die 2·4·6
+    p.joker = 1;
+    p.gratis = 0;
+    rollBergab(0.55);   // descent 4, Pulverschnee
+    expect(ref('crossLabel').textContent).toBe('4 Kreuzungen');
+    expect(ref('live').textContent).toBe('0 von 4 Kreuzungen, 0 Punkte');
+    expect(ref('dots').children).toHaveLength(4);
+    expect(ref('eventLine').textContent).toBe('Pulverschnee: +5 mit Abfahrt');
+    expect(tile('yellow').classList.contains('is-forbidden')).toBe(true);
+    expect(tile('black').classList.contains('is-forbidden')).toBe(false);
+    expect(ref('primary').textContent).toBe('Weiter →');
+    expect(tile('blue').querySelector('[data-ref="minus"]').disabled).toBe(true);
+
+    // Four crossings on red; a fifth only shakes the tile.
+    for (let i = 0; i < 5; i++) plus('red');
+    expect(tile('red').querySelector('[data-ref="count"]').textContent).toBe('4');
+    expect(tile('red').classList.contains('is-bumped')).toBe(true);
+    expect(screen().querySelectorAll('.crossings .dot.is-used')).toHaveLength(4);
+    expect(ref('live').textContent).toBe('4 von 4 Kreuzungen, +21 Punkte');
+    tile('red').querySelector('[data-ref="minus"]').click();
+
+    // Forbidden yellow → Ohne-Befugnis sheet; Abbrechen adds nothing.
+    plus('yellow');
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Ohne Befugnis');
+    sheetButton('Abbrechen').click();
+    expect(tile('yellow').querySelector('[data-ref="count"]').hidden).toBe(true);
+    // Sad smiley → negative, then the Joker turns it happy.
+    plus('yellow');
+    withRandom(0.9, () => sheetButton('Würfeln').click());
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Negative Punkte');
+    expect(ref('primary').textContent).toBe('+9 →');   // 12 + 5 − 8
+    sheetButton('Joker nutzen').click();
+    expect(p.joker).toBe(0);
+    expect(ref('primary').textContent).toBe('+25 →');   // 12 + 8 + 5
+    expect(tile('yellow').querySelector('[data-ref="smiley"]').src).toContain('froehlich');
+
+    // Extraaktivität: happy smiley → +12, then the icon shows the result and is done.
+    ref('extra').click();
+    withRandom(0.1, () => sheetButton('Würfeln').click());
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('+12 Punkte');
+    sheetButton('OK').click();
+    expect(ref('extraLabel').textContent).toBe('+12');
+    expect(ref('extra').disabled).toBe(true);
+    expect(ref('primary').textContent).toBe('+37 →');
+
+    const before = p.points;
+    ref('primary').click();
+    expect(p.points).toBe(before + 37);
+    expect(store.game.history.at(-1).text).toBe('Bergab: Rot ×3 = 12, Gelb ×1 = 8 (+5 Pulverschnee), Extraaktivität +12 → +37 Punkte');
+    vi.advanceTimersByTime(800);
+  });
+
+  it('Bergab Unfall: no tiles, "Weiter →"; the Joker on the event die averts it', () => {
+    const p = store.game.players[store.game.currentPlayerIndex];
+    p.points = 0;
+    p.joker = 1;
+    p.gratis = 0;
+    rollBergab(0.7);   // Unfall
+    expect(ref('tiles').hidden).toBe(true);
+    expect(ref('blockedText').textContent).toBe('Unfall – diese Runde keine Abfahrt');
+    expect(ref('extra').hidden).toBe(true);
+    expect(ref('primary').textContent).toBe('Weiter →');
+    ref('eventJoker').click();
+    sheetButton('Einsetzen').click();
+    expect(p.joker).toBe(0);
+    expect(ref('tiles').hidden).toBe(false);
+    expect(ref('eventLine').textContent).toBe('Joker: Unfall abgewendet');
+    expect(ref('eventJoker').hidden).toBe(true);
+    ref('primary').click();
+    vi.advanceTimersByTime(800);
+  });
+
+  it('Bergab Sonne as the 3rd coin: all coins are returned, a sheet says so once', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const p = store.game.players[store.game.currentPlayerIndex];
+    p.joker = 1;
+    p.gratis = 1;
+    rollBergab(0.9);   // Sonne
+    expect(p).toMatchObject({ joker: 0, gratis: 0 });
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('3 Münzen – alle zurückgeben');
+    sheetButton('OK').click();
+    expect(ref('eventLine').textContent).toBe('3 Münzen – alle zurückgegeben');
+    go('turn_start');   // locked → back to the dice, without the sheet again
+    expect(title()).toBe('Bergab');
+    expect(sheet()).toBeNull();
+    ref('primary').click();
+    vi.advanceTimersByTime(800);
   });
 
   it('menu goes back to the previous screen', () => {
@@ -258,9 +534,7 @@ describe('v2 app shell', () => {
   it('shows the lunch card when a round starts at 11:00, once', () => {
     store.game.round = 6;               // 10:30
     store.game.currentPlayerIndex = 1;  // last player
-    clickLabel('Bergauf');
-    clickLabel('Würfeln');
-    clickLabel('Fertig');
+    playBergauf();
     vi.advanceTimersByTime(800);
     expect(title()).toBe('Mittagspause offen!');
     clickLabel('OK');
@@ -272,9 +546,7 @@ describe('v2 app shell', () => {
     store.game.round = 17;
     store.game.currentPlayerIndex = 1;
     store.game.eventsShown.push('lunch_close');
-    clickLabel('Bergauf');
-    clickLabel('Würfeln');
-    clickLabel('Fertig');
+    playBergauf();
     vi.advanceTimersByTime(800);
     expect(title()).toBe('Noch 3 Runden – ab ins Tal!');
     const rows = screen().querySelectorAll('.talstation-list__row');
@@ -285,9 +557,7 @@ describe('v2 app shell', () => {
   it('the last turn of the last round leads to game end; home then offers the Schlusswertung', () => {
     store.game.round = 20;
     store.game.currentPlayerIndex = 1;
-    clickLabel('Bergauf');
-    clickLabel('Würfeln');
-    clickLabel('Fertig');
+    playBergauf();
     vi.advanceTimersByTime(800);
     expect(title()).toBe('Skitag vorbei!');
     expect(store.game.finished).toBe(true);
@@ -324,9 +594,7 @@ describe('v2 app shell', () => {
     store.game.round = 5;
     store.game.currentPlayerIndex = 0;
     screen().querySelector('[data-ref="continue"]').click();   // finished=false now → turn_start
-    clickLabel('Bergauf');
-    clickLabel('Würfeln');
-    clickLabel('Fertig');
+    playBergauf();
     document.getElementById('btnMenu').click();   // leave turn_end before the 800 ms
     vi.advanceTimersByTime(2000);
     expect(store.game.currentPlayerIndex).toBe(0);

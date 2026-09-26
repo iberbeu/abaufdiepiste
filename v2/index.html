@@ -74,7 +74,7 @@
 
 <template id="tpl-setup_players">
   <section class="screen wizard">
-    <header class="wizard__head">
+    <header class="step-head">
       <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
       <span class="wizard__dots" role="img" aria-label="Schritt 1 von 4"><span class="dot is-used"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
     </header>
@@ -89,7 +89,7 @@
 
 <template id="tpl-setup_names">
   <section class="screen wizard">
-    <header class="wizard__head">
+    <header class="step-head">
       <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
       <span class="wizard__dots" role="img" aria-label="Schritt 2 von 4"><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot"></span><span class="dot"></span></span>
     </header>
@@ -118,7 +118,7 @@
 
 <template id="tpl-setup_talstation">
   <section class="screen wizard">
-    <header class="wizard__head">
+    <header class="step-head">
       <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
       <span class="wizard__dots" role="img" aria-label="Schritt 3 von 4"><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot"></span></span>
     </header>
@@ -141,7 +141,7 @@
 
 <template id="tpl-setup_length">
   <section class="screen wizard">
-    <header class="wizard__head">
+    <header class="step-head">
       <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
       <span class="wizard__dots" role="img" aria-label="Schritt 4 von 4"><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot is-used"></span></span>
     </header>
@@ -184,6 +184,155 @@
         <span>Pause<span class="btn-action__sub btn-action__lock" data-ref="pauseSub" hidden><span class="icon icon--sm icon--lock"></span><span data-ref="pauseReason"></span></span></span>
       </button>
     </div>
+  </section>
+</template>
+
+<!-- ── BERGAUF (flow_spec §5, B1 + B2) ── -->
+
+<template id="tpl-bergauf_roll">
+  <section class="screen step bergauf">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Bergauf</h1>
+      <span></span>
+    </header>
+    <div class="dice-grid" data-ref="dice"></div>
+    <div class="step-cta"><button class="btn-primary" data-ref="roll"><span class="icon icon--dice"></span>Würfeln</button></div>
+  </section>
+</template>
+
+<template id="tpl-bergauf_result">
+  <section class="screen step bergauf">
+    <header class="step-head">
+      <span></span>
+      <h1 class="step-head__title">Bergauf</h1>
+      <span class="roll-dots" data-ref="dots" role="img"><span class="dot"></span><span class="dot"></span></span>
+    </header>
+    <div class="dice-grid" data-ref="dice"></div>
+    <p class="bergauf__hint" data-ref="hint"></p>
+    <ul class="result-lines" data-ref="lines" aria-live="polite"></ul>
+    <button class="btn-joker" data-ref="joker" aria-pressed="false" hidden><span class="icon icon--sm icon--joker"></span><span data-ref="jokerLabel"></span></button>
+    <div class="step-cta action-stack">
+      <button class="btn-primary" data-ref="primary"></button>
+      <button class="btn-text" data-ref="secondary"></button>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-transport-die">
+  <button class="die die--md" aria-pressed="false">
+    <img class="die__img" data-ref="img" alt="">
+    <span class="die__corner die__corner--held" data-ref="held" hidden><span class="icon icon--sm icon--lock"></span></span>
+    <span class="die__corner die__corner--joker" data-ref="jokered" hidden><span class="icon icon--sm icon--joker"></span></span>
+  </button>
+</template>
+
+<template id="tpl-result-line">
+  <li class="result-line"><span class="icon icon--sm" data-ref="icon"></span><span data-ref="text"></span></li>
+</template>
+
+<template id="tpl-face-picker">
+  <div class="face-picker"></div>
+</template>
+
+<template id="tpl-face-option">
+  <button class="face-option"><img class="face-option__img" data-ref="img" alt=""><span class="face-option__name" data-ref="name"></span></button>
+</template>
+
+<!-- ── BERGAB (flow_spec §5, D1 + D2) ── -->
+
+<template id="tpl-bergab_roll">
+  <section class="screen step bergab">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Bergab</h1>
+      <span></span>
+    </header>
+    <div class="dice-row bergab__dice">
+      <div class="die" role="img" data-ref="descent"><div class="die__face"><span class="die__value">?</span><span class="die__stars" data-ref="stars"></span></div></div>
+      <div class="die die--event"><img class="die__img" src="../img/die_unknown.svg" alt="Ereigniswürfel"></div>
+    </div>
+    <div class="step-cta"><button class="btn-primary" data-ref="roll"><span class="icon icon--dice"></span>Würfeln</button></div>
+  </section>
+</template>
+
+<template id="tpl-bergab_result">
+  <section class="screen step step--split bergab">
+    <h1 class="visually-hidden">Bergab</h1>
+    <div class="step__aside bergab__top">
+      <div class="dice-row bergab__dice">
+        <div class="die" role="img" data-ref="descent"><div class="die__face"><span class="die__value" data-ref="value"></span><span class="die__stars" data-ref="stars"></span></div></div>
+        <div class="die die--event" data-ref="event">
+          <img class="die__img" data-ref="eventImg" alt="">
+          <button class="die__corner die__corner--joker" data-ref="eventJoker" aria-label="Joker einsetzen" hidden><span class="icon icon--sm icon--joker"></span></button>
+        </div>
+      </div>
+      <p class="result-line" data-ref="eventLine" aria-live="polite" hidden></p>
+      <p class="visually-hidden" aria-live="polite" data-ref="live"></p>
+      <div class="crossings" data-ref="crossings">
+        <span class="crossings__label" data-ref="crossLabel"></span>
+        <span class="crossings__dots" data-ref="dots"></span>
+      </div>
+    </div>
+    <div class="step__main bergab__main">
+      <div class="slope-grid" data-ref="tiles"></div>
+      <div class="blocked" data-ref="blocked" hidden>
+        <span class="icon icon--lg icon--warning"></span>
+        <p class="blocked__text" data-ref="blockedText"></p>
+      </div>
+      <button class="round-option" data-ref="extra" aria-label="Extraaktivität" hidden>
+        <span class="icon icon--dice" data-ref="extraIcon"></span>
+        <span class="round-option__label" data-ref="extraLabel" hidden></span>
+      </button>
+    </div>
+    <div class="step-cta step__cta"><button class="btn-primary" data-ref="primary"></button></div>
+  </section>
+</template>
+
+<template id="tpl-slope-tile">
+  <div class="slope-tile">
+    <button class="slope-tile__plus" data-ref="plus"><span class="icon icon--plus"></span></button>
+    <span class="slope-tile__name" data-ref="name"></span>
+    <span class="slope-tile__pts" data-ref="pts"></span>
+    <button class="slope-tile__minus" data-ref="minus"><span class="icon icon--minus"></span></button>
+    <span class="slope-tile__count" data-ref="count" hidden></span>
+    <span class="slope-tile__flag" data-ref="flag" hidden>
+      <span class="icon icon--sm icon--warning" data-ref="warn"></span>
+      <img class="slope-tile__smiley" data-ref="smiley" alt="" hidden>
+    </span>
+  </div>
+</template>
+
+<template id="tpl-dot">
+  <span class="dot"></span>
+</template>
+
+<template id="tpl-decision-die">
+  <img class="decision-die" alt="">
+</template>
+
+<!-- ── PAUSE (flow_spec §5) ── -->
+
+<template id="tpl-pause">
+  <section class="screen step pause">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Mittagspause</h1>
+      <span></span>
+    </header>
+    <div class="pause-tiles">
+      <button class="pause-tile" data-ref="restaurant" aria-pressed="false">
+        <span class="icon icon--lg icon--restaurant"></span>
+        <span class="pause-tile__name">Restaurant</span>
+        <span class="pause-tile__pts" data-ref="restaurantPts"></span>
+      </button>
+      <button class="pause-tile" data-ref="bar" aria-pressed="false">
+        <span class="icon icon--lg icon--bar"></span>
+        <span class="pause-tile__name">Bar</span>
+        <span class="pause-tile__pts" data-ref="barPts"></span>
+      </button>
+    </div>
+    <div class="step-cta"><button class="btn-primary" data-ref="primary" disabled>Restaurant oder Bar?</button></div>
   </section>
 </template>
 

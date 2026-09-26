@@ -7,6 +7,7 @@ import {
   gameTime,
   gameTimeHour,
   analyzeTransportSymbols,
+  transportOptions,
   calcDescentPoints,
   effectiveCrossings,
   sightseeingBonus,
@@ -539,5 +540,35 @@ describe('calcAbschlusswertungResult — talstation not reached (penalties)', ()
     const r = calcAbschlusswertungResult(false, noSel, 0, 0, 0);
     const slopeItems = r.penaltyItems.filter(it => it.label.includes('Piste'));
     expect(slopeItems).toHaveLength(0);
+  });
+});
+
+describe('transportOptions (app v2)', () => {
+  const opts = (...syms) => transportOptions(syms);
+
+  it('two identical symbols are a ride; several pairs combine', () => {
+    expect(opts('gondel', 'gondel', 'skilift', 'skilift', 'zug', 'fussweg'))
+      .toEqual({ helicopter: null, pairs: ['skilift', 'gondel'], exchanges: [] });
+  });
+
+  it('three identical symbols include a pair AND can be swapped for a symbol rolled once', () => {
+    expect(opts('gondel', 'gondel', 'gondel', 'sesselbahn', 'sesselbahn', 'zug'))
+      .toEqual({ helicopter: null, pairs: ['sesselbahn', 'gondel'], exchanges: [{ from: 'gondel', targets: ['zug'] }] });
+  });
+
+  it('a swap is only offered for symbols without a pair; 3+3 needs no swap', () => {
+    expect(opts('gondel', 'gondel', 'gondel', 'zug', 'zug', 'zug'))
+      .toEqual({ helicopter: null, pairs: ['gondel', 'zug'], exchanges: [] });
+    expect(opts('gondel', 'gondel', 'gondel', 'gondel', 'skilift', 'zug').exchanges)
+      .toEqual([{ from: 'gondel', targets: ['skilift', 'zug'] }]);
+  });
+
+  it('six identical symbols = free ride', () => {
+    expect(opts('zug', 'zug', 'zug', 'zug', 'zug', 'zug')).toEqual({ helicopter: 'zug', pairs: [], exchanges: [] });
+  });
+
+  it('six different symbols = nothing valid (Liftschlange)', () => {
+    expect(opts('fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug'))
+      .toEqual({ helicopter: null, pairs: [], exchanges: [] });
   });
 });

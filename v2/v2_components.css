@@ -8,6 +8,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
 [hidden] { display: none !important; }   /* components set display, so [hidden] must win */
+/* Readable by screen readers only (e.g. a screen's <h1> that the layout does not show). */
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 body {
   min-height: 100dvh;
   background: var(--bg-bottom);
@@ -255,9 +257,13 @@ button.avatar:active { transform: scale(0.92); }
 .die--sm { width: var(--die-sm); height: var(--die-sm); border-radius: 12px; }
 .die--event { background: var(--die-event); }
 .die__value { font-size: var(--fs-xxl); font-weight: var(--fw-display); line-height: 1; }
-.die__stars { color: #D98A1E; font-size: var(--fs-sm); line-height: 1; }
+.die__stars { color: var(--die-star); font-size: var(--fs-sm); line-height: 1; }
 .die__face { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .die__img { width: 70%; height: 70%; object-fit: contain; }
+button.die { transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+button.die:disabled { cursor: default; }
+.die.is-rolling { animation: die-shake var(--dur-slow) linear; }
+.die.is-pickable { box-shadow: 0 0 0 3px var(--joker), 0 4px 0 rgba(0, 0, 0, 0.35); }
 .die.is-held { transform: translateY(-8px); box-shadow: 0 0 0 3px var(--secondary), 0 12px 0 rgba(0, 0, 0, 0.35); }
 .die__corner {
   position: absolute;
@@ -284,6 +290,7 @@ button.avatar:active { transform: scale(0.92); }
 .crossings.is-full .dot { animation: pop var(--dur) var(--ease-spring); }
 
 /* ── RESULT LINE (Bergauf combos, event effects) ── */
+.result-lines { list-style: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-height: 40px; }
 .result-line {
   display: flex;
   align-items: center;
@@ -295,6 +302,40 @@ button.avatar:active { transform: scale(0.92); }
 }
 .result-line--good { color: var(--positive); }
 .result-line--bad  { color: var(--negative); }
+
+/* ── JOKER BUTTON (use a Joker coin in context, e.g. turn a die) ── */
+.btn-joker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--joker);
+  color: var(--text-on-light);
+  font-weight: var(--fw-label);
+}
+.btn-joker.is-active { background: var(--surface-raised); color: var(--joker); box-shadow: inset 0 0 0 2px var(--joker); }
+
+/* ── FACE PICKER (Joker: turn a die to any face) ── */
+.face-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); width: 100%; }
+.face-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-label);
+}
+.face-option__img { width: 56px; height: 56px; padding: var(--space-1); border-radius: 12px; background: var(--die-light); object-fit: contain; }
+.face-option.is-selected { box-shadow: inset 0 0 0 2px var(--text-muted); }
+
+/* ── ACTION STACK (primary button + text button under it) ── */
+.action-stack { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); width: 100%; }
+.roll-dots { display: flex; gap: var(--space-2); }
 
 /* ── SLOPE TILES (Bergab + Schlusswertung) ── */
 .slope-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); width: 100%; }
@@ -344,12 +385,55 @@ button.avatar:active { transform: scale(0.92); }
   font-weight: var(--fw-display);
   pointer-events: none;
 }
-.slope-tile__flag { position: absolute; top: var(--space-2); right: var(--space-2); pointer-events: none; }
+/* Top left, so it never collides with the count badge (top right). */
+.slope-tile__flag { position: absolute; top: var(--space-2); left: var(--space-2); display: flex; pointer-events: none; }
+.slope-tile__smiley { width: 26px; height: 26px; border-radius: 6px; background: #fff; }
+.slope-tile__minus:disabled { cursor: default; }
 .slope-tile.is-selected { box-shadow: inset 0 0 0 3px #fff; }
 .slope-tile.is-empty .slope-tile__minus { opacity: 0.3; }
 .slope-tile.is-forbidden { opacity: 0.5; }
 .slope-tile.is-forbidden.is-selected { opacity: 1; }
 .slope-tile.is-bumped { animation: wiggle var(--dur-slow) var(--ease-out); }
+@media (orientation: portrait) and (max-height: 760px) { .slope-tile { min-height: 104px; } }
+
+/* ── STEP HEAD: back button left, title/progress centred (setup wizard, action steps) ── */
+.step-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; min-height: var(--tap-min); }
+.step-head > :last-child:not(:first-child) { justify-self: end; }
+.step-head__title { font-size: var(--fs-lg); font-weight: var(--fw-display); }
+
+/* ── STEP CTA: the step's main button(s), pinned to the bottom so they stay reachable
+   when the step is taller than the phone screen (the content scrolls under them). ── */
+.step-cta {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  width: 100%;
+  margin-top: auto;
+  padding: var(--space-4) 0 max(var(--space-2), env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--bg-bottom) var(--space-4));
+}
+
+/* ── PAUSE TILES (Restaurant / Bar) — wood of a mountain hut, like the Pause action button ── */
+.pause-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); width: 100%; margin-top: var(--space-5); }
+.pause-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  background: #9A6A48;
+  box-shadow: 0 var(--press-depth) 0 #6b4630;
+  color: #fff;
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.pause-tile__name { font-size: var(--fs-lg); font-weight: var(--fw-display); }
+.pause-tile__pts  { font-size: var(--fs-xl); font-weight: var(--fw-number); font-variant-numeric: tabular-nums; }
+.pause-tile.is-selected { box-shadow: inset 0 0 0 3px #fff, 0 var(--press-depth) 0 #6b4630; }
+.pause-tile.is-dimmed { opacity: 0.4; }
+/* Short screens: flatter tiles, so the confirm button stays in view. */
+@media (max-height: 760px) { .pause-tile { aspect-ratio: auto; min-height: 136px; } }
 
 /* ── NUMBER TILES (setup: how many players) ── */
 /* Flex, not grid: an incomplete last row (5 tiles for 2–6 players) stays centred. */
@@ -459,6 +543,14 @@ button.avatar:active { transform: scale(0.92); }
 }
 .round-option.is-done-good { border-style: solid; border-color: var(--positive); color: var(--positive); }
 .round-option.is-done-bad  { border-style: solid; border-color: var(--negative); color: var(--negative); }
+.round-option__label { font-weight: var(--fw-number); font-variant-numeric: tabular-nums; }
+
+/* ── BLOCKED STEP (e.g. Unfall: no descent this turn) ── */
+.blocked { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-6) 0; color: var(--negative); text-align: center; }
+.blocked__text { font-size: var(--fs-lg); font-weight: var(--fw-display); color: var(--text); }
+
+/* ── ENTSCHEIDUNGSWÜRFEL result (sheet body) ── */
+.decision-die { width: 96px; height: 96px; padding: var(--space-2); border-radius: var(--radius-md); background: var(--die-light); animation: burst var(--dur-slow) var(--ease-spring); }
 
 /* ── BOTTOM SHEET ── */
 .sheet-layer { position: fixed; inset: 0; z-index: 10; }
@@ -524,6 +616,7 @@ button.avatar:active { transform: scale(0.92); }
 /* ── MOTION ──
    Note for the JS: a CSS animation only replays when its class is newly added.
    To replay .is-bumped / .is-full, remove the class, force a reflow (el.offsetWidth), then add it again. */
+@keyframes die-shake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-10deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
 @keyframes wiggle { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @keyframes pop    { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } }
 @keyframes burst  { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }

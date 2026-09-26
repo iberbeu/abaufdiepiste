@@ -10,9 +10,12 @@
 // ═══════════════════════════════════════════════════════════════
 
 let openLayer = null;
+let returnFocus = null;   // the element that opened the sheet — focused again on close
 
 export function openSheet({ title, text = '', body = null, actions = [] }) {
+  const opener = openLayer ? returnFocus : document.activeElement;   // a sheet replacing a sheet keeps the first opener
   closeSheet();
+  returnFocus = opener;
   const layer = document.getElementById('tpl-sheet').content.firstElementChild.cloneNode(true);
   layer.querySelector('[data-ref="title"]').textContent = title;
   const textEl = layer.querySelector('[data-ref="text"]');
@@ -42,7 +45,10 @@ export function closeSheet() {
   if (!openLayer) return;
   openLayer.remove();
   openLayer = null;
-  document.querySelector('.app').inert = false;
+  document.querySelector('.app').inert = false;   // first: an inert element cannot take focus
+  // Back to where the user was — unless that element is gone (e.g. the screen changed).
+  if (returnFocus?.isConnected && !returnFocus.disabled) returnFocus.focus();
+  returnFocus = null;
   document.removeEventListener('keydown', onKey);
 }
 
