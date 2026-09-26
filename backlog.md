@@ -37,6 +37,8 @@ Bugs and missing features identified by audit on 2026-04-05. Each item reference
 ### Errors in the instructions
 | ID | Area | Issue  | Solution? |
 |----|------|--------|-----------|
+| ~~ERR-1~~ | ~~Bergab / Ereigniswürfel~~ | ~~Resolved~~ — Die alte Regel lautete "Wegen eingeschränkter Sicht werden nur halbe Punkte angerechnet." Gemeint ist die Geschwindigkeit: bei schlechter Sicht darf man nur halb so viele Kreuzungen passieren, die Punkte bleiben voll. | App, Tests und `website/anleitung_source/anleitung_content.html` folgen der neuen Regel. Die `.docx` wurde nach `specifications/spielregeln.md` konvertiert und dort korrigiert — inklusive der Übersichtstabelle, die vorher nur als Bild im Word-Dokument lag |
+| ~~ERR-2~~ | ~~Bergab / Abfahrtswürfel~~ | ~~Resolved~~ — Die App hatte die Augenzahlen 1·1·2·2·3·3 / 2·2·3·3·4·4 / 3·3·4·4·6·6 — die Anleitung nennt 2 und 4 (Anfänger), 2, 4 und 6 (Fortgeschritten), 4 und 6 (Profi). | Behoben: `DESCENT_DICE` in `game_logic.js` folgt jetzt der Anleitung, `dice_app.js` übernimmt die Werte von dort. Fehlende Würfelbilder `descent_anfaenger_4.svg` und `descent_fortgeschritten_6.svg` ergänzt |
 
 
 ## UI Improvements

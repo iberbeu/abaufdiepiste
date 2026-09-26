@@ -1,9 +1,10 @@
 import {
   TRANSPORT_SYMBOLS, TRANSPORT_NAMES, SLOPE_PTS, ALLOWED_SLOPES,
+  DESCENT_DICE as DESCENT_FACES,
   getLevel, levelLabel,
   gameTime as _gameTime, gameTimeHour as _gameTimeHour,
   analyzeTransportSymbols,
-  calcDescentPoints,
+  calcDescentPoints, effectiveCrossings,
   calcAbschlusswertungResult,
 } from './game_logic.js';
 
@@ -23,15 +24,16 @@ const TRANSPORT_IMGS    = {
 const EVENT_FACES = [
   { sym:'fahrt',       img:'img/event_fahrt.png',       label:'+1 Fahrt',    cls:'success', text:'+1 Fahrt: Du erhältst eine Gratisfahrt-Münze! 🎟' },
   { sym:'helikopter',  img:'img/event_helikopter.png',  label:'Helikopter',  cls:'warning', text:'Helikopter: Transport ins nächste Tal – neu starten! 🚁' },
-  { sym:'schneesturm', img:'img/event_schneesturm.png', label:'Schneesturm', cls:'danger',  text:'Schneesturm: Nur halbe Punkte für diese Abfahrt! ❄' },
+  { sym:'schneesturm', img:'img/event_schneesturm.png', label:'Schneesturm', cls:'danger',  text:'Schneesturm: Schlechte Sicht – nur halb so weit fahren! ❄' },
   { sym:'pulverschnee',img:'img/event_pulverschnee.png',label:'Pulverschnee',cls:'success', text:'Pulverschnee: +5 Bonuspunkte! 🎉' },
   { sym:'unfall',      img:'img/event_unfall.png',      label:'Unfall',      cls:'danger',  text:'Unfall: Keine Abfahrt möglich – Zug aussetzen' },
   { sym:'sonne',       img:'img/event_sonne.png',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
 ];
+// Face values come from game_logic.js — only presentation is added here.
 const DESCENT_DICE = {
-  anfaenger:      { faces:[1,1,2,2,3,3], cls:'die-descent-anfaenger',      label:'🔴 Anfänger',      imgPrefix:'img/descent_anfaenger_' },
-  fortgeschritten:{ faces:[2,2,3,3,4,4], cls:'die-descent-fortgeschritten', label:'⚫ Fortgeschritten', imgPrefix:'img/descent_fortgeschritten_' },
-  profi:          { faces:[3,3,4,4,6,6], cls:'die-descent-profi',           label:'🟡 Profi',          imgPrefix:'img/descent_profi_' }
+  anfaenger:      { ...DESCENT_FACES.anfaenger,       cls:'die-descent-anfaenger',       label:'🔴 Anfänger',       imgPrefix:'img/descent_anfaenger_' },
+  fortgeschritten:{ ...DESCENT_FACES.fortgeschritten, cls:'die-descent-fortgeschritten', label:'⚫ Fortgeschritten', imgPrefix:'img/descent_fortgeschritten_' },
+  profi:          { ...DESCENT_FACES.profi,           cls:'die-descent-profi',           label:'🟡 Profi',          imgPrefix:'img/descent_profi_' }
 };
 const IMG_UNKNOWN = 'img/die_unknown.svg';
 
@@ -824,9 +826,7 @@ function rollBothDice() {
     if (ev.sym === 'helikopter' || ev.sym === 'unfall') {
       descentRes.style.display = 'none';
     } else {
-      descentRes.style.display = '';
-      descentRes.className = 'result-box info';
-      descentRes.textContent = `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val>1?'en':''} passieren.`;
+      renderDescentResultText();
     }
 
     // Show event result
@@ -888,11 +888,7 @@ function useJokerOnEvent() {
   checkCoinLimit(p);
   updateCoinsDisplay();
   // Show the descent result text now that the event is averted
-  const descentRes = document.getElementById('descentResult');
-  descentRes.style.display = '';
-  descentRes.className = 'result-box info';
-  const val = state.descentValue;
-  descentRes.textContent = `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val>1?'en':''} passieren.`;
+  renderDescentResultText();
   // Reveal slope selector (re-render banner without the negative effect)
   renderDescentEventBanner();
   filterSlopesByLevel();
@@ -910,29 +906,51 @@ function renderDescentEventBanner() {
     const jokerBtn = p && p.joker > 0
       ? `<button class="btn btn-warn btn--mt-8 btn--sm" onclick="useJokerOnEvent()">🃏 Joker nutzen (${p.joker} verfügbar)</button>`
       : '';
-    html += `<div class="result-box warning" style="margin:0 0 8px;">⚠ Schneesturm aktiv – nur <b>halbe Punkte</b>!${jokerBtn}</div>`;
+    const max = currentMaxCrossings();
+    html += `<div class="result-box warning result-box--flush-top">⚠ Schneesturm aktiv – schlechte Sicht: nur <b>${max} statt ${state.descentValue} Kreuzungen</b>! Punkte bleiben voll.${jokerBtn}</div>`;
   } else if (ev?.sym === 'schneesturm' && state.jokerUsedOnEvent) {
-    html += '<div class="result-box success" style="margin:0 0 8px;">🃏 Schneesturm abgewendet – volle Punkte!</div>';
+    html += '<div class="result-box success result-box--flush-top">🃏 Schneesturm abgewendet – volle Fahrt!</div>';
   }
-  if (ev?.sym === 'pulverschnee') html += '<div class="result-box success" style="margin:0 0 8px;">❄ Pulverschnee – +5 Bonuspunkte werden addiert!</div>';
+  if (ev?.sym === 'pulverschnee') html += '<div class="result-box success result-box--flush-top">❄ Pulverschnee – +5 Bonuspunkte werden addiert!</div>';
   document.getElementById('descentEventBanner').innerHTML = html;
   document.getElementById('slopeSelector').style.display = '';
   document.getElementById('descentPointsPreview').style.display = '';
   // Initialise counter
   const maxEl = document.getElementById('crossingMax');
-  if (maxEl) maxEl.textContent = state.descentValue;
+  if (maxEl) maxEl.textContent = currentMaxCrossings();
   updateCrossingCounter();
+}
+
+// Crossings the current player may still pass this turn.
+// Schneesturm halves the rolled die value; a Joker on the event restores it.
+function currentMaxCrossings() {
+  const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
+  return effectiveCrossings(state.descentValue, ev?.sym ?? null, state.jokerUsedOnEvent);
+}
+
+// Renders the "Abfahrt: X – du darfst Y Kreuzungen passieren" info line.
+function renderDescentResultText() {
+  const el = document.getElementById('descentResult');
+  if (!el) return;
+  const val = state.descentValue;
+  const max = currentMaxCrossings();
+  el.style.display = '';
+  el.className = 'result-box info';
+  el.textContent = max < val
+    ? `🎿 Abfahrt: ${val} – Schneesturm halbiert die Fahrt: nur ${max} Kreuzung${max === 1 ? '' : 'en'} passieren.`
+    : `🎿 Abfahrt: ${val} – du darfst ${val} Kreuzung${val === 1 ? '' : 'en'} passieren.`;
 }
 
 function updateCrossingCounter() {
   const usedEl = document.getElementById('crossingUsed');
   const counter = document.getElementById('crossingCounter');
   if (!usedEl || !counter) return;
+  const max = currentMaxCrossings();
   const used = Object.values(slopeSelection).reduce((a, b) => a + b, 0);
   usedEl.textContent = used;
   counter.classList.remove('counter-full', 'counter-over');
-  if (used > state.descentValue) counter.classList.add('counter-over');
-  else if (used === state.descentValue && used > 0) counter.classList.add('counter-full');
+  if (used > max) counter.classList.add('counter-over');
+  else if (used === max && used > 0) counter.classList.add('counter-full');
 }
 
 // Returns the set of slope colours allowed for the current player's level
@@ -1031,7 +1049,7 @@ function updateOhneBefugnisUI() {
 
 function updateKboxAvailability() {
   const used = Object.values(slopeSelection).reduce((a, b) => a + b, 0);
-  const remaining = state.descentValue - used;
+  const remaining = currentMaxCrossings() - used;
 
   document.querySelectorAll('.kreuzung-boxes').forEach(group => {
     const color = group.dataset.color;
@@ -1053,7 +1071,7 @@ function updateKboxAvailability() {
 // Delegates pure calculation to game_logic.js; reads module-level state here.
 function calcDescentTotal() {
   const ev = state.eventIndex >= 0 ? EVENT_FACES[state.eventIndex] : null;
-  return calcDescentPoints(slopeSelection, ev?.sym ?? null, state.jokerUsedOnEvent, ohneBefugnisResult, getAllowedSlopes());
+  return calcDescentPoints(slopeSelection, ev?.sym ?? null, ohneBefugnisResult, getAllowedSlopes());
 }
 
 function updateDescentPreview() {
@@ -1199,7 +1217,7 @@ function confirmDescentPoints() {
   checkLevelUp(p, _prevLevelDescent);
   const schneesturmActive = ev?.sym === 'schneesturm' && !state.jokerUsedOnEvent;
   const histLine = parts.length > 0
-    ? `${p.name}: Abfahrt [${parts.join(', ')}]${schneesturmActive?' (Schneesturm ÷2)':''}${state.jokerUsedOnEvent && ev?.sym==='schneesturm'?' (Joker: Schneesturm abgewendet)':''}${ev?.sym==='pulverschnee'?' (+5 Pulverschnee)':''}${ohneBefugnisRed?' (Ohne Befugnis: negativ)':''}${extraPts > 0 ? ' + Extraaktivität +12':''} → ${(total + extraPts) >= 0 ? '+' : ''}${total + extraPts} Punkte`
+    ? `${p.name}: Abfahrt [${parts.join(', ')}]${schneesturmActive?` (Schneesturm: nur ${currentMaxCrossings()} Kreuzungen)`:''}${state.jokerUsedOnEvent && ev?.sym==='schneesturm'?' (Joker: Schneesturm abgewendet)':''}${ev?.sym==='pulverschnee'?' (+5 Pulverschnee)':''}${ohneBefugnisRed?' (Ohne Befugnis: negativ)':''}${extraPts > 0 ? ' + Extraaktivität +12':''} → ${(total + extraPts) >= 0 ? '+' : ''}${total + extraPts} Punkte`
     : `${p.name}: Abfahrt ohne Pisten-Punkte bestätigt${extraPts > 0 ? ' + Extraaktivität +12':''}`;
   addHistory(histLine);
   if (extraaktivitaetPending !== null) {

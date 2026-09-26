@@ -6,10 +6,12 @@ import {
   gameTimeHour,
   analyzeTransportSymbols,
   calcDescentPoints,
+  effectiveCrossings,
   sightseeingBonus,
   calcAbschlusswertungResult,
   TRANSPORT_SYMBOLS,
   SLOPE_PTS,
+  DESCENT_DICE,
 } from '../game_logic.js';
 
 // ─── Player level ─────────────────────────────────────────────────────────────
@@ -176,6 +178,63 @@ describe('analyzeTransportSymbols — invalid', () => {
   });
 });
 
+// ─── Descent dice faces ───────────────────────────────────────────────────────
+
+describe('DESCENT_DICE — face values per rulebook', () => {
+  it('every die has exactly 6 faces', () => {
+    Object.values(DESCENT_DICE).forEach(d => expect(d.faces).toHaveLength(6));
+  });
+
+  it('Anfänger (red die) shows only 2 and 4', () => {
+    expect(new Set(DESCENT_DICE.anfaenger.faces)).toEqual(new Set([2, 4]));
+  });
+
+  it('Fortgeschritten (black die) shows 2, 4 and 6', () => {
+    expect(new Set(DESCENT_DICE.fortgeschritten.faces)).toEqual(new Set([2, 4, 6]));
+  });
+
+  it('Profi (yellow die) shows only 4 and 6', () => {
+    expect(new Set(DESCENT_DICE.profi.faces)).toEqual(new Set([4, 6]));
+  });
+
+  it('all faces are even, so Schneesturm halving is always a whole number', () => {
+    Object.values(DESCENT_DICE).forEach(d => {
+      d.faces.forEach(f => expect(f % 2).toBe(0));
+    });
+  });
+});
+
+// ─── Descent movement (Schneesturm) ───────────────────────────────────────────
+
+describe('effectiveCrossings', () => {
+  it('returns the rolled value when there is no event', () => {
+    expect(effectiveCrossings(4, null, false)).toBe(4);
+  });
+
+  it('returns the rolled value for unrelated events', () => {
+    expect(effectiveCrossings(6, 'pulverschnee', false)).toBe(6);
+    expect(effectiveCrossings(6, 'sonne', false)).toBe(6);
+  });
+
+  it('halves the rolled value on Schneesturm', () => {
+    expect(effectiveCrossings(2, 'schneesturm', false)).toBe(1);
+    expect(effectiveCrossings(4, 'schneesturm', false)).toBe(2);
+    expect(effectiveCrossings(6, 'schneesturm', false)).toBe(3);
+  });
+
+  it('a Joker on the event restores full movement', () => {
+    expect(effectiveCrossings(6, 'schneesturm', true)).toBe(6);
+  });
+
+  it('never immobilises the player — every real face keeps at least 1 crossing', () => {
+    Object.values(DESCENT_DICE).forEach(d => {
+      d.faces.forEach(f => {
+        expect(effectiveCrossings(f, 'schneesturm', false)).toBeGreaterThanOrEqual(1);
+      });
+    });
+  });
+});
+
 // ─── Descent point calculation ────────────────────────────────────────────────
 
 const noEvent = null;
@@ -183,7 +242,7 @@ const noEvent = null;
 describe('calcDescentPoints — basic slope points', () => {
   it('calculates blue piste correctly (2 pts per crossing)', () => {
     const sel = { blue: 3, red: 0, black: 0, yellow: 0 };
-    const { total, basePoints } = calcDescentPoints(sel, noEvent, false, null);
+    const { total, basePoints } = calcDescentPoints(sel, noEvent, null);
     expect(basePoints).toBe(6);
     expect(total).toBe(6);
   });
@@ -191,13 +250,13 @@ describe('calcDescentPoints — basic slope points', () => {
   it('calculates mixed slopes', () => {
     // 2×blue=4 + 1×red=4 + 1×black=6 = 14
     const sel = { blue: 2, red: 1, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, noEvent, false, null);
+    const { total } = calcDescentPoints(sel, noEvent, null);
     expect(total).toBe(14);
   });
 
   it('returns 0 for empty selection', () => {
     const sel = { blue: 0, red: 0, black: 0, yellow: 0 };
-    const { total, parts } = calcDescentPoints(sel, noEvent, false, null);
+    const { total, parts } = calcDescentPoints(sel, noEvent, null);
     expect(total).toBe(0);
     expect(parts).toHaveLength(0);
   });
@@ -210,45 +269,38 @@ describe('calcDescentPoints — SLOPE_PTS constant values', () => {
   it('yellow = 8',() => expect(SLOPE_PTS.yellow).toBe(8));
 });
 
-describe('calcDescentPoints — Schneesturm (halve points)', () => {
-  it('halves base points on schneesturm (floors odd totals)', () => {
-    // 1×red = 4 → floor(4/2) = 2
+describe('calcDescentPoints — Schneesturm does NOT touch points', () => {
+  it('pays full points for the slopes actually skied', () => {
+    // 1×red = 4 → still 4; Schneesturm only limits how far you get (effectiveCrossings)
     const sel = { blue: 0, red: 1, black: 0, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'schneesturm', false, null);
-    expect(total).toBe(2);
+    const { total } = calcDescentPoints(sel, 'schneesturm', null);
+    expect(total).toBe(4);
   });
 
-  it('floors odd results (3 pts → 1)', () => {
-    // 1×blue=2 + 0 → actually not odd, use 3 crossings: none with exactly 3 base.
-    // 1×black = 6 → floor(6/2)=3; use 3×blue=6→3
+  it('gives the same total as no event at all', () => {
     const sel = { blue: 3, red: 0, black: 0, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'schneesturm', false, null);
-    expect(total).toBe(3);
+    const { total: storm } = calcDescentPoints(sel, 'schneesturm', null);
+    const { total: calm }  = calcDescentPoints(sel, noEvent, null);
+    expect(storm).toBe(calm);
   });
 
-  it('joker cancels schneesturm — full points apply', () => {
+  it('adds no Schneesturm note to bonusText', () => {
     const sel = { blue: 0, red: 1, black: 0, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'schneesturm', true, null);
-    expect(total).toBe(4); // full red piste points
-  });
-
-  it('includes (÷2 Schneesturm) in bonusText', () => {
-    const sel = { blue: 0, red: 1, black: 0, yellow: 0 };
-    const { bonusText } = calcDescentPoints(sel, 'schneesturm', false, null);
-    expect(bonusText).toContain('Schneesturm');
+    const { bonusText } = calcDescentPoints(sel, 'schneesturm', null);
+    expect(bonusText).not.toContain('Schneesturm');
   });
 });
 
 describe('calcDescentPoints — Pulverschnee (+5 bonus)', () => {
   it('adds +5 to total', () => {
     const sel = { blue: 1, red: 0, black: 0, yellow: 0 }; // base=2
-    const { total } = calcDescentPoints(sel, 'pulverschnee', false, null);
+    const { total } = calcDescentPoints(sel, 'pulverschnee', null);
     expect(total).toBe(7);
   });
 
   it('no bonus on empty slope selection (BUG-11 fix: bonus requires actual skiing)', () => {
     const sel = { blue: 0, red: 0, black: 0, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'pulverschnee', false, null);
+    const { total } = calcDescentPoints(sel, 'pulverschnee', null);
     expect(total).toBe(0);
   });
 });
@@ -259,26 +311,26 @@ describe('calcDescentPoints — Ohne Befugnis (red result negates)', () => {
   it('negates only forbidden slope on red (only forbidden slope selected)', () => {
     // Anfänger selects 1×black (forbidden, 6pts) — red die → -6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, noEvent, false, false, anfaengerSlopes);
+    const { total } = calcDescentPoints(sel, noEvent, false, anfaengerSlopes);
     expect(total).toBe(-6);
   });
 
   it('keeps allowed points, negates forbidden on red (mixed selection)', () => {
     // Anfänger selects 1×red (allowed, 4pts) + 1×black (forbidden, 6pts) — red die → 4-6=-2
     const sel = { blue: 0, red: 1, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, noEvent, false, false, anfaengerSlopes);
+    const { total } = calcDescentPoints(sel, noEvent, false, anfaengerSlopes);
     expect(total).toBe(-2);
   });
 
   it('does not negate on green (ohneBefugnisResult=true)', () => {
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, noEvent, false, true, anfaengerSlopes);
+    const { total } = calcDescentPoints(sel, noEvent, true, anfaengerSlopes);
     expect(total).toBe(6);
   });
 
   it('does not negate when ohneBefugnisResult is null (not yet rolled)', () => {
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, noEvent, false, null, anfaengerSlopes);
+    const { total } = calcDescentPoints(sel, noEvent, null, anfaengerSlopes);
     expect(total).toBe(6);
   });
 });
@@ -288,52 +340,48 @@ describe('calcDescentPoints — Ohne Befugnis joker rescue (FEAT-19)', () => {
     // 1×black=6 (forbidden for Anfänger)
     // red (no rescue) → -6; green (natural or joker-rescued) → +6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total: red }     = calcDescentPoints(sel, noEvent, false, false, anfaengerSlopes);
-    const { total: rescued } = calcDescentPoints(sel, noEvent, false, true,  anfaengerSlopes);
+    const { total: red }     = calcDescentPoints(sel, noEvent, false, anfaengerSlopes);
+    const { total: rescued } = calcDescentPoints(sel, noEvent, true,  anfaengerSlopes);
     expect(red).toBe(-6);
     expect(rescued).toBe(6);
   });
 
-  it('schneesturm active + joker rescue: points are halved but NOT negated', () => {
-    // 1×black=6 → halved by schneesturm=3 → ohneBefugnisResult=true → still +3
+  it('schneesturm + joker rescue: full points, not negated', () => {
+    // 1×black=6 → Schneesturm leaves points alone → ohneBefugnisResult=true → +6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'schneesturm', false, true, anfaengerSlopes);
-    expect(total).toBe(3);
+    const { total } = calcDescentPoints(sel, 'schneesturm', true, anfaengerSlopes);
+    expect(total).toBe(6);
   });
 
-  it('without rescue (red): schneesturm halves allowed only, forbidden penalty is full', () => {
-    // 1×black=6 (forbidden) — no allowed slopes selected — schneesturm has nothing to halve
-    // allowed portion: floor(0/2)=0; forbidden: 6 → total = 0-6 = -6
+  it('without rescue (red): forbidden penalty is full, Schneesturm changes nothing', () => {
+    // 1×black=6 (forbidden), no allowed slopes → total = 0-6 = -6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'schneesturm', false, false, anfaengerSlopes);
+    const { total } = calcDescentPoints(sel, 'schneesturm', false, anfaengerSlopes);
     expect(total).toBe(-6);
   });
 });
 
 describe('calcDescentPoints — combined modifiers', () => {
-  it('schneesturm + pulverschnee cannot coexist, but stacking logic is correct', () => {
+  it('schneesturm leaves points untouched, pulverschnee still adds +5', () => {
     const sel = { blue: 0, red: 2, black: 0, yellow: 0 }; // base=8
-    // schneesturm only: floor(8/2)=4
-    const { total: t1 } = calcDescentPoints(sel, 'schneesturm', false, null);
-    expect(t1).toBe(4);
-    // pulverschnee only: 8+5=13
-    const { total: t2 } = calcDescentPoints(sel, 'pulverschnee', false, null);
+    const { total: t1 } = calcDescentPoints(sel, 'schneesturm', null);
+    expect(t1).toBe(8);
+    const { total: t2 } = calcDescentPoints(sel, 'pulverschnee', null);
     expect(t2).toBe(13);
   });
 
-  it('schneesturm + ohneBefugnis red + mixed slopes: halves allowed, full forbidden penalty', () => {
-    // 1×red=4 (allowed) + 1×black=6 (forbidden) — schneesturm — red die
-    // allowed: floor(4/2)=2; forbidden: 6 → total = 2-6 = -4
+  it('schneesturm + ohneBefugnis red + mixed slopes: only the forbidden penalty applies', () => {
+    // 1×red=4 (allowed) + 1×black=6 (forbidden) — red die → 4-6 = -2
     const sel = { blue: 0, red: 1, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'schneesturm', false, false, anfaengerSlopes);
-    expect(total).toBe(-4);
+    const { total } = calcDescentPoints(sel, 'schneesturm', false, anfaengerSlopes);
+    expect(total).toBe(-2);
   });
 
   it('pulverschnee + ohneBefugnis red + mixed slopes: bonus applies to allowed portion only', () => {
     // 1×red=4 (allowed) + 1×black=6 (forbidden) — pulverschnee — red die
     // allowed: 4+5=9; forbidden: 6 → total = 9-6 = 3
     const sel = { blue: 0, red: 1, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'pulverschnee', false, false, anfaengerSlopes);
+    const { total } = calcDescentPoints(sel, 'pulverschnee', false, anfaengerSlopes);
     expect(total).toBe(3);
   });
 
@@ -341,7 +389,7 @@ describe('calcDescentPoints — combined modifiers', () => {
     // 1×black=6 (all forbidden) — pulverschnee — red die
     // allowedBase=0 → bonus guard blocks; total = 0-6 = -6
     const sel = { blue: 0, red: 0, black: 1, yellow: 0 };
-    const { total } = calcDescentPoints(sel, 'pulverschnee', false, false, anfaengerSlopes);
+    const { total } = calcDescentPoints(sel, 'pulverschnee', false, anfaengerSlopes);
     expect(total).toBe(-6);
   });
 });

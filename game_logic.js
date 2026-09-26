@@ -20,10 +20,12 @@ export const TRANSPORT_NAMES = [
 
 export const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
 
+// Face values per the rulebook (Spielmaterial ÜBERARBEITET.docx, "Fahrniveaus"):
+// Anfänger = red die (2, 4), Fortgeschritten = black die (2, 4, 6), Profi = yellow die (4, 6).
 export const DESCENT_DICE = {
-  anfaenger:       { faces: [1, 1, 2, 2, 3, 3] },
-  fortgeschritten: { faces: [2, 2, 3, 3, 4, 4] },
-  profi:           { faces: [3, 3, 4, 4, 6, 6] },
+  anfaenger:       { faces: [2, 2, 2, 4, 4, 4] },
+  fortgeschritten: { faces: [2, 2, 4, 4, 6, 6] },
+  profi:           { faces: [4, 4, 4, 6, 6, 6] },
 };
 
 export const ALLOWED_SLOPES = {
@@ -165,20 +167,41 @@ export function analyzeTransportSymbols(syms) {
   return results;
 }
 
+// ─── Descent movement ────────────────────────────────────────────────────────
+
+/**
+ * Returns how many crossings the player may actually pass this turn.
+ * Schneesturm halves the rolled movement ("wegen eingeschränkter Sicht"), it does
+ * NOT reduce points. A Joker averts the event and restores full movement.
+ * Every descent die face is even, so the halved value is always a whole number.
+ *
+ * @param {number} descentValue  — rolled face of the descent die
+ * @param {string|null} eventSym — EVENT_FACES[n].sym, or null
+ * @param {boolean} jokerUsedOnEvent
+ * @returns {number}
+ */
+export function effectiveCrossings(descentValue, eventSym, jokerUsedOnEvent) {
+  if (eventSym === 'schneesturm' && !jokerUsedOnEvent) {
+    return Math.floor(descentValue / 2);
+  }
+  return descentValue;
+}
+
 // ─── Descent point calculation ───────────────────────────────────────────────
 
 /**
  * Calculates the total points for a descent turn.
  * Pure function — no DOM or state access.
  *
+ * Schneesturm does not appear here — it reduces movement, not points (see effectiveCrossings).
+ *
  * @param {Object} slopeSelection   — { blue: number, red: number, black: number, yellow: number }
  * @param {string|null} eventSym    — EVENT_FACES[n].sym, or null
- * @param {boolean} jokerUsedOnEvent
  * @param {boolean|null} ohneBefugnisResult — null=not rolled, true=green, false=red
  * @param {string[]} allowedSlopes  — colours the player may use (e.g. ['blue','red'] for Anfänger)
  * @returns {{ total: number, basePoints: number, parts: string[], bonusText: string }}
  */
-export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, ohneBefugnisResult, allowedSlopes = ['blue', 'red', 'black', 'yellow']) {
+export function calcDescentPoints(slopeSelection, eventSym, ohneBefugnisResult, allowedSlopes = ['blue', 'red', 'black', 'yellow']) {
   let allowedBase = 0;
   let forbiddenBase = 0;
   const parts = [];
@@ -202,12 +225,7 @@ export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, oh
   let bonusText = '';
 
   if (ohneBefugnisResult === false) {
-    // Schneesturm halves only the allowed portion; forbidden penalty applies in full.
     let allowedTotal = allowedBase;
-    if (eventSym === 'schneesturm' && !jokerUsedOnEvent) {
-      allowedTotal = Math.floor(allowedTotal / 2);
-      bonusText = ' (÷2 Schneesturm)';
-    }
     // Pulverschnee bonus only when the player has at least one legitimate slope:
     // skiing only on forbidden pistes with a red penalty earns no powder bonus.
     if (eventSym === 'pulverschnee' && allowedBase > 0) {
@@ -218,10 +236,6 @@ export function calcDescentPoints(slopeSelection, eventSym, jokerUsedOnEvent, oh
     bonusText += ' (Ohne Befugnis: negativ)';
   } else {
     total = basePoints;
-    if (eventSym === 'schneesturm' && !jokerUsedOnEvent) {
-      total = Math.floor(total / 2);
-      bonusText = ' (÷2 Schneesturm)';
-    }
     if (eventSym === 'pulverschnee' && basePoints > 0) {
       total += 5;
       bonusText = ' (+5 Pulverschnee)';
