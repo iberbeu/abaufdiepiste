@@ -1,7 +1,7 @@
 import {
   TRANSPORT_SYMBOLS, TRANSPORT_NAMES, SLOPE_PTS, ALLOWED_SLOPES,
   DESCENT_DICE as DESCENT_FACES,
-  getLevel, levelLabel,
+  getLevel, levelLabel, levelStars,
   gameTime as _gameTime, gameTimeHour as _gameTimeHour,
   analyzeTransportSymbols,
   calcDescentPoints, effectiveCrossings,
@@ -30,10 +30,11 @@ const EVENT_FACES = [
   { sym:'sonne',       img:'img/event_sonne.png',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
 ];
 // Face values come from game_logic.js — only presentation is added here.
+// The three dice share one look (.die-descent); the level is told apart by the stars on the faces.
 const DESCENT_DICE = {
-  anfaenger:      { ...DESCENT_FACES.anfaenger,       cls:'die-descent-anfaenger',       label:'🔴 Anfänger',       imgPrefix:'img/descent_anfaenger_' },
-  fortgeschritten:{ ...DESCENT_FACES.fortgeschritten, cls:'die-descent-fortgeschritten', label:'⚫ Fortgeschritten', imgPrefix:'img/descent_fortgeschritten_' },
-  profi:          { ...DESCENT_FACES.profi,           cls:'die-descent-profi',           label:'🟡 Profi',          imgPrefix:'img/descent_profi_' }
+  anfaenger:      { ...DESCENT_FACES.anfaenger,       label:`${levelLabel('anfaenger')} ${levelStars('anfaenger')}`,             imgPrefix:'img/descent_anfaenger_' },
+  fortgeschritten:{ ...DESCENT_FACES.fortgeschritten, label:`${levelLabel('fortgeschritten')} ${levelStars('fortgeschritten')}`, imgPrefix:'img/descent_fortgeschritten_' },
+  profi:          { ...DESCENT_FACES.profi,           label:`${levelLabel('profi')} ${levelStars('profi')}`,                     imgPrefix:'img/descent_profi_' }
 };
 const IMG_UNKNOWN = 'img/die_unknown.svg';
 
@@ -322,7 +323,7 @@ function updateAll() {
   document.getElementById('currentPlayerDot').style.background = p ? p.color : '';
   document.getElementById('currentPlayerPoints').textContent = p ? p.points : 0;
   const badge = document.getElementById('levelBadge');
-  badge.textContent = levelLabel(lvl);
+  badge.textContent = `${levelLabel(lvl)} ${levelStars(lvl)}`;
   badge.className = 'level-badge ' + levelBadgeClass(lvl);
 
   // Player strip
@@ -755,9 +756,9 @@ function resetDescentDice() {
   const lvl = getLevel(p.points);
   const dd = DESCENT_DICE[lvl];
   const descentDieEl = document.getElementById('descentDie');
-  descentDieEl.className = `die ${dd.cls}`;
+  descentDieEl.className = 'die die-descent';
   descentDieEl.innerHTML = dieFaceHTML(dieImg(IMG_UNKNOWN, '?'));
-  document.getElementById('descentDieLegend').textContent = dd.label + ' · ' + dd.faces.join(', ');
+  document.getElementById('descentDieLegend').textContent = dd.label + ' · ' + [...new Set(dd.faces)].join(', ');
   document.getElementById('descentDiceLabel').textContent = dd.label;
   document.getElementById('descentResult').style.display = 'none';
   document.getElementById('eventResult').style.display = 'none';
@@ -809,7 +810,7 @@ function rollBothDice() {
 
   // Animate descent die — cycle through unique face values, then settle
   const descentEl = document.getElementById('descentDie');
-  descentEl.className = `die ${dd.cls}`;
+  descentEl.className = 'die die-descent';
   const uniqueFaces = [...new Set(dd.faces)];
   animateDieRoll(
     descentEl,
@@ -1595,8 +1596,6 @@ function checkRoundNotifications() {
 // LEVEL-UP CELEBRATION (FEAT-17)
 // ═══════════════════════════════════════
 const _LEVEL_ORDER = ['anfaenger', 'fortgeschritten', 'profi'];
-const _LEVEL_ICONS = { anfaenger: '🔴', fortgeschritten: '⚫', profi: '🟡' };
-const _LEVEL_LABELS = { anfaenger: 'Anfänger', fortgeschritten: 'Fortgeschritten', profi: 'Profi' };
 
 function checkLevelUp(p, prevLevel) {
   const newLevel = getLevel(p.points);
@@ -1610,10 +1609,10 @@ function showLevelUpCelebration(p, newLevel) {
   toast.className = 'levelup-toast';
   toast.innerHTML = `
     <div class="levelup-toast-content">
-      <span class="levelup-toast-icon">${_LEVEL_ICONS[newLevel]}</span>
+      <span class="levelup-toast-icon">${levelStars(newLevel)}</span>
       <div class="levelup-toast-text">
         <strong>${esc(p.name)}</strong>
-        <span>Level Up! ${_LEVEL_LABELS[newLevel]}</span>
+        <span>Level Up! ${levelLabel(newLevel)}</span>
       </div>
     </div>`;
   document.body.appendChild(toast);
@@ -2112,7 +2111,7 @@ function updateScoreboard() {
   body.innerHTML = '';
   sorted.forEach(pl => {
     const lvl = getLevel(pl.points);
-    const shortLevel = { anfaenger: 'ANF.', fortgeschritten: 'FORT.', profi: 'PROFI' }[lvl];
+    const shortLevel = `${{ anfaenger: 'ANF.', fortgeschritten: 'FORT.', profi: 'PROFI' }[lvl]} ${levelStars(lvl)}`;
     const isCurrent = pl === currentPlayer();
     const tr = document.createElement('tr');
     if (isCurrent) tr.className = 'current-player';

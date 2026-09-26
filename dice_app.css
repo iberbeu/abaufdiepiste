@@ -141,7 +141,7 @@
 
   /* ── LEVEL BADGE ── */
   .level-badge {
-    display: inline-block; padding: 3px 10px; border-radius: 50px;
+    display: inline-block; white-space: nowrap; padding: 3px 10px; border-radius: 50px;
     font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
   }
   /* Level badges — deliberate non-piste colours to avoid semantic collision */
@@ -187,7 +187,7 @@
   }
   /* Each face carries its own background, border, and rounded corners —
      inherited from the colour modifier classes (.die-transport, .die-event,
-     .die-descent-*, .die-decision). No background on the parent wrapper, so
+     .die-descent, .die-decision). No background on the parent wrapper, so
      there is no flat frame behind the cube. */
 .die-face {
     position: absolute; top: 0; left: 0;
@@ -239,34 +239,18 @@
     color: var(--summit-white);
     border-color: rgba(245,245,240,0.25);
   }
-  /* Ereigniswürfel — white faces, image fills entire surface */
-  .die-event .die-face {
-    background: #ffffff;
-    border-color: var(--border);
-  }
-  .die-event .die-face img { object-fit: cover; }
-  /* Abfahrt – Anfänger: piste-blue */
-  .die-descent-anfaenger .die-face {
-    background: linear-gradient(135deg, #6aaee8, var(--piste-blue));
-    color: #ffffff;
-  }
-  /* Abfahrt – Fortgeschritten: piste-red */
-  .die-descent-fortgeschritten .die-face {
-    background: linear-gradient(135deg, #e87070, var(--piste-red));
-    color: #ffffff;
-  }
-  /* Abfahrt – Profi: piste-yellow */
-  .die-descent-profi .die-face {
-    background: linear-gradient(135deg, #f5d070, var(--piste-yellow));
-    color: var(--alpine-night);
-  }
-
-  /* Entscheidungswürfel — white faces; the happy/sad smiley SVG fills the surface.
-     No red/green on the die itself, the outcome is carried by the smiley. */
+  /* White dice — Ereignis-, Abfahrts- and Entscheidungswürfel share one look; the face image
+     fills the whole surface.
+     Abfahrt: one neutral die for all levels, the level is shown by the stars on the face images
+     (img/descent_*.svg), not by colour.
+     Entscheidung: no red/green on the die itself, the outcome is carried by the smiley. */
+  .die-event .die-face,
+  .die-descent .die-face,
   .die-decision .die-face {
     background: #ffffff;
     border-color: var(--border);
   }
+  .die-event .die-face img { object-fit: cover; }
 
 /* ── BUTTONS ── */
   .btn {
@@ -756,7 +740,7 @@
     box-shadow: 0 4px 24px rgba(0,0,0,0.18);
     border-left: 4px solid var(--color-primary);
   }
-  .levelup-toast-icon { font-size: 1.6rem; line-height: 1; }
+  .levelup-toast-icon { font-size: 1.25rem; line-height: 1; letter-spacing: 1px; color: var(--alpenglühen); }
   .levelup-toast-text { display: flex; flex-direction: column; }
   .levelup-toast-text strong { font-size: 0.95rem; color: var(--text); }
   .levelup-toast-text span   { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }

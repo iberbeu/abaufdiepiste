@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   getLevel,
   levelLabel,
+  levelStars,
   gameTime,
   gameTimeHour,
   analyzeTransportSymbols,
@@ -46,6 +48,31 @@ describe('levelLabel', () => {
   });
   it('maps profi to Profi', () => {
     expect(levelLabel('profi')).toBe('Profi');
+  });
+});
+
+describe('levelStars', () => {
+  it('shows one filled star for anfaenger', () => {
+    expect(levelStars('anfaenger')).toBe('★☆☆');
+  });
+  it('shows two filled stars for fortgeschritten', () => {
+    expect(levelStars('fortgeschritten')).toBe('★★☆');
+  });
+  it('shows three filled stars for profi', () => {
+    expect(levelStars('profi')).toBe('★★★');
+  });
+});
+
+describe('descent die face images (img/descent_*.svg)', () => {
+  Object.entries(DESCENT_DICE).forEach(([level, { faces }]) => {
+    [...new Set(faces)].forEach(face => {
+      it(`${level} face ${face}: image exists, shows the number and the level's star count`, () => {
+        const svg = readFileSync(new URL(`../img/descent_${level}_${face}.svg`, import.meta.url), 'utf8');
+        const filledStars = levelStars(level).split('★').length - 1;
+        expect(svg).toContain(`>${face}</text>`);
+        expect(svg.match(/<polygon /g) ?? []).toHaveLength(filledStars);
+      });
+    });
   });
 });
 
@@ -185,15 +212,15 @@ describe('DESCENT_DICE — face values per rulebook', () => {
     Object.values(DESCENT_DICE).forEach(d => expect(d.faces).toHaveLength(6));
   });
 
-  it('Anfänger (red die) shows only 2 and 4', () => {
+  it('Anfänger (1-star die) shows only 2 and 4', () => {
     expect(new Set(DESCENT_DICE.anfaenger.faces)).toEqual(new Set([2, 4]));
   });
 
-  it('Fortgeschritten (black die) shows 2, 4 and 6', () => {
+  it('Fortgeschritten (2-star die) shows 2, 4 and 6', () => {
     expect(new Set(DESCENT_DICE.fortgeschritten.faces)).toEqual(new Set([2, 4, 6]));
   });
 
-  it('Profi (yellow die) shows only 4 and 6', () => {
+  it('Profi (3-star die) shows only 4 and 6', () => {
     expect(new Set(DESCENT_DICE.profi.faces)).toEqual(new Set([4, 6]));
   });
 

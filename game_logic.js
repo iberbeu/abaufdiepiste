@@ -20,8 +20,9 @@ export const TRANSPORT_NAMES = [
 
 export const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
 
-// Face values per the rulebook (Spielmaterial ÜBERARBEITET.docx, "Fahrniveaus"):
-// Anfänger = red die (2, 4), Fortgeschritten = black die (2, 4, 6), Profi = yellow die (4, 6).
+// Face values per the rulebook (specifications/spielregeln.md, "Fahrniveaus"):
+// Anfänger = 1-star die (2, 4), Fortgeschritten = 2-star die (2, 4, 6), Profi = 3-star die (4, 6).
+// The three dice look identical; every face shows the crossing count plus the level's stars.
 export const DESCENT_DICE = {
   anfaenger:       { faces: [2, 2, 2, 4, 4, 4] },
   fortgeschritten: { faces: [2, 2, 4, 4, 6, 6] },
@@ -54,6 +55,17 @@ export function getLevel(pts) {
  */
 export function levelLabel(level) {
   return { anfaenger: 'Anfänger', fortgeschritten: 'Fortgeschritten', profi: 'Profi' }[level];
+}
+
+/**
+ * Returns the level as a star rating, e.g. '★☆☆' for Anfänger.
+ * The filled stars match the ones printed on the physical descent die.
+ * @param {'anfaenger'|'fortgeschritten'|'profi'} level
+ * @returns {string}
+ */
+export function levelStars(level) {
+  const n = { anfaenger: 1, fortgeschritten: 2, profi: 3 }[level];
+  return '★'.repeat(n) + '☆'.repeat(3 - n);
 }
 
 // ─── Game clock ──────────────────────────────────────────────────────────────
