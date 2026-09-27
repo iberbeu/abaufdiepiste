@@ -138,7 +138,7 @@
       <span class="wizard__dots" role="img" aria-label="Schritt 3 von 4"><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot is-used"></span><span class="dot"></span></span>
     </header>
     <h1 class="wizard__title">Wo ist eure Talstation?</h1>
-    <ol class="player-rows" data-ref="rows"></ol>
+    <ol class="player-rows player-rows--talstation" data-ref="rows"></ol>
     <button class="btn-primary wizard__cta" data-ref="next">Weiter →</button>
     <button class="btn-text" data-ref="skip">Überspringen</button>
   </section>
@@ -205,29 +205,31 @@
 <!-- ── BERGAUF (flow_spec §5, B1 + B2) ── -->
 
 <template id="tpl-bergauf_roll">
-  <section class="screen step bergauf">
+  <section class="screen step step--split bergauf">
     <header class="step-head">
       <button class="icon-btn" data-ref="back" aria-label="Zurück"><span class="icon icon--back"></span></button>
       <h1 class="step-head__title">Bergauf</h1>
       <span></span>
     </header>
-    <div class="dice-grid" data-ref="dice"></div>
-    <div class="step-cta"><button class="btn-primary" data-ref="roll"><span class="icon icon--dice"></span>Würfeln</button></div>
+    <div class="dice-grid step__aside" data-ref="dice"></div>
+    <div class="step-cta step__cta"><button class="btn-primary" data-ref="roll"><span class="icon icon--dice"></span>Würfeln</button></div>
   </section>
 </template>
 
 <template id="tpl-bergauf_result">
-  <section class="screen step bergauf">
+  <section class="screen step step--split bergauf">
     <header class="step-head">
       <span></span>
       <h1 class="step-head__title">Bergauf</h1>
       <span class="roll-dots" data-ref="dots" role="img"><span class="dot"></span><span class="dot"></span></span>
     </header>
-    <div class="dice-grid" data-ref="dice"></div>
-    <p class="bergauf__hint" data-ref="hint"></p>
-    <ul class="result-lines" data-ref="lines" aria-live="polite"></ul>
+    <div class="dice-grid step__aside" data-ref="dice"></div>
+    <div class="step__main bergauf__info">
+      <p class="bergauf__hint" data-ref="hint"></p>
+      <ul class="result-lines" data-ref="lines" aria-live="polite"></ul>
+    </div>
     <button class="btn-joker" data-ref="joker" aria-pressed="false" hidden><span class="icon icon--sm icon--joker"></span><span data-ref="jokerLabel"></span></button>
-    <div class="step-cta action-stack">
+    <div class="step-cta step__cta action-stack">
       <button class="btn-primary" data-ref="primary"></button>
       <button class="btn-text" data-ref="secondary"></button>
     </div>
@@ -295,11 +297,11 @@
         <span class="icon icon--lg icon--warning"></span>
         <p class="blocked__text" data-ref="blockedText"></p>
       </div>
-      <button class="round-option" data-ref="extra" aria-label="Extraaktivität" hidden>
-        <span class="icon icon--dice" data-ref="extraIcon"></span>
-        <span class="round-option__label" data-ref="extraLabel" hidden></span>
-      </button>
     </div>
+    <button class="round-option bergab__extra" data-ref="extra" aria-label="Extraaktivität" hidden>
+      <span class="icon icon--dice" data-ref="extraIcon"></span>
+      <span class="round-option__label" data-ref="extraLabel" hidden></span>
+    </button>
     <div class="step-cta step__cta"><button class="btn-primary" data-ref="primary"></button></div>
   </section>
 </template>
@@ -522,26 +524,28 @@
       </div>
     </div>
 
-    <div class="sw-step" data-ref="stepReturn" hidden>
+    <div class="sw-step sw-step--return" data-ref="stepReturn" hidden>
       <p class="sw-step__question">Rückweg zur Talstation</p>
       <div class="slope-grid" data-ref="tiles"></div>
-      <div class="adjust-card__row">
-        <span class="adjust-card__label">Beförderungen</span>
-        <div class="stepper" data-field="transports">
-          <button class="stepper__btn" data-step="-1" aria-label="Eine Beförderung weniger"><span class="icon icon--minus"></span></button>
-          <span class="stepper__value" data-ref="transports"></span>
-          <button class="stepper__btn" data-step="1" aria-label="Eine Beförderung mehr"><span class="icon icon--plus"></span></button>
+      <div class="sw-step__rows">
+        <div class="adjust-card__row">
+          <span class="adjust-card__label">Beförderungen</span>
+          <div class="stepper" data-field="transports">
+            <button class="stepper__btn" data-step="-1" aria-label="Eine Beförderung weniger"><span class="icon icon--minus"></span></button>
+            <span class="stepper__value" data-ref="transports"></span>
+            <button class="stepper__btn" data-step="1" aria-label="Eine Beförderung mehr"><span class="icon icon--plus"></span></button>
+          </div>
         </div>
-      </div>
-      <div class="adjust-card__row">
-        <span class="adjust-card__label">Zusätzliche Talstationen</span>
-        <div class="stepper" data-field="extraTalstationen">
-          <button class="stepper__btn" data-step="-1" aria-label="Eine Talstation weniger"><span class="icon icon--minus"></span></button>
-          <span class="stepper__value" data-ref="extraTalstationen"></span>
-          <button class="stepper__btn" data-step="1" aria-label="Eine Talstation mehr"><span class="icon icon--plus"></span></button>
+        <div class="adjust-card__row">
+          <span class="adjust-card__label">Zusätzliche Talstationen</span>
+          <div class="stepper" data-field="extraTalstationen">
+            <button class="stepper__btn" data-step="-1" aria-label="Eine Talstation weniger"><span class="icon icon--minus"></span></button>
+            <span class="stepper__value" data-ref="extraTalstationen"></span>
+            <button class="stepper__btn" data-step="1" aria-label="Eine Talstation mehr"><span class="icon icon--plus"></span></button>
+          </div>
         </div>
+        <p class="sw-step__penalty" data-ref="penalty" aria-live="polite"></p>
       </div>
-      <p class="sw-step__penalty" data-ref="penalty" aria-live="polite"></p>
       <div class="step-cta"><button class="btn-primary" data-ref="toSummary">Weiter →</button></div>
     </div>
 

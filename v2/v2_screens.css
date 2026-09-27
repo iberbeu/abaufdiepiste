@@ -15,6 +15,7 @@
 /* ── BERGAUF: dice centred, buttons at the bottom ── */
 .bergauf { padding-bottom: var(--space-4); }
 .bergauf .dice-grid { --die-md: var(--die-lg); margin-top: var(--space-5); }   /* big dice: they are the whole step */
+.bergauf__info { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); width: 100%; }
 .bergauf__hint { color: var(--text-muted); font-size: var(--fs-sm); }
 
 /* ── BERGAB: dice + crossings on top, tiles in the middle, total at the bottom ── */
@@ -45,6 +46,7 @@
 .sw-step { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); width: 100%; flex: 1; }
 .sw-step__question { font-size: var(--fs-xl); font-weight: var(--fw-display); text-align: center; }
 .sw-step__place { color: var(--text-muted); font-weight: var(--fw-label); }
+.sw-step__rows { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); width: 100%; }
 .sw-step__penalty { color: var(--negative); font-size: var(--fs-lg); font-weight: var(--fw-number); }
 .sw-choice { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); width: 100%; margin-top: auto; }
 .ranking { padding-bottom: var(--space-4); }
@@ -92,3 +94,100 @@
 .wizard__title { font-size: var(--fs-xl); font-weight: var(--fw-display); text-align: center; }
 .wizard__hint { color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
 .wizard__cta { margin-top: auto; }
+
+
+/* ═══ LANDSCAPE (phones on their side) — flow_spec §9. Shared rules: v2_components.css ═══ */
+@media (orientation: landscape) and (max-height: 540px) {
+  /* Home: logo + title left, buttons right. */
+  .home {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "logo actions" "title actions";
+    align-content: center;
+    justify-items: center;
+    column-gap: var(--space-6);
+    row-gap: var(--space-3);
+    padding-bottom: 0;
+  }
+  .home__logo  { grid-area: logo; align-self: end; width: 88px; height: 88px; }
+  .home__title { grid-area: title; align-self: start; margin-bottom: 0; }
+  .home > .action-list { grid-area: actions; }
+
+  /* Turn start: the three actions sit next to the player, not at the bottom. */
+  .turn-start > .action-list { margin-top: 0; }
+
+  /* Bergauf: dice (+ Joker) left, title, result and buttons right — a 6×1 dice row (spec) leaves no room for the result lines. */
+  .bergauf.step--split { grid-template-areas: "aside head" "aside main" "joker cta"; }
+  .bergauf > .btn-joker { grid-area: joker; }
+  .bergauf .dice-grid { margin-top: 0; }
+
+  /* Bergab: dice + crossings + 🎲 left, tiles + total right. */
+  .bergab.step--split { grid-template-areas: "aside main" "extra cta"; }
+  .bergab > .bergab__extra { grid-area: extra; }
+  .bergab__dice { margin-top: 0; }
+
+  /* Round event with the Talstation list: text + OK left, list right. */
+  .event-card:has(> .talstation-list:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-content: center;
+    justify-items: center;
+    column-gap: var(--space-6);
+  }
+  .event-card:has(> .talstation-list:not([hidden])) > * { grid-column: 1; }
+  .event-card:has(> .talstation-list:not([hidden])) > .talstation-list { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
+  .event-card { min-height: 0; }
+  .talstation-list__row { padding: var(--space-2) var(--space-4); }
+
+  /* Less air at the bottom: the phone's height is what runs out. */
+  .screen.step { padding-bottom: 0; }
+
+  /* Setup wizard: tighter, and the five number tiles in one row. */
+  .wizard { gap: var(--space-3); padding-bottom: 0; }
+  .wizard__title { font-size: var(--fs-lg); }
+  .number-tile { width: calc((100% - 4 * var(--space-3)) / 5); aspect-ratio: auto; min-height: 88px; }
+  .choice-tile { min-height: 64px; }
+  /* Talstationen: two columns (the name list stays one column — its drag order reads top to bottom). */
+  .player-rows--talstation { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--space-5); }
+
+  /* Schlusswertung: step title and player side by side; always the small header;
+     Rückweg = tiles left, rides + Talstationen right. */
+  .schlusswertung {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "head hero" "step step";
+    align-content: start;
+    column-gap: var(--space-6);
+  }
+  .schlusswertung > .step-head   { grid-area: head; }
+  .schlusswertung > .player-hero { grid-area: hero; justify-self: start; }
+  .schlusswertung > .sw-step     { grid-area: step; }
+  .schlusswertung .player-hero { flex-direction: row; gap: var(--space-3); padding-top: 0; }
+  .schlusswertung .avatar--lg { width: 48px; height: 48px; font-size: var(--fs-lg); box-shadow: none; }
+  .schlusswertung .player-hero__name { margin-top: 0; font-size: var(--fs-lg); }
+  .schlusswertung .sw-step__question { font-size: var(--fs-lg); }
+  .sw-step--return:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "q q" "tiles rows" "tiles cta";
+    align-items: center;
+    gap: var(--space-3) var(--space-6);
+  }
+  .sw-step--return > .sw-step__question { grid-area: q; }
+  .sw-step--return > .slope-grid        { grid-area: tiles; }
+  .sw-step--return > .sw-step__rows     { grid-area: rows; gap: var(--space-2); }
+  .sw-step--return > .step-cta          { grid-area: cta; position: static; padding-top: 0; background: none; }
+
+  /* Ranking: podium left, title + the rest + buttons right. */
+  .ranking {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "podium title" "podium rest" "podium cta";
+    align-items: center;
+    column-gap: var(--space-6);
+  }
+  .ranking > .ranking__title { grid-area: title; margin-top: 0; justify-self: center; }
+  .ranking > .podium         { grid-area: podium; margin-top: 0; }
+  .ranking > .rank-list      { grid-area: rest; }
+  .ranking > .step-cta       { grid-area: cta; position: static; padding-top: 0; background: none; }
+}

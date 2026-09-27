@@ -231,12 +231,15 @@ Full-height sheet with big rows:
 
 ## 9. Landscape
 
-- Top bar and score strip unchanged.
+Applies to phones on their side (landscape, at most 540 px high). Built in UI-12.15.
+- Top bar and score strip share **one row** (height is what runs out); the strip scrolls sideways and keeps the current player's chip in view.
 - Main area splits into two columns:
   - Turn start: avatar/name left, the three action buttons stacked right.
   - Bergab: dice + headline + 🎲 left, 2×2 tiles right, primary button bottom right.
-  - Bergauf: dice 6×1 row, result + buttons below.
-- Sheets become centred dialogs (max width ~480 px).
+  - Bergauf: dice 3×2 (+ Joker button) left, title, result and buttons right. (Changed from the planned 6×1 row: a row of six leaves no room for the result lines below.)
+  - Home: logo left, buttons right. Round event with Talstationen: text + OK left, list right. Schlusswertung Rückweg: tiles left, steppers right. Ranking: podium left, list + buttons right.
+- Setup: the five number tiles in one row; Talstationen in two columns (the names list stays one column, its drag order reads top to bottom).
+- Sheets become centred dialogs (max width ~480 px), scrolling if taller than the screen.
 
 ---
 

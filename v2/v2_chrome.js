@@ -77,6 +77,16 @@ export function renderChrome({ bump = false, pending = 0 } = {}) {
     chip.querySelector('.score-chip__points').textContent = formatPoints(points);
     chip.setAttribute('aria-label', `${player.name}: ${formatPoints(points)} Punkte`);
   });
+  keepInView(strip, currentChip());
+}
+
+/** With 5–6 players the strip scrolls sideways: keep the current player's chip visible. */
+function keepInView(strip, chip) {
+  if (!chip) return;
+  const s = strip.getBoundingClientRect();
+  const c = chip.getBoundingClientRect();
+  if (c.left < s.left) strip.scrollLeft -= s.left - c.left;
+  else if (c.right > s.right) strip.scrollLeft += c.right - s.right;
 }
 
 /** The current player's chip in the score strip (turn end flies the points into it). */

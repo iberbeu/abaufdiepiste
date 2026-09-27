@@ -437,7 +437,7 @@ button.die:disabled { cursor: default; }
 .pause-tile.is-selected { box-shadow: inset 0 0 0 3px #fff, 0 var(--press-depth) 0 #6b4630; }
 .pause-tile.is-dimmed { opacity: 0.4; }
 /* Short screens: flatter tiles, so the confirm button stays in view. */
-@media (max-height: 760px) { .pause-tile { aspect-ratio: auto; min-height: 136px; } }
+@media (orientation: portrait) and (max-height: 760px) { .pause-tile { aspect-ratio: auto; min-height: 136px; } }
 
 /* ── MENU ROWS ── */
 .menu-list { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
@@ -822,23 +822,60 @@ button.die:disabled { cursor: default; }
 .confetti > span:nth-child(4n)   { --d: 0.55s; }
 .confetti > span:nth-child(even) { --drift: -30px; }
 
-/* ── LANDSCAPE: two columns for the main step on short screens ── */
+/* ── LANDSCAPE (phones on their side: ~320–430 px high) — flow_spec §9, UI-12.15 ──
+   Height is the scarce resource: the top bar and the score strip share one row, steps split
+   into two columns, tiles get flatter. Screen-specific splits live in v2_screens.css. */
 @media (orientation: landscape) and (max-height: 540px) {
-  .app { max-width: 900px; }
+  .app {
+    max-width: 900px;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-4);
+  }
+  .app > .topbar      { grid-row: 1; grid-column: 1; grid-template-columns: auto auto auto; column-gap: var(--space-3); }
+  .app > .score-strip { grid-row: 1; grid-column: 2; }
+  .app > .outlet      { grid-row: 2; grid-column: 1 / -1; }
+  .app--no-chrome          { grid-template-rows: 1fr; }
+  .app--no-chrome > .outlet { grid-row: 1; }
+
   .step--split {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas: "aside main" "aside cta";
     align-items: center;
     column-gap: var(--space-6);
   }
+  .step--split:has(> .step-head) { grid-template-areas: "head head" "aside main" "aside cta"; }
+  .step--split > .step-head   { grid-area: head; }
   .step--split > .step__aside { grid-area: aside; }
   .step--split > .step__main  { grid-area: main; }
   .step--split > .step__cta   { grid-area: cta; }
-  .slope-tile { min-height: 96px; }
+
+  /* The main button sits in its own grid cell here — sticky would only cover the content above it. */
+  .step--split > .step-cta { position: static; padding-top: 0; background: none; }
+  .step-cta { padding-top: var(--space-2); }
+  .btn-primary { min-height: 56px; }
+
+  /* Flatter slope tiles: a smaller +/− and name, so they never collide. */
+  .slope-tile { min-height: 92px; }
+  .slope-tile__plus  { padding-top: var(--space-1); }
+  .slope-tile__minus { padding-bottom: var(--space-1); }
+  .slope-tile__plus .icon, .slope-tile__minus .icon { --icon: 18px; }
+  .slope-tile__name { font-size: var(--fs-md); }
   .btn-action { min-height: 64px; }
   .avatar--lg { --avatar-lg: 72px; }
-  .sheet { max-width: 480px; bottom: 50%; transform: translateY(50%); border-radius: var(--radius-lg); animation-name: fade-in; }
+  .pause-tiles { margin-top: 0; }
+  .pause-tile { aspect-ratio: auto; min-height: 112px; }
+  .sheet {
+    max-width: 480px;
+    max-height: calc(100dvh - var(--space-5));
+    overflow-y: auto;
+    bottom: 50%;
+    transform: translateY(50%);
+    border-radius: var(--radius-lg);
+    animation-name: fade-in;
+  }
+  .sheet::before { display: none; }   /* a centred card has no drag handle */
 }
 
 /* ── MOTION ──

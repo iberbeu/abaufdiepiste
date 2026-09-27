@@ -126,6 +126,11 @@
   :root { --die-lg: 68px; --die-md: 56px; }
 }
 
+/* Phones on their side: same smaller dice. */
+@media (orientation: landscape) and (max-height: 540px) {
+  :root { --die-lg: 68px; --die-md: 56px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; }
 }
