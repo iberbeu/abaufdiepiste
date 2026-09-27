@@ -65,12 +65,12 @@ describe('v2 app shell', () => {
     expect(screen().querySelector('[data-ref="continue"]').hidden).toBe(true);
   });
 
-  it('setup W1: number tiles 2–6, 2 preselected without a last group, back to home', () => {
+  it('setup W1: number tiles 2–4, 2 preselected without a last group, back to home', () => {
     clickLabel('Neues Spiel');   // no game yet → no confirm sheet
     expect(sheet()).toBeNull();
     expect(title()).toBe('Wie viele spielen?');
     const tiles = screen().querySelectorAll('.number-tile');
-    expect([...tiles].map(t => t.textContent)).toEqual(['2', '3', '4', '5', '6']);   // no solo game
+    expect([...tiles].map(t => t.textContent)).toEqual(['2', '3', '4']);   // no solo game, one player per game piece
     expect(screen().querySelector('.number-tile.is-selected').textContent).toBe('2');
     ref('back').click();
     expect(screen().classList.contains('home')).toBe(true);
@@ -89,7 +89,8 @@ describe('v2 app shell', () => {
 
     // Colour: Clara (player-1) takes Anna's colour 2 → they swap.
     rows()[0].querySelector('[data-ref="color"]').click();
-    expect(sheet().querySelectorAll('.swatch')).toHaveLength(6);
+    expect(sheet().querySelectorAll('.swatch')).toHaveLength(4);
+    expect(sheet().textContent).toContain('Alpine Night');   // the four game piece colours, named
     sheet().querySelectorAll('.swatch')[1].click();
     expect(sheet()).toBeNull();
     expect(rows()[0].classList.contains('player-2')).toBe(true);
@@ -328,7 +329,7 @@ describe('v2 app shell', () => {
     expect(title()).toBe('Bergauf');
     const dice = screen().querySelectorAll('.die');
     expect(dice).toHaveLength(6);
-    expect([...dice].every(d => d.disabled && d.querySelector('img').src.endsWith('die_unknown.svg'))).toBe(true);
+    expect([...dice].every(d => d.disabled && d.querySelector('img').src.endsWith('die_question.svg'))).toBe(true);
     ref('back').click();
     expect(isTurnStart()).toBe(true);
   });
@@ -343,6 +344,9 @@ describe('v2 app shell', () => {
     expect(screen().querySelectorAll('.roll-dots .dot.is-used')).toHaveLength(1);
     expect(ref('hint').textContent).toBe('Antippen = behalten');
     expect(ref('lines').children.length).toBeGreaterThan(0);
+    // After roll 1 the second roll is the usual move: it is the big button, "Fertig" the small one.
+    expect(ref('primary').textContent).toBe('Nochmal würfeln');
+    expect(ref('secondary').textContent).toBe('Fertig');
     expect(ref('secondary').hidden).toBe(false);
   });
 
@@ -400,6 +404,24 @@ describe('v2 app shell', () => {
     expect(ref('joker').hidden).toBe(true);
     expect(document.getElementById('jokerCount').hidden).toBe(true);
     expect(store.game.history.at(-1).text).toBe('Joker eingesetzt');
+
+    // Until the turn ends, the 🃏 in the top bar takes the last Joker back.
+    const logged = store.game.history.length;
+    document.getElementById('btnJoker').click();
+    sheetButton('Zurücknehmen').click();
+    expect(p.joker).toBe(1);
+    expect(turn.data.dice[5]).toBe('zug');
+    expect(turn.data.jokered[5]).toBe(false);
+    expect(store.game.history.length).toBe(logged - 1);   // the "Joker eingesetzt" entry is gone
+    expect(ref('lines').textContent).toBe('Liftschlange – nächste Runde nochmal');
+    // On the dice screen the 🃏 acts on the dice: "Würfel drehen" starts the same pick.
+    document.getElementById('btnJoker').click();
+    sheetButton('Würfel drehen').click();
+    expect(ref('hint').textContent).toBe('Welchen Würfel drehen?');
+    screen().querySelectorAll('.die')[5].click();
+    sheet().querySelectorAll('.face-option')[4].click();
+    expect(turn.data.dice[5]).toBe('gondel');
+    expect(p.joker).toBe(0);
 
     // A die turned with a Joker is final: it cannot be turned again (no second Joker on it).
     p.joker = 1;
@@ -474,7 +496,7 @@ describe('v2 app shell', () => {
     sheetButton('Joker nutzen').click();
     expect(p.joker).toBe(0);
     expect(ref('primary').textContent).toBe('+25 →');   // 12 + 8 + 5
-    expect(tile('yellow').querySelector('[data-ref="smiley"]').src).toContain('froehlich');
+    expect(tile('yellow').querySelector('[data-ref="smiley"]').src).toContain('smiley_happy');
 
     // Extraaktivität: happy smiley → +12, then the icon shows the result and is done.
     ref('extra').click();
@@ -512,6 +534,43 @@ describe('v2 app shell', () => {
     vi.advanceTimersByTime(800);
   });
 
+  it('Bergab Helikopter: the Joker works from the panel or the 🃏 and can be taken back until the turn ends', async () => {
+    const p = store.game.players[store.game.currentPlayerIndex];
+    p.points = 0;
+    p.joker = 1;
+    p.gratis = 0;
+    rollBergab(0.2);   // Helikopter
+    expect(ref('blockedText').textContent).toBe('Helikopter – ab ins nächste Tal');
+    expect(ref('blockedJoker').hidden).toBe(false);
+
+    // The 🃏 in the top bar acts on the event die here
+    document.getElementById('btnJoker').click();
+    sheetButton('Helikopter abwenden').click();
+    expect(p.joker).toBe(0);
+    expect(ref('tiles').hidden).toBe(false);
+    plus('blue');
+    expect(ref('primary').textContent).toBe('+2 →');
+
+    // Taken back: blocked again, the chosen crossing is gone, the Joker is back
+    document.getElementById('btnJoker').click();
+    sheetButton('Zurücknehmen').click();
+    expect(p.joker).toBe(1);
+    expect(ref('tiles').hidden).toBe(true);
+    expect(ref('primary').textContent).toBe('Weiter →');
+
+    // The button in the blocked panel does the same as the badge on the die
+    ref('blockedJoker').click();
+    sheetButton('Einsetzen').click();
+    expect(ref('eventLine').textContent).toBe('Joker: Helikopter abgewendet');
+    expect(Object.values((await import('../v2/turn_state.js')).turn.data.slopes)).toEqual([0, 0, 0, 0]);
+
+    // Leave the turn open for the next test
+    const { clearTurn } = await import('../v2/turn_state.js');
+    const { go } = await import('../v2/v2_router.js');
+    clearTurn();
+    go('turn_start');
+  });
+
   it('Bergab Sonne as the 3rd coin: all coins are returned, a sheet says so once', async () => {
     const { go } = await import('../v2/v2_router.js');
     const p = store.game.players[store.game.currentPlayerIndex];
@@ -539,6 +598,7 @@ describe('v2 app shell', () => {
   });
 
   it('menu shows round and time; pages return to the menu, the menu to the game (no bouncing)', () => {
+    expect(document.getElementById('topbarRound').textContent).toBe(`(${store.game.round}/20)`);
     document.getElementById('btnMenu').click();
     expect(ref('status').textContent).toBe(`Runde ${store.game.round} von 20 · ${document.getElementById('topbarTime').textContent}`);
     ref('scores').click();
@@ -561,6 +621,12 @@ describe('v2 app shell', () => {
     const tableRows = screen().querySelectorAll('.score-table tbody tr');
     expect(tableRows).toHaveLength(store.game.roundSnapshots.length + 1);
     expect(tableRows[tableRows.length - 1].classList.contains('is-live')).toBe(true);
+    // Each player's Sehenswürdigkeiten, Joker and Gratis Fahrten
+    const first = store.game.players.find(pl => pl.name === rows[0].querySelector('[data-ref="name"]').textContent);
+    const stats = rows[0].querySelector('[data-ref="stats"]');
+    expect(stats.hidden).toBe(false);
+    expect(['sights', 'joker', 'gratis'].map(k => stats.querySelector(`[data-ref="${k}"]`).textContent))
+      .toEqual([first.sightings, first.joker, first.gratis].map(String));
 
     screen().querySelector('.score-table tbody .score-cell[data-ref="btn"]').click();
     expect(sheet().querySelector('.sheet__title').textContent).toMatch(/^(Anna|Ben) · \d\d:\d\d$/);
@@ -652,6 +718,17 @@ describe('v2 app shell', () => {
     clickLabel('OK');
   });
 
+  it('last-round card before the last round, with the Talstationen', () => {
+    store.game.round = 19;
+    store.game.currentPlayerIndex = 1;
+    playBergauf();
+    vi.advanceTimersByTime(800);
+    expect(title()).toBe('Letzte Runde!');
+    expect(screen().querySelectorAll('.talstation-list__row')).toHaveLength(2);
+    clickLabel('OK');
+    expect(store.game.eventsShown).toContain('last_round');
+  });
+
   it('the last turn of the last round leads to game end; home then offers the Schlusswertung', async () => {
     store.game.round = 20;
     store.game.currentPlayerIndex = 1;
@@ -706,6 +783,23 @@ describe('v2 app shell', () => {
     expect(screen().querySelector('.points-burst').hidden).toBe(true);
     vi.advanceTimersByTime(800);
     expect(isTurnStart()).toBe(true);
+  });
+
+  it('Passen asks first, then ends the turn without points', () => {
+    const idx = store.game.currentPlayerIndex;
+    const points = store.game.players[idx].points;
+    clickLabel('Passen');
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Passen?');
+    sheetButton('Abbrechen').click();
+    expect(isTurnStart()).toBe(true);
+    clickLabel('Passen');
+    sheetButton('Passen').click();
+    expect(store.game.history.at(-1)).toMatchObject({ text: 'Gepasst', playerIdx: idx });
+    expect(ref('check').hidden).toBe(false);
+    vi.advanceTimersByTime(800);
+    expect(isTurnStart()).toBe(true);
+    expect(store.game.currentPlayerIndex).not.toBe(idx);
+    expect(store.game.players[idx].points).toBe(points);
   });
 
   it('a level-up at turn end: points land, then the celebration card waits for a tap', () => {
@@ -885,15 +979,20 @@ describe('v2 app shell', () => {
     expect(screen().querySelectorAll('.pad__player')).toHaveLength(3);
   });
 
-  it('Punkteblock: chips add up, Sehenswürdigkeit grows, ± flips, totals and stars follow', () => {
-    const cellBtn = (time, col) => {
-      const tr = [...screen().querySelectorAll('.pad tbody tr')].find(r => r.firstElementChild.textContent === time);
-      return tr.querySelectorAll('.pad__cell')[col];
-    };
-    const chip = label => [...sheet().querySelectorAll('.chip')].find(c => c.textContent.startsWith(label));
+  const padCell = (time, col) => {
+    const tr = [...screen().querySelectorAll('.pad tbody tr')].find(r => r.firstElementChild.textContent === time);
+    return tr.querySelectorAll('.pad__cell')[col];
+  };
+  const padChip = label => [...sheet().querySelectorAll('.chip')].find(c => c.textContent.startsWith(label));
 
-    cellBtn('10:00', 0).click();
+  it('Punkteblock: chips add up, Sehenswürdigkeit grows, ± flips, totals and stars follow', () => {
+    const cellBtn = (time, col) => padCell(time, col).querySelector('[data-ref="value"]');
+    const cellOpen = (time, col) => padCell(time, col).click();
+    const chip = padChip;
+
+    cellOpen('10:00', 0);
     expect(sheet().querySelector('.sheet__title').textContent).toBe('Anna · 10:00');
+    expect(sheet().querySelector('.pad-entry__input').value).toBe('0');   // an empty cell starts at 0
     chip('+4').click();
     chip('+4').click();
     chip('Sehensw.').click();
@@ -904,7 +1003,7 @@ describe('v2 app shell', () => {
     const sightsShown = () => screen().querySelectorAll('.pad__meta')[1].querySelectorAll('.pad__value')[0].textContent;
     expect(sightsShown()).toBe('1');
 
-    cellBtn('10:30', 0).click();
+    cellOpen('10:30', 0);
     const input = sheet().querySelector('.pad-entry__input');
     input.value = '6';
     sheet().querySelector('[data-ref="sign"]').click();
@@ -923,13 +1022,76 @@ describe('v2 app shell', () => {
     expect(totals[0]).toBe('7');   // the running total ignores the Schlusswertung
 
     // Re-opening the 10:00 cell starts from its own Sehenswürdigkeit; "Löschen" takes it back out
-    cellBtn('10:00', 0).click();
+    cellOpen('10:00', 0);
     expect(chip('Sehensw.').textContent).toBe('Sehensw. +10');
     sheet().querySelector('[data-ref="clear"]').click();
     expect(chip('Sehensw.').textContent).toBe('Sehensw. +5');
     sheetButton('Eintragen').click();
     expect(cellBtn('10:00', 0).textContent).toBe('');
     expect(sightsShown()).toBe('0');
+    // Level and Sehenswürdigkeiten rows live in the sticky head
+    expect(screen().querySelectorAll('.pad thead .pad__meta')).toHaveLength(2);
+  });
+
+  it('Punkteblock: the next cell is marked, Meldungen follow the day, the podium ends it', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const { setCell, setFinal } = await import('../v2/punkteblock_logic.js');
+    const pad = store.pad;
+    const n = pad.players.length;
+    // Clear the entries of the previous test: a fresh day
+    pad.cells.forEach((row, r) => row.forEach((_, i) => setCell(pad, r + 1, i, null)));
+    pad.final.fill(null);
+    go('punkteblock');
+    const first = padCell('08:00', 0);
+    expect(first.classList.contains('is-next')).toBe(true);
+    expect(first.querySelector('[data-ref="next"]').hidden).toBe(false);
+    expect(padCell('08:00', 1).classList.contains('is-next')).toBe(false);
+
+    // Piste chips in the piste colours, Extra in orange
+    first.click();
+    expect(padChip('+2').classList.contains('chip--blue')).toBe(true);
+    expect(padChip('+8').classList.contains('chip--yellow')).toBe(true);
+    expect(padChip('Extra').classList.contains('chip--extra')).toBe(true);
+    padChip('+2').click();
+    sheetButton('Eintragen').click();
+    expect(padCell('08:00', 1).classList.contains('is-next')).toBe(true);
+
+    // Up to 10:30 filled; the last entry of 10:30 makes 11:00 the next round → lunch Meldung
+    const fillUpTo = (lastRound, except) => {
+      for (let r = 1; r <= lastRound; r++) for (let i = 0; i < n; i++) {
+        if (pad.cells[r - 1][i] === null && !(r === except.round && i === except.i)) setCell(pad, r, i, 0);
+      }
+      go('punkteblock');
+    };
+    fillUpTo(6, { round: 6, i: n - 1 });
+    padCell('10:30', n - 1).click();
+    sheetButton('Eintragen').click();
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Mittagspause offen!');
+    sheetButton('OK').click();
+    expect(sheet()).toBeNull();
+    expect(pad.eventsShown).toEqual(['lunch_open']);
+
+    // The last entry before 17:30 → lunch over (skipped past) and the last round
+    fillUpTo(19, { round: 19, i: n - 1 });
+    padCell('17:00', n - 1).click();
+    sheetButton('Eintragen').click();
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Mittagspause vorbei');
+    sheetButton('OK').click();
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Letzte Runde!');
+    sheetButton('OK').click();
+
+    // The last Schlusswertung → podium with confetti; "Zurück & bearbeiten" returns to the pad
+    for (let i = 0; i < n - 1; i++) setFinal(pad, i, 0);
+    setCell(pad, 20, 0, 30);
+    go('punkteblock');
+    screen().querySelectorAll('[data-ref="finalRow"] .pad__cell')[n - 1].click();
+    sheetButton('Eintragen').click();
+    expect(title()).toBe('Endstand');
+    expect(screen().querySelectorAll('.podium__place')).toHaveLength(Math.min(n, 3));
+    expect(screen().querySelector('.podium__place--pos-1 .podium__name').textContent).toBe(pad.players[0].name);
+    expect(confettiShown()).toBe(true);
+    clickLabel('Zurück & bearbeiten');
+    expect(title()).toBe('Punkteblock');
   });
 
   it('Punkteblock: reopening shows the pad; "Neu" asks and keeps it until the new one starts', () => {

@@ -12,7 +12,7 @@ import {
 export const START_HOUR = 8;          // fixed since BUG-13
 export const MAX_ROUNDS = 20;         // 08:00–17:30
 export const MIN_PLAYERS = 2;         // decision 26.09.2026: no solo game
-export const MAX_PLAYERS = 6;
+export const MAX_PLAYERS = 4;         // decision 27.09.2026: 2–4 players, one per game piece colour
 export const LUNCH_START_H = 11;      // 11:00
 export const LUNCH_END_H = 12.5;      // 12:30
 // Short game (decision 26.09.2026): start stays 08:00 and the lunch window stays 11:00–12:30,
@@ -23,7 +23,7 @@ export const MIN_ROUNDS = (LUNCH_END_H - START_HOUR) * 2 + 2;
 /**
  * Creates a fresh game.
  * @param {Array<{name: string, talstation?: string, colorIndex?: number}>} players — in turn order.
- *   colorIndex (1–6) is used only if every player has a valid one and none repeats;
+ *   colorIndex (1–MAX_PLAYERS) is used only if every player has a valid one and none repeats;
  *   otherwise all players get the default colours 1, 2, 3 …
  * @param {number} totalRounds — MIN_ROUNDS…MAX_ROUNDS
  */
@@ -60,7 +60,7 @@ export function createGame(players, totalRounds = MAX_ROUNDS) {
 
 /**
  * Starting point of the setup wizard, prefilled from the last group (FEAT-21).
- * Always holds MAX_PLAYERS slots whose colours are a permutation of 1…6, so any first
+ * Always holds MAX_PLAYERS slots whose colours are a permutation of 1…MAX_PLAYERS, so any first
  * `count` players have unique colours and lowering the count never loses typed names.
  * @param {{ players: Array<{name, talstation, colorIndex}>, totalRounds: number } | null} lastGroup
  * @returns {{ count: number, players: Array<{name: string, talstation: string, colorIndex: number}>, totalRounds: number }}
@@ -74,7 +74,7 @@ export function setupDraft(lastGroup) {
     if (c) used.add(c);
     return { name: String(p.name ?? ''), talstation: String(p.talstation ?? ''), colorIndex: c };
   });
-  const free = [1, 2, 3, 4, 5, 6].filter(c => !used.has(c));
+  const free = Array.from({ length: MAX_PLAYERS }, (_, i) => i + 1).filter(c => !used.has(c));
   players.forEach(p => { if (!p.colorIndex) p.colorIndex = free.shift(); });
   const rounds = Number.isInteger(lastGroup?.totalRounds) ? lastGroup.totalRounds : MAX_ROUNDS;
   return {
@@ -171,7 +171,7 @@ export function advanceTurn(game) {
 /**
  * One-shot round events that are due now and were not shown yet.
  * Pure: does not mark them as shown — call markEventsShown() once they are displayed.
- * @returns {Array<'lunch_open'|'lunch_close'|'three_rounds'>}
+ * @returns {Array<'lunch_open'|'lunch_close'|'three_rounds'|'last_round'>}
  */
 export function dueRoundEvents(game) {
   if (game.finished) return [];
@@ -181,7 +181,8 @@ export function dueRoundEvents(game) {
   if (!shown.includes('lunch_open') && h >= LUNCH_START_H && h <= LUNCH_END_H) due.push('lunch_open');
   if (!shown.includes('lunch_close') && h > LUNCH_END_H) due.push('lunch_close');
   const remaining = roundsRemaining(game);
-  if (!shown.includes('three_rounds') && game.totalRounds > 3 && remaining > 0 && remaining <= 3) due.push('three_rounds');
+  if (!shown.includes('three_rounds') && game.totalRounds > 3 && remaining > 1 && remaining <= 3) due.push('three_rounds');
+  if (!shown.includes('last_round') && remaining === 1) due.push('last_round');
   return due;
 }
 
@@ -436,17 +437,41 @@ export function spendCoin(game, kind) {
 }
 
 /**
+ * Gives back a coin the current player spent this turn (undo). Mutates `game`.
+ * Removes the matching "… eingesetzt" history entry of this player and round, so the round detail
+ * only shows what really happened. The coin limit is not applied: the undo restores a state the
+ * player already had.
+ * @param {'joker'|'gratis'} kind
+ */
+export function refundCoin(game, kind) {
+  if (!(kind in COIN_LABELS)) throw new Error(`refundCoin: unknown coin ${kind}`);
+  currentPlayer(game)[kind]++;
+  const text = `${COIN_LABELS[kind]} eingesetzt`;
+  const i = game.history.findLastIndex(h => h.text === text && h.round === game.round && h.playerIdx === game.currentPlayerIndex);
+  if (i !== -1) game.history.splice(i, 1);
+}
+
+/**
+ * The current player passes (decision 27.09.2026): no dice, no points, the time runs on.
+ * Only logs the turn — advancing is up to the turn end. Mutates `game`.
+ */
+export function passTurn(game) {
+  addHistory(game, 'Gepasst');
+}
+
+/**
  * Validates a parsed saved game. Returns the game or null when the shape is unusable.
  * Keeps the app from crashing on stale or hand-edited localStorage.
  */
 export function restoreGame(raw) {
-  if (!raw || raw.version !== 1 || !Array.isArray(raw.players) || raw.players.length < MIN_PLAYERS) return null;
+  if (!raw || raw.version !== 1 || !Array.isArray(raw.players)) return null;
+  if (raw.players.length < MIN_PLAYERS || raw.players.length > MAX_PLAYERS) return null;
   if (!Number.isInteger(raw.round) || !Number.isInteger(raw.totalRounds) || !Number.isInteger(raw.currentPlayerIndex)) return null;
   if (raw.currentPlayerIndex < 0 || raw.currentPlayerIndex >= raw.players.length) return null;
   if (raw.totalRounds < MIN_ROUNDS || raw.totalRounds > MAX_ROUNDS || raw.round < 1 || raw.round > raw.totalRounds) return null;
   const counters = ['points', 'joker', 'gratis', 'sightings', 'colorIndex'];
   const playersOk = raw.players.every(p => p && typeof p.name === 'string'
-    && counters.every(k => Number.isFinite(p[k])));
+    && counters.every(k => Number.isFinite(p[k])) && isColorIndex(p.colorIndex));
   if (!playersOk) return null;
   raw.eventsShown ??= [];
   raw.roundSnapshots ??= [];

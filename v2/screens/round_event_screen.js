@@ -5,11 +5,20 @@ import { markEventsShown, roundsRemaining } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
 
-const EVENTS = {
+/** Meldung texts, shared with the Punkteblock (punkteblock_screen.js). */
+export const EVENTS = {
   lunch_open:   { icon: 'restaurant', title: 'Mittagspause offen!',  text: 'Bis 12:30 – Restaurant +15, Bar +7.' },
   lunch_close:  { icon: 'lock',       title: 'Mittagspause vorbei',  text: 'Ab jetzt sind keine Pausen mehr möglich.' },
   three_rounds: { icon: 'skier',      title: '',                     text: 'Zeit, zur Talstation zurückzufahren.' },
+  last_round:   { icon: 'warning',    title: 'Letzte Runde!',        text: 'Das ist der letzte Zug – danach ist der Skitag vorbei.' },
 };
+
+/** Title of a Meldung; `remaining` = rounds left including the current one. */
+export function eventTitle(id, remaining) {
+  return id === 'three_rounds'
+    ? `Noch ${remaining} ${remaining === 1 ? 'Runde' : 'Runden'} – ab ins Tal!`
+    : EVENTS[id].title;
+}
 
 registerScreen('round_event', {
   chrome: true,
@@ -21,13 +30,10 @@ registerScreen('round_event', {
     if (!ev) return go('turn_start');
 
     el.querySelector('[data-ref="icon"]').classList.add(`icon--${ev.icon}`);
-    const remaining = roundsRemaining(game);
-    el.querySelector('[data-ref="title"]').textContent = id === 'three_rounds'
-      ? `Noch ${remaining} ${remaining === 1 ? 'Runde' : 'Runden'} – ab ins Tal!`
-      : ev.title;
+    el.querySelector('[data-ref="title"]').textContent = eventTitle(id, roundsRemaining(game));
     el.querySelector('[data-ref="text"]').textContent = ev.text;
 
-    if (id === 'three_rounds') {
+    if (id === 'three_rounds' || id === 'last_round') {
       const list = el.querySelector('[data-ref="talstationen"]');
       const tpl = document.getElementById('tpl-talstation-row');
       list.hidden = false;

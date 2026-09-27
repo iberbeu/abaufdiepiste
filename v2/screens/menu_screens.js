@@ -88,6 +88,11 @@ registerScreen('menu_scores', {
       r('meta').textContent = levelStars(getLevel(points));
       r('meta').setAttribute('aria-label', levelLabel(getLevel(points)));
       r('points').textContent = formatPoints(points);
+      r('stats').hidden = false;
+      r('sights').textContent = p.sightings;
+      r('joker').textContent = p.joker;
+      r('gratis').textContent = p.gratis;
+      r('stats').setAttribute('aria-label', `${p.sightings} Sehenswürdigkeiten, ${p.joker} Joker, ${p.gratis} Gratis Fahrt`);
       return row;
     }));
 
@@ -221,7 +226,7 @@ function ruleCards() {
     {
       title: 'Weitere Regeln',
       items: [
-        { img: '../img/entscheidung_froehlich.svg', label: 'Extraaktivität', text: `Ab ★★: fröhlicher Smiley = +${EXTRA_ACTIVITY_POINTS} Punkte` },
+        { img: 'img/dice/smiley_happy.svg', label: 'Extraaktivität', text: `Ab ★★: fröhlicher Smiley = +${EXTRA_ACTIVITY_POINTS} Punkte` },
         { label: 'Mittagspause', text: `11:00–12:30, einmal: Restaurant +${PAUSE_POINTS.restaurant}, Bar +${PAUSE_POINTS.bar}` },
         { label: 'Sehenswürdigkeiten', text: '+5, +10, +15 … – jede weitere 5 mehr' },
         { label: 'Münzen', text: `${COIN_LIMIT} gleichzeitig → alle zurückgeben · übrige Münzen +5 in der Schlusswertung` },

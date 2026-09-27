@@ -6,7 +6,9 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { gameTime, gameTimeHour, getLevel, sightseeingBonus } from '../game_logic.js';
-import { START_HOUR, MAX_ROUNDS, MIN_PLAYERS, MAX_PLAYERS, LUNCH_START_H, LUNCH_END_H, defaultName } from './flow_logic.js';
+import {
+  START_HOUR, MAX_ROUNDS, MIN_PLAYERS, MAX_PLAYERS, LUNCH_START_H, LUNCH_END_H, defaultName, ranking,
+} from './flow_logic.js';
 
 /** Rows marked orange on the pad: the last rounds, time to head for the valley. */
 export const VALLEY_ROUNDS = 3;
@@ -30,7 +32,61 @@ export function createPad(players) {
     // so clearing or re-entering a cell also corrects the progressive bonus of later ones.
     cellSightings: Array.from({ length: MAX_ROUNDS }, () => players.map(() => 0)),
     final: players.map(() => null),   // Schlusswertung (penalties and coin bonus), null = not entered
+    eventsShown: [],                  // Meldungen already shown (ids as in padDueEvents)
   };
+}
+
+/**
+ * The cell to fill in next: the first empty time cell in turn order (row by row, player by player).
+ * Once any Schlusswertung is entered, the time rows are done (a short game ends early): then it is
+ * the first empty Schlusswertung cell. null when everything is filled.
+ * @returns {{ kind: 'round', round: number, playerIdx: number } | { kind: 'final', playerIdx: number } | null}
+ */
+export function nextCell(pad) {
+  const finalStarted = pad.final.some(v => v !== null);
+  if (!finalStarted) {
+    for (let r = 0; r < MAX_ROUNDS; r++) {
+      const playerIdx = pad.cells[r].indexOf(null);
+      if (playerIdx !== -1) return { kind: 'round', round: r + 1, playerIdx };
+    }
+  }
+  const playerIdx = pad.final.indexOf(null);
+  return playerIdx === -1 ? null : { kind: 'final', playerIdx };
+}
+
+/** Every player's Schlusswertung is entered → the pad is complete (podium). */
+export function allFinalsDone(pad) {
+  return pad.final.every(v => v !== null);
+}
+
+/** Players by final total, highest first; equal totals share a rank (like ranking() in the app). */
+export function padRanking(pad) {
+  return ranking({ players: pad.players.map((_, i) => ({ points: finalTotal(pad, i) })) });
+}
+
+/**
+ * Meldungen that are due now and were not shown yet — the same ones as in the app
+ * (see dueRoundEvents in flow_logic.js). The pad has no turns, so "now" is the round of the
+ * next cell to fill in (nextCell). The pad is always the full day, so the last rounds are 17:30.
+ * Pure: mark them with markPadEvents() once shown.
+ * @returns {Array<'lunch_open'|'lunch_close'|'three_rounds'|'last_round'>}
+ */
+export function padDueEvents(pad) {
+  const next = nextCell(pad);
+  if (next?.kind !== 'round' || next.round === 1) return [];
+  const h = gameTimeHour(START_HOUR, next.round);
+  const remaining = MAX_ROUNDS - next.round + 1;
+  const shown = pad.eventsShown;
+  const due = [];
+  if (!shown.includes('lunch_open') && h >= LUNCH_START_H && h <= LUNCH_END_H) due.push('lunch_open');
+  if (!shown.includes('lunch_close') && h > LUNCH_END_H) due.push('lunch_close');
+  if (!shown.includes('three_rounds') && remaining > 1 && remaining <= VALLEY_ROUNDS) due.push('three_rounds');
+  if (!shown.includes('last_round') && remaining === 1) due.push('last_round');
+  return due;
+}
+
+export function markPadEvents(pad, ids) {
+  ids.forEach(id => { if (!pad.eventsShown.includes(id)) pad.eventsShown.push(id); });
 }
 
 /** The pad's time rows (always the full day 08:00–17:30), with the colouring of the printed pad. */
@@ -101,11 +157,17 @@ export function restorePad(raw) {
   const n = raw.players.length;
   if (n < MIN_PLAYERS || n > MAX_PLAYERS) return null;
   const numOrNull = v => v === null || Number.isFinite(v);
-  const ok = raw.players.every(p => p && typeof p.name === 'string' && Number.isInteger(p.colorIndex))
+  const ok = raw.players.every(p => p && typeof p.name === 'string' && Number.isInteger(p.colorIndex) && p.colorIndex >= 1 && p.colorIndex <= MAX_PLAYERS)
     && Array.isArray(raw.cells) && raw.cells.length === MAX_ROUNDS
     && raw.cells.every(row => Array.isArray(row) && row.length === n && row.every(numOrNull))
     && Array.isArray(raw.cellSightings) && raw.cellSightings.length === MAX_ROUNDS
     && raw.cellSightings.every(row => Array.isArray(row) && row.length === n && row.every(Number.isInteger))
     && Array.isArray(raw.final) && raw.final.length === n && raw.final.every(numOrNull);
-  return ok ? raw : null;
+  if (!ok) return null;
+  if (!Array.isArray(raw.eventsShown)) {
+    // A pad saved before the Meldungen existed: what is due now already lies behind the group.
+    raw.eventsShown = [];
+    markPadEvents(raw, padDueEvents(raw));
+  }
+  return raw;
 }

@@ -1,10 +1,11 @@
-// TURN START — flow_spec.md §5. Whose turn (avatar, name, level stars) and the three actions.
+// TURN START — flow_spec.md §5. Whose turn (avatar, name, level stars), the three actions and "Passen".
 // Pause is always visible; outside the lunch window or once taken it is locked, shows why,
 // and a tap only wiggles it.
 
 import { getLevel, levelLabel, levelStars } from '../../game_logic.js';
-import { currentPlayer, pauseStatus } from '../flow_logic.js';
-import { store } from '../v2_store.js';
+import { currentPlayer, pauseStatus, passTurn } from '../flow_logic.js';
+import { store, saveGame } from '../v2_store.js';
+import { openSheet } from '../v2_sheet.js';
 import { registerScreen, go } from '../v2_router.js';
 import { initial } from '../v2_chrome.js';
 import { activeTurn } from '../turn_state.js';
@@ -33,6 +34,19 @@ registerScreen('turn_start', {
 
     ref('bergauf').addEventListener('click', () => go('bergauf_roll'));
     ref('bergab').addEventListener('click', () => go('bergab_roll'));
+    // Passing ends the turn at once, so it asks first (decision 27.09.2026).
+    ref('pass').addEventListener('click', () => openSheet({
+      title: 'Passen?',
+      text: 'Du bleibst stehen und bekommst in diesem Zug keine Punkte.',
+      actions: [
+        { label: 'Passen', onClick: () => {
+          passTurn(game);
+          saveGame();
+          go('turn_end', { points: 0 });
+        } },
+        { label: 'Abbrechen', kind: 'text' },
+      ],
+    }));
 
     const pause = ref('pause');
     const status = pauseStatus(game, p);

@@ -10,6 +10,7 @@
 /* ── TURN START: player on top, the three actions at the bottom (thumb reach) ── */
 .turn-start { padding-bottom: var(--space-4); }
 .turn-start > .action-list { margin-top: auto; }
+.turn-start__pass { align-self: center; }
 .turn-start .avatar--lg { animation: burst var(--dur-slow) var(--ease-spring); }   /* the next player pops in */
 
 /* ── BERGAUF: dice centred, buttons at the bottom ── */
@@ -21,7 +22,11 @@
 /* ── BERGAB: dice + crossings on top, tiles in the middle, total at the bottom ── */
 .bergab { padding-bottom: var(--space-4); }
 .bergab__top { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; }
-.bergab__dice { margin-top: var(--space-3); }
+.bergab__dice { margin-top: var(--space-3); --die-size: var(--die-bergab); }
+.bergab__dice--big { flex: 1; align-items: center; margin-top: 0; --die-size: var(--die-bergab-big); }
+.bergab__dice .die { width: var(--die-size); height: var(--die-size); border-radius: calc(var(--die-size) * 0.2); }
+.bergab__dice .die__value { font-size: calc(var(--die-size) * 0.42); }
+.bergab__dice .die__stars { font-size: calc(var(--die-size) * 0.17); }
 .bergab__main { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; }
 
 /* ── PAUSE ── */
@@ -84,7 +89,7 @@
   font-weight: var(--fw-label);
   text-align: left;
 }
-.talstation-list__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--player); }
+.talstation-list__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--player); box-shadow: inset 0 0 0 2px var(--player-edge); }
 .talstation-list__place { color: var(--text-muted); }
 
 

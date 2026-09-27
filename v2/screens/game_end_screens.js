@@ -175,34 +175,7 @@ registerScreen('ranking', {
     if (!game.finished) return go('turn_start');
     if (nextSchlusswertungPlayer(game) !== -1) return go('game_end');
     const ref = refIn(el);
-    const order = ranking(game);
-
-    const place = ({ playerIdx, rank, points }, i) => {
-      const position = i + 1;
-      const pl = game.players[playerIdx];
-      const li = clone('tpl-podium-place');
-      const r = refIn(li);
-      // Position decides the podium order (2nd – 1st – 3rd), rank the block height: tied players stand equally high.
-      li.classList.add(`player-${pl.colorIndex}`, `podium__place--pos-${position}`, `podium__place--${Math.min(rank, PODIUM_PLACES)}`);
-      r('avatar').textContent = initial(pl.name);
-      r('name').textContent = pl.name;
-      r('points').textContent = formatPoints(points);
-      r('rank').textContent = rank;
-      li.setAttribute('aria-label', `${rank}. Platz: ${pl.name}, ${formatPoints(points)} Punkte`);
-      return li;
-    };
-    ref('podium').replaceChildren(...order.slice(0, PODIUM_PLACES).map(place));
-    ref('rest').replaceChildren(...order.slice(PODIUM_PLACES).map(({ playerIdx, rank, points }) => {
-      const pl = game.players[playerIdx];
-      const row = clone('tpl-rank-row');
-      const r = refIn(row);
-      row.classList.add(`player-${pl.colorIndex}`);
-      r('rank').textContent = `${rank}.`;
-      r('avatar').textContent = initial(pl.name);
-      r('name').textContent = pl.name;
-      r('points').textContent = formatPoints(points);
-      return row;
-    }));
+    fillRanking(ref, ranking(game), game.players);
 
     ref('newGame').addEventListener('click', () => go('setup_players', { fresh: true }));
     ref('history').addEventListener('click', () => go('menu_scores'));
@@ -211,3 +184,38 @@ registerScreen('ranking', {
     if (previousScreen()?.id === 'schlusswertung') return confetti();
   },
 });
+
+/**
+ * Fills a ranking view: podium for the top places, the rest as rows. Shared with the Punkteblock end.
+ * @param {(name: string) => Element} ref — finds [data-ref="podium"] and [data-ref="rest"]
+ * @param {Array<{ playerIdx: number, rank: number, points: number }>} order — from ranking() / padRanking()
+ * @param {Array<{ name: string, colorIndex: number }>} players
+ */
+export function fillRanking(ref, order, players) {
+  const place = ({ playerIdx, rank, points }, i) => {
+    const position = i + 1;
+    const pl = players[playerIdx];
+    const li = clone('tpl-podium-place');
+    const r = refIn(li);
+    // Position decides the podium order (2nd – 1st – 3rd), rank the block height: tied players stand equally high.
+    li.classList.add(`player-${pl.colorIndex}`, `podium__place--pos-${position}`, `podium__place--${Math.min(rank, PODIUM_PLACES)}`);
+    r('avatar').textContent = initial(pl.name);
+    r('name').textContent = pl.name;
+    r('points').textContent = formatPoints(points);
+    r('rank').textContent = rank;
+    li.setAttribute('aria-label', `${rank}. Platz: ${pl.name}, ${formatPoints(points)} Punkte`);
+    return li;
+  };
+  ref('podium').replaceChildren(...order.slice(0, PODIUM_PLACES).map(place));
+  ref('rest').replaceChildren(...order.slice(PODIUM_PLACES).map(({ playerIdx, rank, points }) => {
+    const pl = players[playerIdx];
+    const row = clone('tpl-rank-row');
+    const r = refIn(row);
+    row.classList.add(`player-${pl.colorIndex}`);
+    r('rank').textContent = `${rank}.`;
+    r('avatar').textContent = initial(pl.name);
+    r('name').textContent = pl.name;
+    r('points').textContent = formatPoints(points);
+    return row;
+  }));
+}

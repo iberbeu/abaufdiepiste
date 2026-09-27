@@ -14,7 +14,7 @@ import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
 import { renderChrome } from '../v2_chrome.js';
 import { openSheet } from '../v2_sheet.js';
-import { beginAction, activeTurn, markRolled } from '../turn_state.js';
+import { beginAction, activeTurn, markRolled, recordJoker, setTurnView } from '../turn_state.js';
 import { playRoll } from '../v2_dice.js';
 
 const SLOPES = ['blue', 'red', 'black', 'yellow'];
@@ -24,8 +24,8 @@ const EVENT_NAMES = {
   pulverschnee: 'Pulverschnee', unfall: 'Unfall', sonne: 'Sonne',
 };
 const BLOCKED_TEXT = { unfall: 'Unfall – diese Runde keine Abfahrt', helikopter: 'Helikopter – ab ins nächste Tal' };
-const IMG_HAPPY = '../img/entscheidung_froehlich.svg';
-const IMG_SAD = '../img/entscheidung_traurig.svg';
+const IMG_HAPPY = 'img/dice/smiley_happy.svg';
+const IMG_SAD = 'img/dice/smiley_sad.svg';
 
 const clone = id => document.getElementById(id).content.firstElementChild.cloneNode(true);
 const filledStars = level => levelStars(level).replace(/☆/g, '');
@@ -114,7 +114,7 @@ registerScreen('bergab_result', {
         ref('eventImg').src = eventImg(d.event);
         ref('eventImg').alt = EVENT_NAMES[d.event];
       }
-      ref('eventJoker').hidden = rolling || !JOKER_EVENTS.includes(d.event) || d.jokerOnEvent || p.joker === 0;
+      ref('eventJoker').hidden = !eventJokerPossible();
 
       renderEventLine();
 
@@ -131,6 +131,9 @@ registerScreen('bergab_result', {
       ref('tiles').hidden = rolling || state.blocked;
       ref('blocked').hidden = rolling || !state.blocked;
       ref('blockedText').textContent = BLOCKED_TEXT[d.event] ?? '';
+      // The corner badge is easy to miss exactly when the Joker matters most — offer it in words too.
+      ref('blockedJoker').hidden = !eventJokerPossible();
+      ref('blockedJokerLabel').textContent = `Joker einsetzen (${p.joker})`;
       SLOPES.forEach(renderTile);
 
       // Extraaktivität: from Fortgeschritten on, not while the descent is blocked
@@ -153,6 +156,10 @@ registerScreen('bergab_result', {
       primary.disabled = rolling;
       primary.textContent = state.total === 0 ? 'Weiter →' : `${signed(state.total)} →`;
       primary.classList.toggle('btn-primary--negative', state.total < 0);
+    }
+
+    function eventJokerPossible() {
+      return !rolling && JOKER_EVENTS.includes(d.event) && !d.jokerOnEvent && player().joker > 0;
     }
 
     function renderEventLine() {
@@ -239,7 +246,7 @@ registerScreen('bergab_result', {
             showSmiley(d.ohneBefugnis, {
               happy: { title: 'Geschafft – volle Punkte' },
               sad: { title: 'Negative Punkte', text: 'Pisten ohne Befugnis zählen minus.' },
-              onJoker: () => { d.ohneBefugnis = true; },
+              joker: { label: 'Ohne Befugnis: fröhlich', apply: () => { d.ohneBefugnis = true; }, undo: () => { d.ohneBefugnis = false; } },
             });
           } },
           { label: 'Abbrechen', kind: 'text' },
@@ -260,7 +267,7 @@ registerScreen('bergab_result', {
             showSmiley(happy, {
               happy: { title: `+${EXTRA_ACTIVITY_POINTS} Punkte` },
               sad: { title: 'Leider nicht geschafft' },
-              onJoker: () => { d.extra = EXTRA_ACTIVITY_POINTS; },
+              joker: { label: 'Extraaktivität geschafft', apply: () => { d.extra = EXTRA_ACTIVITY_POINTS; }, undo: () => { d.extra = 0; } },
             });
           } },
           { label: 'Abbrechen', kind: 'text' },
@@ -269,7 +276,7 @@ registerScreen('bergab_result', {
     }
 
     /** Result of an Entscheidungswürfel roll; on a sad smiley a Joker can turn it happy (§10.2, §10.3). */
-    function showSmiley(happy, { happy: happyText, sad: sadText, onJoker }) {
+    function showSmiley(happy, { happy: happyText, sad: sadText, joker }) {
       const body = clone('tpl-decision-die');
       body.src = happy ? IMG_HAPPY : IMG_SAD;
       body.alt = happy ? 'Fröhlicher Smiley' : 'Trauriger Smiley';
@@ -277,7 +284,8 @@ registerScreen('bergab_result', {
       if (!happy && player().joker > 0) {
         actions.push({ label: 'Joker nutzen', onClick: () => {
           if (!spendCoin(game, 'joker')) return;
-          onJoker();
+          joker.apply();
+          recordJoker(game, joker.label, joker.undo);
           saveGame();
           renderChrome();
           render();
@@ -295,16 +303,31 @@ registerScreen('bergab_result', {
         title: 'Joker einsetzen?',
         text,
         actions: [
-          { label: 'Einsetzen', onClick: () => {
-            if (!spendCoin(game, 'joker')) return;
-            d.jokerOnEvent = true;
-            saveGame();
-            renderChrome();
-            render();
-          } },
+          { label: 'Einsetzen', onClick: useEventJoker },
           { label: 'Abbrechen', kind: 'text' },
         ],
       });
+    }
+
+    function useEventJoker() {
+      if (!eventJokerPossible() || !spendCoin(game, 'joker')) return;
+      d.jokerOnEvent = true;
+      recordJoker(game, d.event === 'schneesturm' ? 'Schneesturm: volle Fahrt' : `${EVENT_NAMES[d.event]} abgewendet`, () => {
+        d.jokerOnEvent = false;
+        trimSlopes();
+      });
+      saveGame();
+      renderChrome();
+      render();
+    }
+
+    /** After the event Joker is taken back, the crossings chosen may exceed the cap again: drop the extra ones. */
+    function trimSlopes() {
+      const { maxCrossings } = descentTurn(d, allowed);
+      let used = Object.values(d.slopes).reduce((a, b) => a + b, 0);
+      for (const color of [...SLOPES].reverse()) {
+        while (used > maxCrossings && d.slopes[color] > 0) { d.slopes[color]--; used--; }
+      }
     }
 
     function finish() {
@@ -317,6 +340,15 @@ registerScreen('bergab_result', {
     }
 
     ref('eventJoker').addEventListener('click', openEventJoker);
+    ref('blockedJoker').addEventListener('click', openEventJoker);
+    setTurnView({
+      render,
+      // The 🃏 in the top bar acts on the event die when that is where a Joker helps right now.
+      joker: () => (eventJokerPossible() ? {
+        label: d.event === 'schneesturm' ? 'Schneesturm: volle Fahrt' : `${EVENT_NAMES[d.event]} abwenden`,
+        run: useEventJoker,
+      } : null),
+    });
     ref('extra').addEventListener('click', openExtra);
     ref('primary').addEventListener('click', finish, { once: true });
 
@@ -348,7 +380,10 @@ registerScreen('bergab_result', {
       showCoinLimit();
     }
 
-    return () => cancelRoll();
+    return () => {
+      cancelRoll();
+      setTurnView(null);
+    };
   },
 });
 

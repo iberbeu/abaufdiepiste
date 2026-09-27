@@ -1,8 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
   createPad, padRows, runningTotal, finalTotal, padLevel, padSightings, nextSightingPoints, cellSightings,
-  setCell, setFinal, restorePad, VALLEY_ROUNDS,
+  setCell, setFinal, restorePad, VALLEY_ROUNDS, nextCell, allFinalsDone, padRanking, padDueEvents, markPadEvents,
 } from '../v2/punkteblock_logic.js';
+
+/** Fills every time cell up to `lastRound` with 0 (except one cell, if given). */
+const fillUpTo = (pad, lastRound, except = null) => {
+  for (let r = 1; r <= lastRound; r++) pad.players.forEach((_, i) => {
+    if (!(except && except.round === r && except.i === i)) setCell(pad, r, i, 0);
+  });
+};
 
 const pad2 = () => createPad([{ name: 'Anna', talstation: 'Dorf', colorIndex: 3 }, { name: '', colorIndex: 1 }]);
 
@@ -16,9 +23,9 @@ describe('createPad', () => {
     expect(pad.final).toEqual([null, null]);
   });
 
-  it('needs 2–6 players', () => {
+  it('needs 2–4 players', () => {
     expect(() => createPad([{ name: 'Solo' }])).toThrow();
-    expect(() => createPad(Array(7).fill({ name: 'X' }))).toThrow();
+    expect(() => createPad(Array(5).fill({ name: 'X' }))).toThrow();
   });
 });
 
@@ -71,6 +78,16 @@ describe('Sehenswürdigkeiten (stored per cell, count derived)', () => {
     expect(nextSightingPoints(pad, 0, 7)).toBe(15);        // next one in another cell
   });
 
+  it('each player has their own count and progression (review 27.09.2026: no shared counter)', () => {
+    const pad = pad2();
+    setCell(pad, 2, 0, 5, 1);
+    setCell(pad, 4, 0, 10, 1);
+    setCell(pad, 5, 1, 5, 1);
+    expect([padSightings(pad, 0), padSightings(pad, 1)]).toEqual([2, 1]);
+    expect(nextSightingPoints(pad, 0, 9)).toBe(15);
+    expect(nextSightingPoints(pad, 1, 9)).toBe(10);
+  });
+
   it('clearing or re-entering a cell corrects the count (no drift, no double counting)', () => {
     const pad = pad2();
     setCell(pad, 3, 0, 13, 1);                  // 4 + 4 + Sehenswürdigkeit 5
@@ -89,7 +106,95 @@ describe('Sehenswürdigkeiten (stored per cell, count derived)', () => {
   });
 });
 
+describe('nextCell', () => {
+  it('goes row by row in turn order, skipping filled cells', () => {
+    const pad = pad2();
+    expect(nextCell(pad)).toEqual({ kind: 'round', round: 1, playerIdx: 0 });
+    setCell(pad, 1, 0, 0);
+    expect(nextCell(pad)).toEqual({ kind: 'round', round: 1, playerIdx: 1 });
+    setCell(pad, 1, 1, 4);
+    setCell(pad, 2, 1, 4);   // filled ahead: player 0 of round 2 is still next
+    expect(nextCell(pad)).toEqual({ kind: 'round', round: 2, playerIdx: 0 });
+  });
+
+  it('moves to the Schlusswertung after the last row, or as soon as one is entered (short game)', () => {
+    const pad = pad2();
+    fillUpTo(pad, 20);
+    expect(nextCell(pad)).toEqual({ kind: 'final', playerIdx: 0 });
+    const short = pad2();
+    fillUpTo(short, 12);
+    setFinal(short, 1, -15);
+    expect(nextCell(short)).toEqual({ kind: 'final', playerIdx: 0 });
+    setFinal(short, 0, 0);
+    expect(nextCell(short)).toBeNull();
+    expect(allFinalsDone(short)).toBe(true);
+    expect(allFinalsDone(pad)).toBe(false);
+  });
+});
+
+describe('padRanking', () => {
+  it('ranks by the final total including the Schlusswertung; ties share a rank', () => {
+    const pad = createPad([{ name: 'A' }, { name: 'B' }, { name: 'C' }]);
+    setCell(pad, 1, 0, 20);
+    setCell(pad, 1, 1, 30);
+    setCell(pad, 1, 2, 20);
+    setFinal(pad, 1, -15);
+    expect(padRanking(pad)).toEqual([
+      { playerIdx: 0, rank: 1, points: 20 },
+      { playerIdx: 2, rank: 1, points: 20 },
+      { playerIdx: 1, rank: 3, points: 15 },
+    ]);
+  });
+});
+
+describe('padDueEvents (Meldungen)', () => {
+  it('follow the round of the next cell, each once', () => {
+    const pad = pad2();
+    expect(padDueEvents(pad)).toEqual([]);
+    fillUpTo(pad, 5);                 // next: 10:30
+    expect(padDueEvents(pad)).toEqual([]);
+    fillUpTo(pad, 6);                 // next: 11:00
+    expect(padDueEvents(pad)).toEqual(['lunch_open']);
+    markPadEvents(pad, ['lunch_open']);
+    expect(padDueEvents(pad)).toEqual([]);
+    fillUpTo(pad, 10);                // next: 13:00
+    expect(padDueEvents(pad)).toEqual(['lunch_close']);
+    markPadEvents(pad, ['lunch_close']);
+    fillUpTo(pad, 20 - VALLEY_ROUNDS);   // next: first orange row
+    expect(padDueEvents(pad)).toEqual(['three_rounds']);
+    markPadEvents(pad, ['three_rounds']);
+    fillUpTo(pad, 19);                // next: 17:30
+    expect(padDueEvents(pad)).toEqual(['last_round']);
+    markPadEvents(pad, ['last_round']);
+    fillUpTo(pad, 20);                // Schlusswertung: no more Meldungen
+    expect(padDueEvents(pad)).toEqual([]);
+  });
+
+  it("only once the next cell is in the new round (the round's last entry triggers it)", () => {
+    const pad = pad2();
+    fillUpTo(pad, 6, { round: 6, i: 1 });
+    expect(padDueEvents(pad)).toEqual([]);
+    setCell(pad, 6, 1, 0);
+    expect(padDueEvents(pad)).toEqual(['lunch_open']);
+  });
+});
+
 describe('restorePad', () => {
+  it('a pad saved before the Meldungen gets eventsShown, and what is due right then counts as shown', () => {
+    const pad = pad2();
+    fillUpTo(pad, 6);
+    const old = JSON.parse(JSON.stringify(pad));
+    delete old.eventsShown;
+    const r = restorePad(old);
+    expect(r.eventsShown).toEqual(['lunch_open']);
+    expect(padDueEvents(r)).toEqual([]);
+  });
+
+  it('rejects more than 4 players and colours outside the 4 game pieces', () => {
+    const pad = pad2();
+    expect(restorePad({ ...JSON.parse(JSON.stringify(pad)), players: [{ ...pad.players[0], colorIndex: 5 }, pad.players[1]] })).toBeNull();
+  });
+
   it('accepts a saved pad and rejects broken ones', () => {
     const pad = pad2();
     setCell(pad, 1, 0, 6, 1);

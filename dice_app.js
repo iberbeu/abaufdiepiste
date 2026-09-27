@@ -153,7 +153,8 @@ function animateDieRoll(el, getRandomHTML, finalHTML) {
 
 // Tracks selected Kreuzungen per slope colour: { blue: 0, red: 0, black: 0, yellow: 0 }
 let slopeSelection = { blue: 0, red: 0, black: 0, yellow: 0 };
-const PLAYER_COLORS = ['#3A8A8C','#e05252','#4caf50','#ff9800','#9c27b0','#00bcd4'];
+// The four game piece colours (decision 27.09.2026): Alpenglühen, Glacier Teal, Sonnen-Gelb, Alpine Night — 2–4 players.
+const PLAYER_COLORS = ['#E8431A','#3A8A8C','#F59C3C','#1B2B4B'];
 
 let state = {
   players: [],
@@ -190,7 +191,7 @@ function initDefaultPlayers() {
     if (raw) {
       const saved = JSON.parse(raw);
       if (Array.isArray(saved.players) && saved.players.length) {
-        saved.players.forEach(p => addPlayerField(p.name, p.talstation || ''));
+        saved.players.slice(0, PLAYER_COLORS.length).forEach(p => addPlayerField(p.name, p.talstation || ''));
         return;
       }
     }
@@ -201,7 +202,7 @@ function initDefaultPlayers() {
 function addPlayerField(name, talstation) {
   const setupList = document.getElementById('playerSetupList');
   const idx = setupList.children.length;
-  if (idx >= 6) return;
+  if (idx >= PLAYER_COLORS.length) return;
   const row = document.createElement('div');
   row.className = 'player-setup-row';
   row.innerHTML = `

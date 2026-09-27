@@ -58,14 +58,15 @@
   --piste-red:     #D93A3A;
   --piste-black:   #2b2f36;
   --piste-yellow:  #F0C040;   /* dark text on it */
+  --extra-activity: #F28C28;  /* Extraaktivität — marked orange on Swiss piste maps (Punkteblock chip only) */
 
-  /* ── Player colours (6, none of them a piste colour) ── */
-  --player-1: #E8431A;  /* Alpenglühen */
-  --player-2: #3FA9AB;  /* Glacier teal, lifted for dark */
-  --player-3: #9B7BE0;  /* Violet */
-  --player-4: #4CC38A;  /* Mint */
-  --player-5: #E86FB0;  /* Pink */
-  --player-6: #C9A27A;  /* Sand */
+  /* ── Player colours = the four physical game pieces (decision 27.09.2026). Brand values, unchanged.
+     --player-ink: text on the colour; --player-edge: ring that keeps the dark piece visible on dark surfaces. ── */
+  --player-1: var(--alpengluehen);
+  --player-2: var(--glacier-teal);
+  --player-3: var(--sonnen-gelb);
+  --player-4: var(--alpine-night);
+  --player-4-edge: #8fa0bf;
 
   /* ── Dice faces ── */
   --die-light:   #ffffff;
@@ -109,6 +110,8 @@
   --die-lg:      84px;
   --die-md:      64px;
   --die-sm:      52px;
+  --die-bergab-big: 136px;   /* Bergab before the roll: the screen is almost empty */
+  --die-bergab:     100px;   /* Bergab result, above the slope tiles */
   --avatar-sm:   22px;
   --avatar-lg:   96px;
   --app-max:     480px;  /* portrait content width on large screens */
@@ -123,12 +126,12 @@
 
 /* Short portrait screens (e.g. iPhone SE, or any phone with the browser bars showing): smaller dice. */
 @media (orientation: portrait) and (max-height: 760px) {
-  :root { --die-lg: 68px; --die-md: 56px; }
+  :root { --die-lg: 68px; --die-md: 56px; --die-bergab-big: 116px; --die-bergab: 68px; }
 }
 
 /* Phones on their side: same smaller dice. */
 @media (orientation: landscape) and (max-height: 540px) {
-  :root { --die-lg: 68px; --die-md: 56px; }
+  :root { --die-lg: 68px; --die-md: 56px; --die-bergab-big: 104px; --die-bergab: 68px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

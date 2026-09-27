@@ -24,7 +24,6 @@ const FIXTURES = [
   ['Pause offen · 11:30', () => game(FOUR, { round: 8, eventsShown: ['lunch_open'] }, FOUR_POINTS)],
   ['Gleich 3 Runden übrig', () => game(FOUR, { round: 17, currentPlayerIndex: 3, eventsShown: ['lunch_open', 'lunch_close'] }, FOUR_POINTS)],
   ['Letzter Zug · 17:30', () => game(FOUR, { round: 20, currentPlayerIndex: 3, eventsShown: ['lunch_open', 'lunch_close', 'three_rounds'] }, FOUR_POINTS)],
-  ['6 Spieler (Farben)', () => game([['Anna'], ['Ben'], ['Clara'], ['Dani'], ['Eli'], ['Fabio']])],
   ['Spiel beendet → Schlusswertung', () => game(FOUR, { round: 20, finished: true, eventsShown: ['lunch_open', 'lunch_close', 'three_rounds'] }, FOUR_POINTS)],
 ];
 

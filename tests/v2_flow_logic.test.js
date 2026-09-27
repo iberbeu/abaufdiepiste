@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createGame, advanceTurn, dueRoundEvents, markEventsShown, pauseStatus,
   currentTime, roundsRemaining, restoreGame, addHistory, addSighting, removeLastSighting, spendCoin,
-  rollDice, gainCoin, descentTurn, takePause, ranking, scoreRows, roundEntries, adjustPlayer, levelUp,
+  rollDice, gainCoin, descentTurn, refundCoin, passTurn, takePause, ranking, scoreRows, roundEntries, adjustPlayer, levelUp,
   nextSchlusswertungPlayer, previewSchlusswertung, applySchlusswertung, setupDraft, assignColor, moveItem, defaultName, endTime, MAX_ROUNDS, MIN_ROUNDS,
 } from '../v2/flow_logic.js';
 
@@ -34,10 +34,11 @@ describe('createGame', () => {
     expect(createGame([{ name: 'A' }, { name: 'B' }], 99).totalRounds).toBe(MAX_ROUNDS);
   });
 
-  it('rejects fewer than 2 or more than 6 players (no solo game)', () => {
+  it('rejects fewer than 2 or more than 4 players (no solo game, one per game piece)', () => {
     expect(() => createGame([])).toThrow();
     expect(() => createGame([{ name: 'Solo' }])).toThrow();
-    expect(() => createGame(Array(7).fill({ name: 'X' }))).toThrow();
+    expect(() => createGame(Array(5).fill({ name: 'X' }))).toThrow();
+    expect(createGame(Array(4).fill({ name: 'X' })).players).toHaveLength(4);
   });
 });
 
@@ -70,24 +71,31 @@ describe('createGame colours', () => {
 });
 
 describe('setupDraft', () => {
-  it('without a last group: 2 players, 20 rounds, 6 empty slots with colours 1–6', () => {
+  it('without a last group: 2 players, 20 rounds, 4 empty slots with colours 1–4', () => {
     const d = setupDraft(null);
     expect(d.count).toBe(2);
     expect(d.totalRounds).toBe(MAX_ROUNDS);
-    expect(d.players).toHaveLength(6);
-    expect(d.players.map(p => p.colorIndex)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(d.players).toHaveLength(4);
+    expect(d.players.map(p => p.colorIndex)).toEqual([1, 2, 3, 4]);
     expect(d.players[0]).toEqual({ name: '', talstation: '', colorIndex: 1 });
   });
 
   it('prefills the last group and gives the free colours to the empty slots', () => {
     const d = setupDraft({
-      players: [{ name: 'Anna', talstation: 'Dorf', colorIndex: 5 }, { name: '', talstation: '', colorIndex: 2 }, { name: 'Clara', talstation: '', colorIndex: 1 }],
+      players: [{ name: 'Anna', talstation: 'Dorf', colorIndex: 4 }, { name: '', talstation: '', colorIndex: 2 }, { name: 'Clara', talstation: '', colorIndex: 1 }],
       totalRounds: 12,
     });
     expect(d.count).toBe(3);
     expect(d.totalRounds).toBe(12);
     expect(d.players.slice(0, 3).map(p => p.name)).toEqual(['Anna', '', 'Clara']);
-    expect(d.players.map(p => p.colorIndex)).toEqual([5, 2, 1, 3, 4, 6]);
+    expect(d.players.map(p => p.colorIndex)).toEqual([4, 2, 1, 3]);
+  });
+
+  it('a saved group of 5–6 (before the 2–4 decision) is cut to 4 with valid colours', () => {
+    const six = Array.from({ length: 6 }, (_, i) => ({ name: `P${i}`, talstation: '', colorIndex: 6 - i }));
+    const d = setupDraft({ players: six, totalRounds: 20 });
+    expect(d.count).toBe(4);
+    expect([...d.players.map(p => p.colorIndex)].sort()).toEqual([1, 2, 3, 4]);
   });
 
   it('a saved one-player group still starts the wizard with 2 players', () => {
@@ -96,7 +104,7 @@ describe('setupDraft', () => {
 
   it('repairs repeated or invalid colours and clamps the rounds', () => {
     const d = setupDraft({ players: [{ name: 'A', talstation: '', colorIndex: 2 }, { name: 'B', talstation: '', colorIndex: 2 }, { name: 'C', talstation: '', colorIndex: 9 }], totalRounds: 99 });
-    expect(new Set(d.players.map(p => p.colorIndex)).size).toBe(6);
+    expect(new Set(d.players.map(p => p.colorIndex)).size).toBe(4);
     expect(d.players[0].colorIndex).toBe(2);
     expect(d.totalRounds).toBe(MAX_ROUNDS);
   });
@@ -185,6 +193,21 @@ describe('dueRoundEvents', () => {
     expect(dueRoundEvents(g)).toEqual(['three_rounds']);
   });
 
+  it('last_round in the last round (instead of three_rounds), once', () => {
+    const g = two();
+    markEventsShown(g, ['lunch_open', 'lunch_close', 'three_rounds']);
+    g.round = 19;
+    expect(dueRoundEvents(g)).toEqual([]);
+    g.round = 20;
+    expect(dueRoundEvents(g)).toEqual(['last_round']);
+    markEventsShown(g, ['last_round']);
+    expect(dueRoundEvents(g)).toEqual([]);
+    const late = two();   // a game restored in its last round never gets "3 rounds left"
+    markEventsShown(late, ['lunch_open', 'lunch_close']);
+    late.round = 20;
+    expect(dueRoundEvents(late)).toEqual(['last_round']);
+  });
+
   it('several events can be due at once after a jump (e.g. a restored game)', () => {
     const g = createGame([{ name: 'A' }, { name: 'B' }], MIN_ROUNDS);
     g.round = 10;   // 12:30, second-to-last round of the shortest game
@@ -268,6 +291,40 @@ describe('spendCoin', () => {
   });
 });
 
+describe('refundCoin', () => {
+  it('gives the coin back and removes the matching "eingesetzt" entry of this turn', () => {
+    const g = two();
+    g.players[0].joker = 1;
+    addHistory(g, 'Bergab: keine Kreuzung → 0 Punkte');
+    spendCoin(g, 'joker');
+    refundCoin(g, 'joker');
+    expect(g.players[0].joker).toBe(1);
+    expect(g.history.map(h => h.text)).toEqual(['Bergab: keine Kreuzung → 0 Punkte']);
+    expect(() => refundCoin(g, 'points')).toThrow();
+  });
+
+  it("never removes another player's entry", () => {
+    const g = two();
+    g.players[1].joker = 1;
+    g.currentPlayerIndex = 1;
+    spendCoin(g, 'joker');
+    g.currentPlayerIndex = 0;
+    refundCoin(g, 'joker');
+    expect(g.history).toHaveLength(1);
+    expect(g.players[0].joker).toBe(1);
+  });
+});
+
+describe('passTurn', () => {
+  it('logs the pass for the current player, nothing else changes', () => {
+    const g = two();
+    passTurn(g);
+    expect(g.history).toEqual([{ time: '08:00', round: 1, playerIdx: 0, text: 'Gepasst' }]);
+    expect(g.players[0].points).toBe(0);
+    expect(g.currentPlayerIndex).toBe(0);
+  });
+});
+
 describe('restoreGame', () => {
   it('accepts a saved game and fills missing arrays', () => {
     const g = JSON.parse(JSON.stringify(two()));
@@ -291,6 +348,13 @@ describe('restoreGame', () => {
     const badName = two();
     badName.players[0].name = 42;
     expect(restoreGame(badName)).toBeNull();
+    // Saved before the 2–4 decision: 5 players or a 5th/6th colour cannot be shown any more
+    const five = createGame(Array(4).fill({ name: 'X' }));
+    five.players.push({ ...five.players[0], colorIndex: 5 });
+    expect(restoreGame(JSON.parse(JSON.stringify(five)))).toBeNull();
+    const oldColour = two();
+    oldColour.players[1].colorIndex = 6;
+    expect(restoreGame(oldColour)).toBeNull();
   });
 });
 

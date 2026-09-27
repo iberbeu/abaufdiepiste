@@ -14,8 +14,8 @@ import { openSheet, closeSheet } from '../v2_sheet.js';
 import { initial } from '../v2_chrome.js';
 
 const DEFAULT_SHORT_ROUNDS = 16;   // 15:30 — preset of the "Kurz" stepper
-// Screen-reader names of --player-1 … --player-6 (v2_tokens.css).
-const COLOR_NAMES = ['Orange', 'Türkis', 'Violett', 'Mint', 'Pink', 'Sand'];
+// Names of --player-1 … --player-4 (v2_tokens.css) = the colours of the game pieces.
+const COLOR_NAMES = ['Alpenglühen', 'Glacier Teal', 'Sonnen-Gelb', 'Alpine Night'];
 
 /** @type {ReturnType<typeof setupDraft> & { short: boolean, shortRounds: number } | null} */
 let draft = null;
@@ -145,20 +145,22 @@ registerScreen('setup_names', {
       const owners = activePlayers();
       body.append(...Array.from({ length: MAX_PLAYERS }, (_, c) => {
         const colorIndex = c + 1;
-        const swatch = clone('tpl-swatch');
+        const option = clone('tpl-swatch');
+        const swatch = ref(option, 'button');
         const owner = owners.findIndex(p => p.colorIndex === colorIndex);
-        swatch.classList.add(`player-${colorIndex}`);
+        option.classList.add(`player-${colorIndex}`);
+        ref(option, 'name').textContent = COLOR_NAMES[c];
         swatch.classList.toggle('is-selected', owner === i);
         swatch.setAttribute('aria-label', `Farbe ${COLOR_NAMES[c]}`);
-        if (owner !== -1 && owner !== i) swatch.firstElementChild.textContent = initial(defaultName(owners[owner].name, owner));
+        if (owner !== -1 && owner !== i) ref(option, 'initial').textContent = initial(defaultName(owners[owner].name, owner));
         swatch.addEventListener('click', () => {
           draft.players = assignColor(draft.players, i, colorIndex);
           closeSheet();
           render();
         });
-        return swatch;
+        return option;
       }));
-      openSheet({ title: 'Farbe wählen', body, actions: [{ label: 'Abbrechen', kind: 'text' }] });
+      openSheet({ title: 'Farbe wählen', text: 'Die Farbe deiner Spielfigur.', body, actions: [{ label: 'Abbrechen', kind: 'text' }] });
     }
 
     enableDragReorder(list, (from, to) => { reorder(from, to); render(); });

@@ -12,12 +12,12 @@ import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
 import { renderChrome } from '../v2_chrome.js';
 import { openSheet, closeSheet } from '../v2_sheet.js';
-import { beginAction, activeTurn, markRolled } from '../turn_state.js';
+import { beginAction, activeTurn, markRolled, recordJoker, setTurnView } from '../turn_state.js';
 import { playRoll } from '../v2_dice.js';
 
 const DICE = 6;
 const MAX_ROLLS = 2;
-const IMG_UNKNOWN = '../img/die_unknown.svg';
+const IMG_UNKNOWN = 'img/dice/die_question.svg';
 
 const nameOf = sym => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(sym)];
 const imgOf = sym => `../img/transport_${sym}.png`;
@@ -112,18 +112,18 @@ registerScreen('bergauf_result', {
       joker.setAttribute('aria-pressed', String(pickingJoker));
       ref('jokerLabel').textContent = pickingJoker ? 'Abbrechen' : `Joker einsetzen (${p.joker})`;
 
-      // After roll 1 the better choice is the primary button; after roll 2 only "Fertig".
+      // After roll 1 the second roll is the usual move, so it is the big button; after roll 2 only "Fertig".
       const canReroll = d.rolls < MAX_ROLLS;
-      const rerollFirst = canReroll && !valid;
+      const allHeld = d.held.every(Boolean);
+      const rerollFirst = canReroll && !allHeld;
       const primary = ref('primary');
       const secondary = ref('secondary');
       primary.textContent = rerollFirst ? 'Nochmal würfeln' : 'Fertig →';
       primary.classList.toggle('btn-primary--secondary', rerollFirst);
       secondary.textContent = rerollFirst ? 'Fertig' : 'Nochmal würfeln';
       secondary.hidden = !canReroll;
-      const allHeld = d.held.every(Boolean);
-      primary.disabled = rolling || (rerollFirst && allHeld);
-      secondary.disabled = rolling || (!rerollFirst && allHeld);
+      primary.disabled = rolling;
+      secondary.disabled = rolling || !rerollFirst;
       primary.dataset.action = rerollFirst ? 'reroll' : 'finish';
       secondary.dataset.action = rerollFirst ? 'finish' : 'reroll';
     }
@@ -181,6 +181,12 @@ registerScreen('bergauf_result', {
         option.addEventListener('click', () => {
           closeSheet();
           if (!spendCoin(game, 'joker')) return;
+          const before = { face: d.dice[i], held: d.held[i] };
+          recordJoker(game, `${nameOf(sym)} gedreht`, () => {
+            d.dice[i] = before.face;
+            d.held[i] = before.held;
+            d.jokered[i] = false;
+          });
           d.dice[i] = sym;
           d.held[i] = true;      // a die turned with a Joker is never rolled again
           d.jokered[i] = true;
@@ -201,13 +207,22 @@ registerScreen('bergauf_result', {
       render();
     });
 
+    setTurnView({
+      render,
+      // The 🃏 in the top bar starts the same "which die?" pick as the button here.
+      joker: () => (rolling || finished ? null : { label: 'Würfel drehen', run: () => { pickingJoker = true; render(); } }),
+    });
+
     // Only the first mount after a roll animates; a remount (menu → back) shows the result directly.
     const pending = d.pendingRoll;
     d.pendingRoll = null;
     if (pending) animateRoll(pending);
     else render();
 
-    return () => cancelRoll();
+    return () => {
+      cancelRoll();
+      setTurnView(null);
+    };
   },
 });
 

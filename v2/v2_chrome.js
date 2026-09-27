@@ -5,11 +5,14 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { sightseeingBonus } from '../game_logic.js';
-import { currentTime, currentPlayer, addSighting, removeLastSighting, spendCoin, levelUp } from './flow_logic.js';
+import {
+  currentTime, currentPlayer, addSighting, removeLastSighting, spendCoin, refundCoin, levelUp, MAX_PLAYERS,
+} from './flow_logic.js';
 import { store, saveGame } from './v2_store.js';
 import { go } from './v2_router.js';
 import { openSheet } from './v2_sheet.js';
 import { celebrateLevelUp } from './v2_fx.js';
+import { recordJoker, lastJoker, popJoker, turnView } from './turn_state.js';
 
 const $ = id => document.getElementById(id);
 
@@ -36,7 +39,7 @@ export function showChrome(visible, quickActions = true) {
   $('quickActions').inert = !quickActions;
 }
 
-const PLAYER_CLASSES = [1, 2, 3, 4, 5, 6].map(n => `player-${n}`);
+const PLAYER_CLASSES = Array.from({ length: MAX_PLAYERS }, (_, i) => `player-${i + 1}`);
 
 /**
  * Re-renders time, coin badges and the score strip from store.game.
@@ -51,8 +54,12 @@ export function renderChrome({ bump = false, pending = 0 } = {}) {
   const p = currentPlayer(game);
 
   $('topbarTime').textContent = currentTime(game);
+  $('topbarRound').textContent = `(${game.round}/${game.totalRounds})`;
+  $('topbarRound').setAttribute('aria-label', `Runde ${game.round} von ${game.totalRounds}`);
   setBadge('btnGratis', 'gratisCount', p.gratis);
   setBadge('btnJoker', 'jokerCount', p.joker);
+  // A Joker spent this turn can be taken back, so the button stays usable at 0.
+  $('btnJoker').classList.toggle('is-empty', p.joker === 0 && !lastJoker(game));
 
   const strip = $('scoreStrip');
   let chips = [...strip.children];
@@ -80,7 +87,7 @@ export function renderChrome({ bump = false, pending = 0 } = {}) {
   keepInView(strip, currentChip());
 }
 
-/** With 5–6 players the strip scrolls sideways: keep the current player's chip visible. */
+/** On narrow phones the strip may scroll sideways: keep the current player's chip visible. */
 function keepInView(strip, chip) {
   if (!chip) return;
   const s = strip.getBoundingClientRect();
@@ -165,16 +172,41 @@ function openGratisSheet(p) {
   });
 }
 
+/**
+ * Joker sheet. On a dice screen that has a use for a Joker right now (e.g. averting the Helikopter),
+ * "Einsetzen" does exactly that; elsewhere it only spends the coin (Joker on the physical board).
+ * The last Joker of this turn can be taken back until the turn ends.
+ */
 function openJokerSheet(p) {
-  if (p.joker === 0) return;
+  const game = store.game;
+  const last = lastJoker(game);
+  if (p.joker === 0 && !last) return;
+  const view = turnView();
+  const target = p.joker > 0 ? view?.joker?.() ?? null : null;
+  const actions = [];
+  if (target) {
+    actions.push({ label: target.label, onClick: target.run });
+  } else if (p.joker > 0) {
+    actions.push({ label: 'Einsetzen', onClick: () => {
+      if (!spendCoin(game, 'joker')) return;
+      recordJoker(game, 'Joker', () => {});
+      commit(false);
+    } });
+  }
+  if (last) {
+    actions.push({ label: `Zurücknehmen: ${last.label}`, kind: actions.length ? 'text' : 'primary', onClick: () => {
+      popJoker(game).undo();
+      refundCoin(game, 'joker');
+      commit(false);
+      turnView()?.render();
+    } });
+  }
+  actions.push({ label: 'Abbrechen', kind: 'text' });
   openSheet({
-    title: 'Joker einsetzen?',
-    // In-app dice uses get their own Joker badge on the die (flow_spec §5) — this sheet is
-    // for everything else, so point that out to avoid spending a Joker twice.
-    text: `Noch ${p.joker} übrig. Beim Würfeln erscheint der Joker direkt am Würfel.`,
-    actions: [
-      { label: 'Einsetzen', onClick: () => { spendCoin(store.game, 'joker'); commit(false); } },
-      { label: 'Abbrechen', kind: 'text' },
-    ],
+    title: p.joker > 0 ? 'Joker einsetzen?' : 'Joker zurücknehmen?',
+    text: p.joker > 0
+      ? `Noch ${p.joker} übrig.${target ? '' : ' Beim Würfeln erscheint der Joker direkt am Würfel.'}`
+      : 'Bis zum Ende deines Zugs kannst du ihn zurücknehmen.',
+    actions,
   });
 }

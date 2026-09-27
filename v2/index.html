@@ -18,7 +18,7 @@
 <div class="app">
   <header class="topbar" id="topbar" hidden>
     <button class="icon-btn" id="btnMenu" aria-label="Menü"><span class="icon icon--menu"></span></button>
-    <span class="topbar__time" id="topbarTime"></span>
+    <span class="topbar__clock"><span class="topbar__time" id="topbarTime"></span><span class="topbar__round" id="topbarRound"></span></span>
     <div class="topbar__actions" id="quickActions">
       <button class="icon-btn" id="btnSight" aria-label="Sehenswürdigkeit"><span class="icon icon--camera"></span></button>
       <button class="icon-btn" id="btnGratis" aria-label="Gratis Fahrt"><span class="icon icon--ticket"></span><span class="icon-btn__badge" id="gratisCount" hidden></span></button>
@@ -79,8 +79,12 @@
       <button class="btn-action btn-action--bergab" data-ref="continue" hidden>
         <span>Weiterspielen<span class="btn-action__sub" data-ref="continueSub"></span></span>
       </button>
-      <button class="btn-action btn-action--bergauf" data-ref="newGame">Neues Spiel</button>
-      <button class="btn-action btn-action--pause" data-ref="punkteblock">Punkteblock</button>
+      <button class="btn-action btn-action--bergauf" data-ref="newGame">
+        <span>Neues Spiel<span class="btn-action__sub">Die App würfelt für euch</span></span>
+      </button>
+      <button class="btn-action btn-action--pause" data-ref="punkteblock">
+        <span>Punkteblock<span class="btn-action__sub btn-action__sub--wrap">Kein Papier-Punkteblock zur Hand? Hier die Punkte eintragen – gewürfelt wird mit den echten Würfeln.</span></span>
+      </button>
     </div>
   </section>
 </template>
@@ -110,7 +114,7 @@
     </header>
     <h1 class="wizard__title">Wer spielt mit?</h1>
     <ol class="player-rows" data-ref="rows"></ol>
-    <p class="wizard__hint">Wer am wenigsten Skierfahrung hat, beginnt.</p>
+    <p class="wizard__hint">Kreis antippen = Farbe deiner Spielfigur wählen.<br>Wer am wenigsten Skierfahrung hat, beginnt.</p>
     <button class="btn-primary wizard__cta" data-ref="next">Weiter →</button>
   </section>
 </template>
@@ -128,7 +132,10 @@
 </template>
 
 <template id="tpl-swatch">
-  <button class="swatch"><span class="swatch__initial"></span></button>
+  <div class="swatch-option">
+    <button class="swatch" data-ref="button"><span class="swatch__initial" data-ref="initial"></span></button>
+    <span data-ref="name"></span>
+  </div>
 </template>
 
 <template id="tpl-setup_talstation">
@@ -198,6 +205,7 @@
         <span class="icon icon--lg icon--restaurant"></span>
         <span>Pause<span class="btn-action__sub btn-action__lock" data-ref="pauseSub" hidden><span class="icon icon--sm icon--lock"></span><span data-ref="pauseReason"></span></span></span>
       </button>
+      <button class="btn-text turn-start__pass" data-ref="pass">Passen</button>
     </div>
   </section>
 </template>
@@ -265,9 +273,9 @@
       <h1 class="step-head__title">Bergab</h1>
       <span></span>
     </header>
-    <div class="dice-row bergab__dice">
+    <div class="dice-row bergab__dice bergab__dice--big">
       <div class="die" role="img" data-ref="descent"><div class="die__face"><span class="die__value">?</span><span class="die__stars" data-ref="stars"></span></div></div>
-      <div class="die die--event"><img class="die__img" src="../img/die_unknown.svg" alt="Ereigniswürfel"></div>
+      <div class="die die--event"><img class="die__img" src="img/dice/die_question.svg" alt="Ereigniswürfel"></div>
     </div>
     <div class="step-cta"><button class="btn-primary" data-ref="roll"><span class="icon icon--dice"></span>Würfeln</button></div>
   </section>
@@ -296,10 +304,11 @@
       <div class="blocked" data-ref="blocked" hidden>
         <span class="icon icon--lg icon--warning"></span>
         <p class="blocked__text" data-ref="blockedText"></p>
+        <button class="btn-joker" data-ref="blockedJoker" hidden><span class="icon icon--sm icon--joker"></span><span data-ref="blockedJokerLabel"></span></button>
       </div>
     </div>
     <button class="round-option bergab__extra" data-ref="extra" aria-label="Extraaktivität" hidden>
-      <span class="icon icon--dice" data-ref="extraIcon"></span>
+      <span class="icon icon--snowboard" data-ref="extraIcon"></span>
       <span class="round-option__label" data-ref="extraLabel" hidden></span>
     </button>
     <div class="step-cta step__cta"><button class="btn-primary" data-ref="primary"></button></div>
@@ -397,7 +406,13 @@
   <li class="rank-row">
     <span class="rank-row__rank" data-ref="rank"></span>
     <span class="avatar avatar--md" data-ref="avatar" aria-hidden="true"></span>
-    <span class="rank-row__name"><span data-ref="name"></span><span class="rank-row__meta" data-ref="meta"></span></span>
+    <span class="rank-row__name"><span data-ref="name"></span><span class="rank-row__meta" data-ref="meta"></span>
+      <span class="rank-row__stats" data-ref="stats" hidden>
+        <span class="rank-stat"><span class="icon icon--sm icon--camera"></span><span data-ref="sights"></span></span>
+        <span class="rank-stat rank-stat--joker"><span class="icon icon--sm icon--joker"></span><span data-ref="joker"></span></span>
+        <span class="rank-stat rank-stat--gratis"><span class="icon icon--sm icon--ticket"></span><span data-ref="gratis"></span></span>
+      </span>
+    </span>
     <span class="rank-row__points" data-ref="points"></span>
   </li>
 </template>
@@ -593,7 +608,7 @@
     </header>
     <div class="pad-wrap">
       <table class="pad">
-        <thead>
+        <thead data-ref="head">
           <tr data-ref="names"><th scope="col" class="pad__corner"></th></tr>
           <tr class="pad__total" data-ref="totals"><th scope="row" class="pad__label">Total</th></tr>
         </thead>
@@ -607,6 +622,22 @@
   </section>
 </template>
 
+<template id="tpl-punkteblock_end">
+  <section class="screen step ranking">
+    <h1 class="ranking__title">Endstand</h1>
+    <ol class="podium" data-ref="podium"></ol>
+    <ol class="rank-list" data-ref="rest"></ol>
+    <div class="step-cta action-stack">
+      <button class="btn-primary" data-ref="done">Fertig</button>
+      <button class="btn-text" data-ref="edit">Zurück &amp; bearbeiten</button>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-pad-event">
+  <span class="icon icon--lg pad-event__icon" data-ref="icon"></span>
+</template>
+
 <template id="tpl-pad-player">
   <th scope="col" class="pad__player"><span class="avatar" data-ref="avatar" aria-hidden="true"></span><span class="pad__name" data-ref="name"></span><span class="pad__talstation" data-ref="talstation"></span></th>
 </template>
@@ -616,7 +647,7 @@
 </template>
 
 <template id="tpl-pad-cell">
-  <td><button class="pad__cell" data-ref="btn"></button></td>
+  <td><button class="pad__cell" data-ref="btn"><span data-ref="value"></span><span class="pad__next" data-ref="next" hidden>nächste</span></button></td>
 </template>
 
 <template id="tpl-pad-value">
