@@ -25,6 +25,34 @@
 /* ── PAUSE ── */
 .pause { padding-bottom: var(--space-4); }
 
+/* ── MENU + MENU PAGES ── */
+.menu, .menu-page { padding-bottom: var(--space-4); }
+.menu__status { color: var(--text-muted); font-weight: var(--fw-label); font-variant-numeric: tabular-nums; }
+.menu-page__h2 { align-self: flex-start; margin-top: var(--space-3); font-size: var(--fs-lg); font-weight: var(--fw-display); }
+.menu-page__hint { color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
+
+/* ── GAME END · SCHLUSSWERTUNG · RANKING ── */
+.game-end { padding-bottom: var(--space-4); }
+.game-end .icon--trophy { color: var(--level-star); }
+.game-end__time { font-size: var(--fs-display); font-weight: var(--fw-display); font-variant-numeric: tabular-nums; }
+.schlusswertung { padding-bottom: var(--space-4); }
+.schlusswertung .player-hero { padding-top: 0; }
+.schlusswertung.is-compact .player-hero { flex-direction: row; gap: var(--space-3); }
+.schlusswertung.is-compact .avatar--lg { width: 48px; height: 48px; font-size: var(--fs-lg); box-shadow: none; }
+.schlusswertung.is-compact .player-hero__name { margin-top: 0; font-size: var(--fs-lg); }
+.schlusswertung.is-compact .sw-step__question { font-size: var(--fs-lg); }
+.sw-step { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); width: 100%; flex: 1; }
+.sw-step__question { font-size: var(--fs-xl); font-weight: var(--fw-display); text-align: center; }
+.sw-step__place { color: var(--text-muted); font-weight: var(--fw-label); }
+.sw-step__penalty { color: var(--negative); font-size: var(--fs-lg); font-weight: var(--fw-number); }
+.sw-choice { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); width: 100%; margin-top: auto; }
+.ranking { padding-bottom: var(--space-4); }
+.ranking__title { font-size: var(--fs-xl); font-weight: var(--fw-display); margin-top: var(--space-3); }
+.ranking .podium { margin-top: var(--space-5); }
+
+/* ── PUNKTEBLOCK ── */
+.punkteblock { gap: var(--space-3); padding-bottom: var(--space-3); }
+
 /* ── TURN END ── */
 .turn-end { display: grid; place-items: center; }
 .turn-end__check { color: var(--positive); --icon: 72px; animation: burst var(--dur-slow) var(--ease-spring); }
@@ -45,17 +73,6 @@
 .talstation-list__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--player); }
 .talstation-list__place { color: var(--text-muted); }
 
-/* ── PLACEHOLDER (temporary, until each real screen exists) ── */
-.placeholder { justify-content: center; text-align: center; padding-bottom: var(--space-6); }
-.placeholder__tag {
-  padding: var(--space-1) var(--space-3);
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-pill);
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-}
-.placeholder__title { font-size: var(--fs-xl); font-weight: var(--fw-display); }
-.placeholder__task { color: var(--text-dim); font-size: var(--fs-sm); }
 
 /* ── SETUP WIZARD ── */
 .wizard { display: flex; flex-direction: column; align-items: center; gap: var(--space-5); padding-bottom: var(--space-4); }

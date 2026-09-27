@@ -6,7 +6,7 @@
 
 import {
   gameTime, gameTimeHour, sightseeingBonus, TRANSPORT_SYMBOLS,
-  COIN_LIMIT, BLOCKING_EVENTS, PAUSE_POINTS, effectiveCrossings, calcDescentPoints,
+  COIN_LIMIT, BLOCKING_EVENTS, PAUSE_POINTS, effectiveCrossings, calcDescentPoints, calcAbschlusswertungResult,
 } from '../game_logic.js';
 
 export const START_HOUR = 8;          // fixed since BUG-13
@@ -225,8 +225,112 @@ export function takePause(game, kind) {
 }
 
 /** Adds a history entry tagged with round and player (FEAT-23 compatible). Mutates `game`. */
-export function addHistory(game, text) {
-  game.history.push({ time: currentTime(game), round: game.round, playerIdx: game.currentPlayerIndex, text });
+export function addHistory(game, text, playerIdx = game.currentPlayerIndex) {
+  game.history.push({ time: currentTime(game), round: game.round, playerIdx, text });
+}
+
+// ── Schlusswertung (game end) ──
+
+/** Index of the first player whose Schlusswertung is not done yet, or -1 when all are done. */
+export function nextSchlusswertungPlayer(game) {
+  return game.players.findIndex(p => !p.schlusswertungDone);
+}
+
+/**
+ * What the Schlusswertung would give a player (preview, nothing is changed).
+ * @param {{ reached: boolean, slopes: {blue:number, red:number, black:number, yellow:number},
+ *           transports: number, extraTalstationen: number }} answers
+ */
+export function previewSchlusswertung(game, playerIdx, answers) {
+  const p = game.players[playerIdx];
+  return calcAbschlusswertungResult(answers.reached, answers.slopes, answers.transports, answers.extraTalstationen, p.joker + p.gratis);
+}
+
+/**
+ * Books a player's Schlusswertung: penalties + coin bonus onto the points, coins returned,
+ * marked done, logged. Only once per player. Mutates `game`.
+ * @returns {object|null} the calcAbschlusswertungResult() result, or null if already done
+ */
+export function applySchlusswertung(game, playerIdx, answers) {
+  const p = game.players[playerIdx];
+  if (!game.finished || p.schlusswertungDone) return null;
+  const result = previewSchlusswertung(game, playerIdx, answers);
+  p.points += result.netDelta;
+  p.joker = 0;
+  p.gratis = 0;
+  p.schlusswertungDone = true;
+  const sign = result.netDelta > 0 ? '+' : result.netDelta < 0 ? '−' : '±';
+  addHistory(game, `Schlusswertung: ${sign}${Math.abs(result.netDelta)} Punkte`, playerIdx);
+  return result;
+}
+
+// ── Scores (menu "Punkte", ranking) ──
+
+/**
+ * Players sorted by points, highest first; equal points share a rank (1, 1, 3 …).
+ * @returns {Array<{ playerIdx: number, rank: number, points: number }>}
+ */
+export function ranking(game) {
+  const all = game.players.map(p => p.points);
+  return game.players
+    .map((p, playerIdx) => ({ playerIdx, points: p.points, rank: 1 + all.filter(x => x > p.points).length }))
+    .sort((a, b) => b.points - a.points || a.playerIdx - b.playerIdx);
+}
+
+/**
+ * Rows of the Punkteverlauf: one per finished round (from roundSnapshots), plus a live row
+ * for the round in progress. A cell is { points, delta } (total after the round and what it
+ * added), or null in the live row for players who have not played yet this round.
+ * @returns {Array<{ round: number, time: string, live: boolean, cells: Array<{points:number, delta:number}|null> }>}
+ */
+export function scoreRows(game) {
+  const rows = game.roundSnapshots.map((snap, i) => {
+    const before = game.roundSnapshots[i - 1]?.points;
+    return {
+      round: snap.round,
+      time: snap.time,
+      live: false,
+      cells: snap.points.map((pts, p) => ({ points: pts, delta: pts - (before?.[p] ?? 0) })),
+    };
+  });
+  if (!game.finished) {
+    const before = game.roundSnapshots.at(-1)?.points;
+    rows.push({
+      round: game.round,
+      time: currentTime(game),
+      live: true,
+      cells: game.players.map((pl, p) => (p < game.currentPlayerIndex
+        ? { points: pl.points, delta: pl.points - (before?.[p] ?? 0) }
+        : null)),
+    });
+  }
+  return rows;
+}
+
+/** History entries of one player in one round (round detail, FEAT-23). */
+export function roundEntries(game, round, playerIdx) {
+  return game.history.filter(h => h.round === round && h.playerIdx === playerIdx);
+}
+
+/**
+ * Manual correction (menu "Anpassungen"): sets a player's points and coins to new values
+ * and logs every change for that player. Coins are clamped to 0 … COIN_LIMIT − 1 in total,
+ * because holding COIN_LIMIT coins returns them all (coin rule). Mutates `game`.
+ * @param {{ points: number, joker: number, gratis: number }} values
+ * @returns {boolean} whether anything changed
+ */
+export function adjustPlayer(game, playerIdx, values) {
+  const p = game.players[playerIdx];
+  const joker = Math.max(0, Math.min(COIN_LIMIT - 1, Math.round(values.joker)));
+  const gratis = Math.max(0, Math.min(COIN_LIMIT - 1 - joker, Math.round(values.gratis)));
+  const points = Math.round(values.points);
+  const changes = [];
+  if (points !== p.points) changes.push(`Anpassung: ${points - p.points > 0 ? '+' : '−'}${Math.abs(points - p.points)} Punkte`);
+  if (joker !== p.joker) changes.push(`Anpassung: Joker ${p.joker} → ${joker}`);
+  if (gratis !== p.gratis) changes.push(`Anpassung: Gratis Fahrt ${p.gratis} → ${gratis}`);
+  Object.assign(p, { points, joker, gratis });
+  changes.forEach(text => addHistory(game, text, playerIdx));
+  return changes.length > 0;
 }
 
 /**

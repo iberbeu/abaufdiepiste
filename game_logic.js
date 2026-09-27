@@ -19,6 +19,8 @@ export const TRANSPORT_NAMES = [
 ];
 
 export const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
+export const SLOPE_PISTE_LABELS = { blue: 'Blaue Piste', red: 'Rote Piste', black: 'Schwarze Piste', yellow: 'Gelbe Piste' };
+export const PULVERSCHNEE_BONUS = 5;   // event Pulverschnee, only with at least one crossing skied
 
 // Event die faces (v1 keeps its own presentation list in dice_app.js, same order).
 export const EVENT_SYMBOLS = ['fahrt', 'helikopter', 'schneesturm', 'pulverschnee', 'unfall', 'sonne'];
@@ -31,6 +33,15 @@ export const BLOCKING_EVENTS = ['unfall', 'helikopter'];
 export const COIN_LIMIT = 3;
 export const EXTRA_ACTIVITY_POINTS = 12;   // Extraaktivität, happy smiley
 export const PAUSE_POINTS = { restaurant: 15, bar: 7 };   // Mittagspause (11:00–12:30, once per game)
+
+// Schlusswertung (spielregeln.md, "Schlusswertung"): penalties when the Talstation is not reached,
+// bonus per remaining coin. Pistes on the way back cost half their normal points (SLOPE_PTS / 2).
+export const SCHLUSS = {
+  talstationMissed: -15,
+  returnRide: -5,          // per transport used to get back
+  extraTalstation: -5,     // per additional Talstation (valley change)
+  coinBonus: 5,            // per remaining coin (Joker or Gratis Fahrt)
+};
 
 // Face values per the rulebook (specifications/spielregeln.md, "Fahrniveaus"):
 // Anfänger = 1-star die (2, 4), Fortgeschritten = 2-star die (2, 4, 6), Profi = 3-star die (4, 6).
@@ -54,9 +65,12 @@ export const ALLOWED_SLOPES = {
  * @param {number} pts
  * @returns {'anfaenger'|'fortgeschritten'|'profi'}
  */
+// Highest point total of each level (spielregeln.md, "Fahrniveaus"); above 70 = Profi.
+export const LEVEL_MAX_POINTS = { anfaenger: 20, fortgeschritten: 70 };
+
 export function getLevel(pts) {
-  if (pts <= 20) return 'anfaenger';
-  if (pts <= 70) return 'fortgeschritten';
+  if (pts <= LEVEL_MAX_POINTS.anfaenger) return 'anfaenger';
+  if (pts <= LEVEL_MAX_POINTS.fortgeschritten) return 'fortgeschritten';
   return 'profi';
 }
 
@@ -284,16 +298,16 @@ export function calcDescentPoints(slopeSelection, eventSym, ohneBefugnisResult, 
     // Pulverschnee bonus only when the player has at least one legitimate slope:
     // skiing only on forbidden pistes with a sad-smiley penalty earns no powder bonus.
     if (eventSym === 'pulverschnee' && allowedBase > 0) {
-      allowedTotal += 5;
-      bonusText = ' (+5 Pulverschnee)';
+      allowedTotal += PULVERSCHNEE_BONUS;
+      bonusText = ` (+${PULVERSCHNEE_BONUS} Pulverschnee)`;
     }
     total = allowedTotal - forbiddenBase;
     bonusText += ' (Ohne Befugnis: negativ)';
   } else {
     total = basePoints;
     if (eventSym === 'pulverschnee' && basePoints > 0) {
-      total += 5;
-      bonusText = ' (+5 Pulverschnee)';
+      total += PULVERSCHNEE_BONUS;
+      bonusText = ` (+${PULVERSCHNEE_BONUS} Pulverschnee)`;
     }
   }
 
@@ -341,28 +355,27 @@ export function calcAbschlusswertungResult(
   const penaltyItems = [];
 
   if (!talstationReached) {
-    penaltyItems.push({ label: 'Talstation nicht erreicht', amount: -15 });
+    penaltyItems.push({ label: 'Talstation nicht erreicht', amount: SCHLUSS.talstationMissed });
 
-    const colorLabels = { blue: 'Blaue Piste', red: 'Rote Piste', black: 'Schwarze Piste', yellow: 'Gelbe Piste' };
     ['blue', 'red', 'black', 'yellow'].forEach(c => {
       const k = (slopeSelection && slopeSelection[c]) || 0;
       if (k > 0) {
         const halfPts = Math.floor(k * SLOPE_PTS[c] / 2);
-        penaltyItems.push({ label: `${colorLabels[c]} ×${k}`, amount: -halfPts });
+        penaltyItems.push({ label: `${SLOPE_PISTE_LABELS[c]} ×${k}`, amount: -halfPts });
       }
     });
 
     for (let i = 0; i < transportCount; i++) {
-      penaltyItems.push({ label: 'Beförderung zurück', amount: -5 });
+      penaltyItems.push({ label: 'Beförderung zurück', amount: SCHLUSS.returnRide });
     }
 
     for (let i = 0; i < extraTalstationen; i++) {
-      penaltyItems.push({ label: 'Zusätzliche Talstation', amount: -5 });
+      penaltyItems.push({ label: 'Zusätzliche Talstation', amount: SCHLUSS.extraTalstation });
     }
   }
 
   const penaltyTotal = penaltyItems.reduce((sum, item) => sum + item.amount, 0);
-  const coinBonus    = totalCoins * 5;
+  const coinBonus    = totalCoins * SCHLUSS.coinBonus;
   const netDelta     = penaltyTotal + coinBonus;
 
   return { penaltyItems, penaltyTotal, coinBonus, netDelta };

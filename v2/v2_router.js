@@ -23,7 +23,7 @@ export function initRouter(outletEl, onChange) {
 
 export function registerScreen(id, def) {
   // A real screen and a leftover placeholder with the same id would silently shadow each other.
-  if (screens.has(id)) throw new Error(`Screen registered twice: ${id} — remove it from placeholder_screens.js`);
+  if (screens.has(id)) throw new Error(`Screen registered twice: ${id} — each screen id may be registered only once`);
   screens.set(id, def);
 }
 
@@ -59,6 +59,11 @@ export function go(id, params = {}, opts = {}) {
 /** Returns to the previous screen (one level). */
 export function back() {
   if (previous) go(previous.id, previous.params, { back: true });
+}
+
+/** The screen shown before the current one ({ id, params }), or null. Read it in mount(). */
+export function previousScreen() {
+  return previous;
 }
 
 export function currentScreenId() {

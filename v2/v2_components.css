@@ -56,6 +56,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus)
 .icon--minus      { --icon-src: url('img/icons/minus.svg'); }
 .icon--trophy     { --icon-src: url('img/icons/trophy.svg'); }
 .icon--grip       { --icon-src: url('img/icons/grip.svg'); }
+.icon--home       { --icon-src: url('img/icons/home.svg'); }
+.icon--book       { --icon-src: url('img/icons/book.svg'); }
+.icon--sliders    { --icon-src: url('img/icons/sliders.svg'); }
 
 /* ── APP SHELL ── */
 .app {
@@ -434,6 +437,172 @@ button.die:disabled { cursor: default; }
 .pause-tile.is-dimmed { opacity: 0.4; }
 /* Short screens: flatter tiles, so the confirm button stays in view. */
 @media (max-height: 760px) { .pause-tile { aspect-ratio: auto; min-height: 136px; } }
+
+/* ── MENU ROWS ── */
+.menu-list { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 64px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-display);
+  text-align: left;
+}
+.menu-row:active { background: var(--surface-raised); }
+.menu-row .icon { color: var(--text-muted); }
+
+/* ── RANKING ROWS ── */
+.rank-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
+.rank-row { display: grid; grid-template-columns: 2ch auto 1fr auto; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--surface); }
+.rank-row__rank { color: var(--text-muted); font-weight: var(--fw-number); }
+.rank-row__name { display: flex; flex-direction: column; font-weight: var(--fw-label); min-width: 0; }
+.rank-row__meta { color: var(--level-star); font-size: var(--fs-sm); letter-spacing: 1px; }
+.rank-row__points { font-size: var(--fs-lg); font-weight: var(--fw-number); font-variant-numeric: tabular-nums; }
+
+/* ── SCORE TABLE (Punkteverlauf) — scrolls sideways inside itself, never the page ── */
+.score-table-wrap { width: 100%; overflow-x: auto; }
+.score-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.score-table th, .score-table td { padding: var(--space-1); text-align: center; }
+.score-table thead th { position: sticky; top: 0; background: var(--bg-bottom); }
+.score-table__time { color: var(--text-muted); font-size: var(--fs-sm); font-weight: var(--fw-label); text-align: left; white-space: nowrap; }
+.score-table tr.is-live .score-table__time { color: var(--text); }
+.score-cell {
+  min-width: var(--tap-min);   /* stays tappable with 6 player columns */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: var(--tap-min);
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.score-cell--empty { color: var(--text-dim); }
+.score-cell__points { font-weight: var(--fw-number); }
+.score-cell__delta { font-size: var(--fs-xs); color: var(--text-muted); }
+.score-cell__delta.is-up { color: var(--positive); }
+.score-cell__delta.is-down { color: var(--negative); }
+.round-entries { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
+.round-entries__item { padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--surface-raised); }
+
+/* ── RULE CARDS (Würfel & Regeln) ── */
+.rule-cards { display: flex; flex-direction: column; gap: var(--space-4); width: 100%; }
+.rule-card { padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface); }
+.rule-card__title { margin-bottom: var(--space-3); font-size: var(--fs-lg); font-weight: var(--fw-display); }
+.rule-card__list { list-style: none; display: flex; flex-direction: column; gap: var(--space-3); }
+.rule-item { display: grid; grid-template-columns: auto 1fr; column-gap: var(--space-3); align-items: center; }
+.rule-item__img { grid-row: span 2; width: 40px; height: 40px; padding: 3px; border-radius: 8px; background: var(--die-light); object-fit: contain; }
+.rule-item__label { font-weight: var(--fw-label); }
+.rule-item__text { grid-column: 2; color: var(--text-muted); font-size: var(--fs-sm); }
+.rule-item__text:empty { display: none; }
+.rule-item__img[hidden] + .rule-item__label, .rule-item__img[hidden] ~ .rule-item__text { grid-column: 1 / -1; }
+
+/* ── ADJUST CARDS (Anpassungen) ── */
+.adjust-list { display: flex; flex-direction: column; gap: var(--space-3); width: 100%; }
+.adjust-card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface); }
+.adjust-card__head { display: flex; align-items: center; gap: var(--space-3); font-size: var(--fs-lg); font-weight: var(--fw-display); }
+.adjust-card__row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.adjust-card__label { color: var(--text-muted); font-weight: var(--fw-label); }
+.stepper__input {
+  width: 5ch;
+  min-height: var(--tap-min);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-lg);   /* ≥16px, so iOS does not zoom in on focus */
+  font-weight: var(--fw-number);
+  text-align: center;
+}
+.stepper__input:focus { outline: none; border-color: var(--focus); }
+
+/* ── SUMMARY LINES (Schlusswertung) ── */
+.summary-lines { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
+.summary-line { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm); background: var(--surface); }
+.summary-line__amount { font-weight: var(--fw-number); font-variant-numeric: tabular-nums; }
+.summary-line__amount.is-up { color: var(--positive); }
+.summary-line__amount.is-down { color: var(--negative); }
+.summary-total { display: flex; justify-content: space-between; width: 100%; padding: var(--space-3) var(--space-4); border-top: 2px solid var(--line); font-size: var(--fs-lg); font-weight: var(--fw-display); font-variant-numeric: tabular-nums; }
+
+/* ── PODIUM (ranking): 2nd – 1st – 3rd, the block height shows the place ── */
+.podium { list-style: none; display: flex; justify-content: center; align-items: flex-end; gap: var(--space-3); width: 100%; }
+.podium__place { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); flex: 1; max-width: 120px; min-width: 0; }
+.podium__place--pos-1 { order: 2; }
+.podium__place--pos-2 { order: 1; }
+.podium__place--pos-3 { order: 3; }
+.podium__name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-label); }
+.podium__points { font-size: var(--fs-lg); font-weight: var(--fw-number); font-variant-numeric: tabular-nums; }
+.podium__block {
+  display: grid;
+  place-items: start center;
+  width: 100%;
+  padding-top: var(--space-2);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--player);
+  color: #fff;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-display);
+}
+.podium__place--1 .podium__block { height: 120px; }
+.podium__place--2 .podium__block { height: 88px; }
+.podium__place--3 .podium__block { height: 64px; }
+.podium__place--1 .avatar { width: 56px; height: 56px; font-size: var(--fs-xl); }
+
+/* ── PUNKTEBLOCK TABLE — a copy of the printed pad. The wrapper scrolls in both directions,
+   so the player header, the totals row and the time column can stay pinned (sticky). ── */
+.pad-wrap { width: 100%; max-height: calc(100dvh - 120px); overflow: auto; border-radius: var(--radius-md); background: var(--surface); }
+.pad { border-collapse: separate; border-spacing: 0; min-width: 100%; font-variant-numeric: tabular-nums; }
+.pad th, .pad td { padding: 2px; text-align: center; border-bottom: 1px solid var(--line); }
+.pad thead th, .pad thead td { position: sticky; background: var(--surface); z-index: 2; }
+.pad thead tr:first-child > * { top: 0; }
+.pad thead tr.pad__total > * { top: 62px; border-bottom: 2px solid var(--line); }
+.pad th[scope="row"] { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+.pad thead th[scope="row"], .pad__corner { left: 0; z-index: 3; }
+.pad__label { padding: 0 var(--space-2); color: var(--text-muted); font-size: var(--fs-xs); font-weight: var(--fw-label); text-align: left; white-space: nowrap; }
+.pad__player { min-width: 64px; height: 62px; vertical-align: middle; }
+.pad__player .avatar { margin: 0 auto 2px; }
+.pad__name { display: block; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); font-weight: var(--fw-label); }
+.pad__talstation { display: block; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); font-size: 10px; }
+.pad__total > * { font-size: var(--fs-md); font-weight: var(--fw-number); color: var(--text); }
+.pad__stars { color: var(--level-star); font-size: var(--fs-xs); letter-spacing: 1px; }
+.pad__cell { width: 100%; min-width: var(--tap-min); min-height: var(--tap-min); border-radius: 8px; font-weight: var(--fw-number); }
+.pad__cell:active { background: var(--surface-raised); }
+.pad tr.is-lunch  > * { background: color-mix(in srgb, var(--glacier-teal) 24%, var(--surface)); }
+.pad tr.is-valley > * { background: color-mix(in srgb, var(--alpengluehen) 22%, var(--surface)); }
+.pad__final > * { border-top: 2px solid var(--line); }
+
+/* ── ENTRY SHEET (Punkteblock cell): number field, ±, quick chips ── */
+.pad-entry { display: flex; flex-direction: column; gap: var(--space-4); width: 100%; }
+.pad-entry__display { display: flex; align-items: center; justify-content: center; gap: var(--space-3); }
+.pad-entry__input {
+  width: 6ch;
+  min-height: 56px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-number);
+  text-align: center;
+}
+.pad-entry__input:focus { outline: none; border-color: var(--focus); }
+.chip-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
+.chip {
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  font-weight: var(--fw-label);
+  font-variant-numeric: tabular-nums;
+}
+.chip:active { transform: scale(0.95); }
 
 /* ── NUMBER TILES (setup: how many players) ── */
 /* Flex, not grid: an incomplete last row (5 tiles for 2–6 players) stays centred. */

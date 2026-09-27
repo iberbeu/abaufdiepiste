@@ -336,6 +336,289 @@
   </section>
 </template>
 
+<!-- ── MENU (flow_spec §8) ── -->
+
+<template id="tpl-menu">
+  <section class="screen step menu">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="close" aria-label="Zurück zum Spiel"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Menü</h1>
+      <span></span>
+    </header>
+    <p class="menu__status" data-ref="status"></p>
+    <nav class="menu-list" aria-label="Menü">
+      <button class="menu-row" data-ref="scores"><span class="icon icon--trophy"></span>Punkte</button>
+      <button class="menu-row" data-ref="rules"><span class="icon icon--book"></span>Würfel &amp; Regeln</button>
+      <button class="menu-row" data-ref="adjust"><span class="icon icon--sliders"></span>Anpassungen</button>
+      <button class="menu-row" data-ref="newGame"><span class="icon icon--plus"></span>Neues Spiel</button>
+      <button class="menu-row" data-ref="home"><span class="icon icon--home"></span>Zum Start</button>
+    </nav>
+  </section>
+</template>
+
+<template id="tpl-menu_scores">
+  <section class="screen step menu-page">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="close" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Punkte</h1>
+      <span></span>
+    </header>
+    <ol class="rank-list" data-ref="ranking"></ol>
+    <h2 class="menu-page__h2">Punkteverlauf</h2>
+    <p class="menu-page__hint" data-ref="empty" hidden>Noch keine Runde gespielt.</p>
+    <div class="score-table-wrap" data-ref="tableWrap">
+      <table class="score-table">
+        <thead><tr data-ref="head"><th scope="col">Zeit</th></tr></thead>
+        <tbody data-ref="body"></tbody>
+      </table>
+    </div>
+    <p class="menu-page__hint">Zelle antippen = Details der Runde</p>
+  </section>
+</template>
+
+<template id="tpl-rank-row">
+  <li class="rank-row">
+    <span class="rank-row__rank" data-ref="rank"></span>
+    <span class="avatar avatar--md" data-ref="avatar" aria-hidden="true"></span>
+    <span class="rank-row__name"><span data-ref="name"></span><span class="rank-row__meta" data-ref="meta"></span></span>
+    <span class="rank-row__points" data-ref="points"></span>
+  </li>
+</template>
+
+<template id="tpl-score-head">
+  <th scope="col"><span class="avatar" data-ref="avatar"></span></th>
+</template>
+
+<template id="tpl-score-row">
+  <tr><th scope="row" class="score-table__time" data-ref="time"></th></tr>
+</template>
+
+<template id="tpl-score-cell">
+  <td><button class="score-cell" data-ref="btn"><span class="score-cell__points" data-ref="points"></span><span class="score-cell__delta" data-ref="delta"></span></button></td>
+</template>
+
+<template id="tpl-score-empty">
+  <td class="score-cell score-cell--empty">–</td>
+</template>
+
+<template id="tpl-round-entries">
+  <ul class="round-entries"></ul>
+</template>
+
+<template id="tpl-round-entry">
+  <li class="round-entries__item"></li>
+</template>
+
+<template id="tpl-menu_rules">
+  <section class="screen step menu-page">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="close" aria-label="Zurück"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Würfel &amp; Regeln</h1>
+      <span></span>
+    </header>
+    <div class="rule-cards" data-ref="cards"></div>
+  </section>
+</template>
+
+<template id="tpl-rule-card">
+  <section class="rule-card">
+    <h2 class="rule-card__title" data-ref="title"></h2>
+    <ul class="rule-card__list" data-ref="list"></ul>
+  </section>
+</template>
+
+<template id="tpl-rule-item">
+  <li class="rule-item"><img class="rule-item__img" data-ref="img" alt="" hidden><span class="rule-item__label" data-ref="label"></span><span class="rule-item__text" data-ref="text"></span></li>
+</template>
+
+<template id="tpl-menu_adjust">
+  <section class="screen step menu-page">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="close" aria-label="Abbrechen"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Anpassungen</h1>
+      <span></span>
+    </header>
+    <p class="menu-page__hint">Nur zum Korrigieren. Max. 2 Münzen pro Person.</p>
+    <div class="adjust-list" data-ref="players"></div>
+    <div class="step-cta"><button class="btn-primary" data-ref="save">Speichern</button></div>
+  </section>
+</template>
+
+<template id="tpl-adjust-card">
+  <section class="adjust-card">
+    <h2 class="adjust-card__head"><span class="avatar avatar--md" data-ref="avatar" aria-hidden="true"></span><span data-ref="name"></span></h2>
+    <div class="adjust-card__row" data-field="points">
+      <span class="adjust-card__label">Punkte</span>
+      <div class="stepper">
+        <button class="stepper__btn" data-step="-1"><span class="icon icon--minus"></span></button>
+        <input class="stepper__input" type="number" inputmode="numeric" data-ref="points">
+        <button class="stepper__btn" data-step="1"><span class="icon icon--plus"></span></button>
+      </div>
+    </div>
+    <div class="adjust-card__row" data-field="joker">
+      <span class="adjust-card__label">Joker</span>
+      <div class="stepper">
+        <button class="stepper__btn" data-step="-1"><span class="icon icon--minus"></span></button>
+        <span class="stepper__value" data-ref="joker"></span>
+        <button class="stepper__btn" data-step="1"><span class="icon icon--plus"></span></button>
+      </div>
+    </div>
+    <div class="adjust-card__row" data-field="gratis">
+      <span class="adjust-card__label">Gratis Fahrt</span>
+      <div class="stepper">
+        <button class="stepper__btn" data-step="-1"><span class="icon icon--minus"></span></button>
+        <span class="stepper__value" data-ref="gratis"></span>
+        <button class="stepper__btn" data-step="1"><span class="icon icon--plus"></span></button>
+      </div>
+    </div>
+  </section>
+</template>
+
+<!-- ── GAME END · SCHLUSSWERTUNG · RANKING (flow_spec §6) ── -->
+
+<template id="tpl-game_end">
+  <section class="screen event-card game-end">
+    <span class="icon icon--lg icon--trophy"></span>
+    <h1 class="event-card__title">Skitag vorbei!</h1>
+    <p class="game-end__time" data-ref="time"></p>
+    <p class="event-card__text">Alle bleiben, wo sie gerade sind. Jetzt wird abgerechnet.</p>
+    <div class="step-cta"><button class="btn-primary" data-ref="start">Schlusswertung starten →</button></div>
+  </section>
+</template>
+
+<template id="tpl-schlusswertung">
+  <section class="screen step schlusswertung">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="back" aria-label="Zurück" hidden><span class="icon icon--back"></span></button>
+      <span class="step-head__title" data-ref="progress"></span>
+      <span></span>
+    </header>
+    <div class="player-hero" data-ref="hero">
+      <span class="avatar avatar--lg" data-ref="avatar" aria-hidden="true"></span>
+      <h1 class="player-hero__name" data-ref="name"></h1>
+    </div>
+
+    <div class="sw-step" data-ref="stepReached">
+      <p class="sw-step__question">Talstation erreicht?</p>
+      <p class="sw-step__place" data-ref="talstation"></p>
+      <div class="sw-choice">
+        <button class="btn-primary btn-primary--secondary" data-ref="yes">Ja</button>
+        <button class="btn-primary btn-primary--negative" data-ref="no">Nein</button>
+      </div>
+    </div>
+
+    <div class="sw-step" data-ref="stepReturn" hidden>
+      <p class="sw-step__question">Rückweg zur Talstation</p>
+      <div class="slope-grid" data-ref="tiles"></div>
+      <div class="adjust-card__row">
+        <span class="adjust-card__label">Beförderungen</span>
+        <div class="stepper" data-field="transports">
+          <button class="stepper__btn" data-step="-1" aria-label="Eine Beförderung weniger"><span class="icon icon--minus"></span></button>
+          <span class="stepper__value" data-ref="transports"></span>
+          <button class="stepper__btn" data-step="1" aria-label="Eine Beförderung mehr"><span class="icon icon--plus"></span></button>
+        </div>
+      </div>
+      <div class="adjust-card__row">
+        <span class="adjust-card__label">Zusätzliche Talstationen</span>
+        <div class="stepper" data-field="extraTalstationen">
+          <button class="stepper__btn" data-step="-1" aria-label="Eine Talstation weniger"><span class="icon icon--minus"></span></button>
+          <span class="stepper__value" data-ref="extraTalstationen"></span>
+          <button class="stepper__btn" data-step="1" aria-label="Eine Talstation mehr"><span class="icon icon--plus"></span></button>
+        </div>
+      </div>
+      <p class="sw-step__penalty" data-ref="penalty" aria-live="polite"></p>
+      <div class="step-cta"><button class="btn-primary" data-ref="toSummary">Weiter →</button></div>
+    </div>
+
+    <div class="sw-step" data-ref="stepSummary" hidden>
+      <ul class="summary-lines" data-ref="lines"></ul>
+      <p class="summary-total"><span>Gesamt</span><span data-ref="total"></span></p>
+      <div class="step-cta"><button class="btn-primary" data-ref="confirm">Bestätigen →</button></div>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-summary-line">
+  <li class="summary-line"><span data-ref="label"></span><span class="summary-line__amount" data-ref="amount"></span></li>
+</template>
+
+<template id="tpl-ranking">
+  <section class="screen step ranking">
+    <h1 class="ranking__title">Rangliste</h1>
+    <ol class="podium" data-ref="podium"></ol>
+    <ol class="rank-list" data-ref="rest"></ol>
+    <div class="step-cta action-stack">
+      <button class="btn-primary" data-ref="newGame">Neues Spiel</button>
+      <button class="btn-text" data-ref="history">Punkteverlauf</button>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-podium-place">
+  <li class="podium__place">
+    <span class="avatar avatar--md" data-ref="avatar" aria-hidden="true"></span>
+    <span class="podium__name" data-ref="name"></span>
+    <span class="podium__points" data-ref="points"></span>
+    <span class="podium__block" data-ref="rank"></span>
+  </li>
+</template>
+
+<!-- ── PUNKTEBLOCK MODE (flow_spec §7, FEAT-24) ── -->
+
+<template id="tpl-punkteblock">
+  <section class="screen step punkteblock">
+    <header class="step-head">
+      <button class="icon-btn" data-ref="home" aria-label="Zum Start"><span class="icon icon--back"></span></button>
+      <h1 class="step-head__title">Punkteblock</h1>
+      <button class="btn-text" data-ref="newPad">Neu</button>
+    </header>
+    <div class="pad-wrap">
+      <table class="pad">
+        <thead>
+          <tr data-ref="names"><th scope="col" class="pad__corner"></th></tr>
+          <tr class="pad__total" data-ref="totals"><th scope="row" class="pad__label">Total</th></tr>
+        </thead>
+        <tbody data-ref="body"></tbody>
+        <tfoot>
+          <tr class="pad__final" data-ref="finalRow"><th scope="row" class="pad__label">Schluss</th></tr>
+          <tr class="pad__total" data-ref="endRow"><th scope="row" class="pad__label">Endstand</th></tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-pad-player">
+  <th scope="col" class="pad__player"><span class="avatar" data-ref="avatar" aria-hidden="true"></span><span class="pad__name" data-ref="name"></span><span class="pad__talstation" data-ref="talstation"></span></th>
+</template>
+
+<template id="tpl-pad-row">
+  <tr><th scope="row" class="pad__label" data-ref="label"></th></tr>
+</template>
+
+<template id="tpl-pad-cell">
+  <td><button class="pad__cell" data-ref="btn"></button></td>
+</template>
+
+<template id="tpl-pad-value">
+  <td class="pad__value"></td>
+</template>
+
+<template id="tpl-pad-entry">
+  <div class="pad-entry">
+    <div class="pad-entry__display">
+      <button class="stepper__btn" data-ref="sign" aria-label="Plus oder Minus">±</button>
+      <input class="pad-entry__input" type="number" inputmode="numeric" data-ref="input" aria-label="Punkte">
+      <button class="btn-text" data-ref="clear">Löschen</button>
+    </div>
+    <div class="chip-grid" data-ref="chips"></div>
+  </div>
+</template>
+
+<template id="tpl-chip">
+  <button class="chip"></button>
+</template>
+
 <template id="tpl-turn_end">
   <section class="screen turn-end">
     <span class="points-burst" data-ref="burst"></span>
@@ -355,19 +638,6 @@
 
 <template id="tpl-talstation-row">
   <li class="talstation-list__row"><span class="talstation-list__dot"></span><span data-ref="name"></span><span class="talstation-list__place" data-ref="talstation"></span></li>
-</template>
-
-<template id="tpl-placeholder">
-  <section class="screen step placeholder">
-    <p class="placeholder__tag">Platzhalter · <span data-ref="id"></span></p>
-    <h1 class="placeholder__title" data-ref="title"></h1>
-    <p class="placeholder__task" data-ref="task"></p>
-    <div class="action-list" data-ref="links"></div>
-  </section>
-</template>
-
-<template id="tpl-placeholder-link">
-  <button class="btn-primary btn-primary--secondary"></button>
 </template>
 
 <script type="module" src="v2_main.js"></script>

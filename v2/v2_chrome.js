@@ -56,8 +56,8 @@ export function renderChrome({ bump = false } = {}) {
     chip.classList.toggle('is-current', isCurrent);
     chip.classList.toggle('is-bumped', isCurrent && bump);
     chip.querySelector('.avatar').textContent = initial(player.name);
-    chip.querySelector('.score-chip__points').textContent = player.points;
-    chip.setAttribute('aria-label', `${player.name}: ${player.points} Punkte`);
+    chip.querySelector('.score-chip__points').textContent = formatPoints(player.points);
+    chip.setAttribute('aria-label', `${player.name}: ${formatPoints(player.points)} Punkte`);
     return chip;
   });
   $('scoreStrip').replaceChildren(...chips);
@@ -68,6 +68,16 @@ function setBadge(btnId, badgeId, count) {
   const badge = $(badgeId);
   badge.textContent = count;
   badge.hidden = count === 0;
+}
+
+/** A point total for display: a real minus sign (−) like everywhere else in the app, not a hyphen. */
+export function formatPoints(n) {
+  return n < 0 ? `−${Math.abs(n)}` : String(n);
+}
+
+/** A change in points: +5, −3, ±0 (real minus sign). */
+export function formatDelta(n) {
+  return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '±0';
 }
 
 /** First letter of a name, upper case; handles emoji/surrogate pairs. */

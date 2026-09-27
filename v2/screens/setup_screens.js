@@ -7,7 +7,8 @@ import {
   setupDraft, assignColor, moveItem, defaultName, endTime, createGame,
   MIN_PLAYERS, MAX_PLAYERS, MAX_ROUNDS, MIN_ROUNDS,
 } from '../flow_logic.js';
-import { setGame, loadLastGroup, saveLastGroup } from '../v2_store.js';
+import { store, setGame, setPad, loadLastGroup, saveLastGroup } from '../v2_store.js';
+import { createPad } from '../punkteblock_logic.js';
 import { registerScreen, go } from '../v2_router.js';
 import { openSheet, closeSheet } from '../v2_sheet.js';
 import { initial } from '../v2_chrome.js';
@@ -19,11 +20,35 @@ const COLOR_NAMES = ['Orange', 'Türkis', 'Violett', 'Mint', 'Pink', 'Sand'];
 /** @type {ReturnType<typeof setupDraft> & { short: boolean, shortRounds: number } | null} */
 let draft = null;
 
-function ensureDraft(fresh) {
+/** @param {'game'|'punkteblock'} [mode] — Punkteblock mode skips the length step (the pad is always the full day). */
+function ensureDraft(fresh, mode = 'game') {
   if (draft && !fresh) return;
   draft = setupDraft(loadLastGroup());
   draft.short = draft.totalRounds < MAX_ROUNDS;
   draft.shortRounds = draft.short ? draft.totalRounds : DEFAULT_SHORT_ROUNDS;
+  draft.mode = mode;
+}
+
+const isPadMode = () => draft.mode === 'punkteblock';
+
+/** Progress dots: 3 steps in Punkteblock mode (no length step), else 4. */
+function applyStepCount(el, step) {
+  const dots = el.querySelectorAll('.wizard__dots .dot');
+  const total = isPadMode() ? 3 : 4;
+  dots.forEach((dot, i) => { dot.hidden = i >= total; });
+  el.querySelector('.wizard__dots').setAttribute('aria-label', `Schritt ${step} von ${total}`);
+}
+
+/** Last wizard step done: start the app game (after W4) or open the Punkteblock (after W3). */
+function finishSetup() {
+  const players = activePlayers();
+  const rounds = draft.short ? draft.shortRounds : MAX_ROUNDS;
+  saveLastGroup(players, rounds);
+  if (isPadMode()) setPad(createPad(players));
+  else setGame(createGame(players, rounds));
+  const target = isPadMode() ? 'punkteblock' : 'turn_start';
+  draft = null;
+  go(target);
 }
 
 const activePlayers = () => draft.players.slice(0, draft.count);
@@ -31,12 +56,30 @@ const clone = id => document.getElementById(id).content.firstElementChild.cloneN
 const ref = (el, name) => el.querySelector(`[data-ref="${name}"]`);
 const goBack = id => go(id, {}, { back: true });
 
+/**
+ * "Neues Spiel" from home or the menu: with a game in progress, confirm first.
+ * The running game is only replaced when the new one starts (W4), so backing out keeps it.
+ */
+export function startNewGame() {
+  const startSetup = () => go('setup_players', { fresh: true });
+  if (!store.game) return startSetup();
+  openSheet({
+    title: 'Laufendes Spiel verwerfen?',
+    text: 'Es wird ersetzt, sobald das neue Spiel startet.',
+    actions: [
+      { label: 'Neues Spiel', onClick: startSetup },
+      { label: 'Abbrechen', kind: 'text' },
+    ],
+  });
+}
+
 // ── W1: how many players ──
 
 registerScreen('setup_players', {
   chrome: false,
-  mount(el, { fresh = false } = {}) {
-    ensureDraft(fresh);
+  mount(el, { fresh = false, mode = 'game' } = {}) {
+    ensureDraft(fresh, mode);
+    applyStepCount(el, 1);
     ref(el, 'back').addEventListener('click', () => goBack('home'));
     ref(el, 'numbers').replaceChildren(...Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => {
       const n = MIN_PLAYERS + i;
@@ -59,6 +102,7 @@ registerScreen('setup_names', {
   chrome: false,
   mount(el) {
     ensureDraft(false);
+    applyStepCount(el, 2);
     const list = ref(el, 'rows');
     ref(el, 'back').addEventListener('click', () => goBack('setup_players'));
     ref(el, 'next').addEventListener('click', () => go('setup_talstation'));
@@ -179,8 +223,10 @@ registerScreen('setup_talstation', {
     const list = ref(el, 'rows');
     const skip = ref(el, 'skip');
     ref(el, 'back').addEventListener('click', () => goBack('setup_names'));
-    ref(el, 'next').addEventListener('click', () => go('setup_length'));
-    skip.addEventListener('click', () => go('setup_length'));
+    const next = () => (isPadMode() ? finishSetup() : go('setup_length'));
+    ref(el, 'next').addEventListener('click', next);
+    skip.addEventListener('click', next);
+    applyStepCount(el, 3);
 
     // "Überspringen" only makes sense while nothing is filled in.
     const updateSkip = () => { skip.hidden = activePlayers().some(p => p.talstation.trim()); };
@@ -242,14 +288,8 @@ registerScreen('setup_length', {
     ref(el, 'minus').addEventListener('click', () => step(-1));
     ref(el, 'plus').addEventListener('click', () => step(1));
 
-    ref(el, 'start').addEventListener('click', () => {
-      const players = activePlayers();
-      const rounds = draft.short ? draft.shortRounds : MAX_ROUNDS;
-      saveLastGroup(players, rounds);
-      setGame(createGame(players, rounds));
-      draft = null;
-      go('turn_start');
-    }, { once: true });
+    ref(el, 'start').addEventListener('click', finishSetup, { once: true });
+    applyStepCount(el, 4);
 
     render();
   },

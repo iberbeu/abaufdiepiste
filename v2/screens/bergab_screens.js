@@ -6,7 +6,7 @@
 // State lives in turn.data (turn_state.js); coins from Sonne / +1 Fahrt are booked at roll time.
 
 import {
-  DESCENT_DICE, ALLOWED_SLOPES, SLOPE_PTS, EVENT_SYMBOLS, JOKER_EVENTS, EXTRA_ACTIVITY_POINTS,
+  DESCENT_DICE, ALLOWED_SLOPES, SLOPE_PTS, EVENT_SYMBOLS, JOKER_EVENTS, EXTRA_ACTIVITY_POINTS, PULVERSCHNEE_BONUS,
   getLevel, levelLabel, levelStars,
 } from '../../game_logic.js';
 import { rollDice, gainCoin, spendCoin, addHistory, currentPlayer, descentTurn } from '../flow_logic.js';
@@ -171,7 +171,7 @@ registerScreen('bergab_result', {
       return {
         sonne: '+1 Joker',
         fahrt: '+1 Gratis Fahrt',
-        pulverschnee: 'Pulverschnee: +5 mit Abfahrt',
+        pulverschnee: 'Pulverschnee: +' + PULVERSCHNEE_BONUS + ' mit Abfahrt',
         schneesturm: 'Schneesturm – halbe Strecke',
       }[d.event] ?? '';
     }

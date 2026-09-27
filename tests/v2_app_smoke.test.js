@@ -198,7 +198,7 @@ describe('v2 app shell', () => {
   it('the score strip opens the scores; back returns', () => {
     document.getElementById('scoreStrip').click();
     expect(title()).toBe('Punkte');
-    clickLabel('Zurück');
+    ref('close').click();
     expect(isTurnStart()).toBe(true);
   });
 
@@ -526,9 +526,100 @@ describe('v2 app shell', () => {
     document.getElementById('btnMenu').click();
     expect(title()).toBe('Menü');
     expect(document.getElementById('topbar').hidden).toBe(true);
-    clickLabel('Zurück');
+    ref('close').click();
     expect(isTurnStart()).toBe(true);
     expect(screen().classList.contains('screen--back')).toBe(true);
+  });
+
+  it('menu shows round and time; pages return to the menu, the menu to the game (no bouncing)', () => {
+    document.getElementById('btnMenu').click();
+    expect(ref('status').textContent).toBe(`Runde ${store.game.round} von 20 · ${document.getElementById('topbarTime').textContent}`);
+    ref('scores').click();
+    expect(title()).toBe('Punkte');
+    ref('close').click();
+    expect(title()).toBe('Menü');
+    ref('rules').click();
+    ref('close').click();
+    expect(title()).toBe('Menü');
+    ref('close').click();
+    expect(isTurnStart()).toBe(true);
+  });
+
+  it('Punkte: ranking, Punkteverlauf with a live row, round detail on tap', () => {
+    document.getElementById('scoreStrip').click();
+    const rows = [...screen().querySelectorAll('.rank-row')];
+    expect(rows).toHaveLength(2);
+    const shown = rows.map(r => Number(r.querySelector('[data-ref="points"]').textContent));
+    expect(shown).toEqual([...shown].sort((a, b) => b - a));
+    const tableRows = screen().querySelectorAll('.score-table tbody tr');
+    expect(tableRows).toHaveLength(store.game.roundSnapshots.length + 1);
+    expect(tableRows[tableRows.length - 1].classList.contains('is-live')).toBe(true);
+
+    screen().querySelector('.score-table tbody .score-cell[data-ref="btn"]').click();
+    expect(sheet().querySelector('.sheet__title').textContent).toMatch(/^(Anna|Ben) · \d\d:\d\d$/);
+    sheetButton('OK').click();
+    ref('close').click();   // opened from the score strip → straight back to the game
+    expect(isTurnStart()).toBe(true);
+  });
+
+  it('Würfel & Regeln is built from the rule constants', () => {
+    document.getElementById('btnMenu').click();
+    ref('rules').click();
+    const cards = screen().querySelectorAll('.rule-card');
+    expect(cards).toHaveLength(5);
+    const first = cards[0].querySelector('.rule-item');
+    expect(first.querySelector('[data-ref="label"]').textContent).toBe('★☆☆ Anfänger');
+    expect(first.querySelector('[data-ref="text"]').textContent).toBe('0–20 Punkte · Würfel 2 / 4 · Pisten: Blau, Rot');
+    ref('close').click();
+    ref('close').click();
+  });
+
+  it('Anpassungen: confirm first, edit on a copy, coins stay below the limit, save logs it', () => {
+    const p = store.game.players[0];
+    const before = { points: p.points, joker: p.joker, gratis: p.gratis };
+    document.getElementById('btnMenu').click();
+    ref('adjust').click();
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Punkte und Münzen ändern?');
+    sheetButton('Anpassen').click();
+    expect(title()).toBe('Anpassungen');
+
+    const card = screen().querySelectorAll('.adjust-card')[0];
+    const step = (field, dir) => card.querySelector(`[data-field="${field}"] [data-step="${dir}"]`);
+    // Cancel: nothing changes.
+    step('points', 1).click();
+    ref('close').click();
+    expect(title()).toBe('Menü');
+    expect(p.points).toBe(before.points);
+
+    ref('adjust').click();
+    sheetButton('Anpassen').click();
+    const card2 = screen().querySelectorAll('.adjust-card')[0];
+    const step2 = (field, dir) => card2.querySelector(`[data-field="${field}"] [data-step="${dir}"]`);
+    p.joker = 0;
+    p.gratis = 0;
+    step2('points', 1).click();
+    step2('joker', 1).click();
+    step2('joker', 1).click();
+    expect(step2('joker', 1).disabled).toBe(true);    // 2 coins = the most a player can hold
+    expect(step2('gratis', 1).disabled).toBe(true);
+    ref('save').click();
+    expect(title()).toBe('Menü');
+    expect(p).toMatchObject({ points: before.points + 1, joker: 2, gratis: 0 });
+    expect(store.game.history.slice(-2).map(h => [h.playerIdx, h.text])).toEqual([[0, 'Anpassung: +1 Punkte'], [0, 'Anpassung: Joker 0 → 2']]);
+    Object.assign(p, before);
+    ref('close').click();
+  });
+
+  it('Neues Spiel from the menu asks first and keeps the game until the new one starts', () => {
+    const running = store.game;
+    document.getElementById('btnMenu').click();
+    ref('newGame').click();
+    sheetButton('Neues Spiel').click();
+    expect(title()).toBe('Wie viele spielen?');
+    expect(store.game).toBe(running);
+    ref('back').click();   // wizard → home
+    screen().querySelector('[data-ref="continue"]').click();
+    expect(isTurnStart()).toBe(true);
   });
 
   it('shows the lunch card when a round starts at 11:00, once', () => {
@@ -554,16 +645,18 @@ describe('v2 app shell', () => {
     clickLabel('OK');
   });
 
-  it('the last turn of the last round leads to game end; home then offers the Schlusswertung', () => {
+  it('the last turn of the last round leads to game end; home then offers the Schlusswertung', async () => {
     store.game.round = 20;
     store.game.currentPlayerIndex = 1;
     playBergauf();
     vi.advanceTimersByTime(800);
     expect(title()).toBe('Skitag vorbei!');
     expect(store.game.finished).toBe(true);
+    expect(ref('time').textContent).toBe('17:30');
     clickLabel('Schlusswertung starten');
-    clickLabel('Weiter');
-    clickLabel('Zum Start');
+    expect(title()).toBe('Anna');
+    const { go } = await import('../v2/v2_router.js');
+    go('home');
     const cont = screen().querySelector('[data-ref="continue"]');
     expect(cont.hidden).toBe(false);
     expect(cont.textContent).toContain('Schlusswertung');
@@ -601,7 +694,7 @@ describe('v2 app shell', () => {
   });
 
   it('a turn without points shows the check icon instead of a number', async () => {
-    clickLabel('Zurück');   // menu → back to turn_end, which restarts its timer
+    ref('close').click();   // menu → back to turn_end, which restarts its timer
     expect(screen().querySelector('[data-ref="check"]').hidden).toBe(false);
     expect(screen().querySelector('.points-burst').hidden).toBe(true);
     vi.advanceTimersByTime(800);
@@ -630,4 +723,203 @@ describe('v2 app shell', () => {
     const { registerScreen } = await import('../v2/v2_router.js');
     expect(() => registerScreen('home', { chrome: false, mount() {} })).toThrow(/twice/);
   });
+
+  it('Schlusswertung: Ja → coin bonus; Nein → Rückweg with half slope points, rides, Talstationen', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const { setGame } = await import('../v2/v2_store.js');
+    const { createGame } = await import('../v2/flow_logic.js');
+    const g = createGame([{ name: 'Anna', talstation: 'Dorf' }, { name: 'Ben', talstation: 'Bahnhof' }]);
+    Object.assign(g, { finished: true, round: 20 });
+    Object.assign(g.players[0], { points: 40, joker: 1, gratis: 1 });
+    g.players[1].points = 30;
+    setGame(g);
+    go('game_end');
+    expect(title()).toBe('Skitag vorbei!');
+    clickLabel('Schlusswertung starten');
+
+    // Anna: Ja → summary → back → Ja → confirm
+    expect(title()).toBe('Anna');
+    expect(ref('progress').textContent).toBe('Schlusswertung 1/2');
+    expect(ref('talstation').textContent).toBe('Dorf');
+    expect(ref('back').hidden).toBe(true);
+    ref('yes').click();
+    expect(ref('stepSummary').hidden).toBe(false);
+    expect([...screen().querySelectorAll('.summary-line')].map(l => l.textContent)).toEqual(['2 Münzen übrig+10']);
+    expect(ref('total').textContent).toBe('+10 → 50 Punkte');
+    ref('back').click();
+    expect(ref('stepReached').hidden).toBe(false);
+    ref('yes').click();
+    ref('confirm').click();
+    expect(g.players[0]).toMatchObject({ points: 50, joker: 0, gratis: 0, schlusswertungDone: true });
+
+    // Ben: Nein → 1× Rot, 2 rides, 1 extra Talstation = −15 −2 −10 −5
+    expect(title()).toBe('Ben');
+    ref('no').click();
+    expect(ref('stepReturn').hidden).toBe(false);
+    screen().querySelector('.slope-tile--red [data-ref="plus"]').click();
+    const step = (field, dir) => screen().querySelector(`.stepper[data-field="${field}"] [data-step="${dir}"]`);
+    step('transports', 1).click();
+    step('transports', 1).click();
+    step('extraTalstationen', 1).click();
+    expect(ref('penalty').textContent).toBe('Strafe: −32');
+    ref('toSummary').click();
+    expect(screen().querySelectorAll('.summary-line')).toHaveLength(5);
+    expect(ref('total').textContent).toBe('−32 → −2 Punkte');
+    ref('back').click();   // back to the Rückweg, answers kept
+    expect(ref('transports').textContent).toBe('2');
+    ref('toSummary').click();
+    ref('confirm').click();
+    expect(g.players[1].points).toBe(-2);
+    expect(g.history.at(-1)).toMatchObject({ playerIdx: 1, text: 'Schlusswertung: −32 Punkte' });
+  });
+
+  it('Rangliste: podium in rank order, Punkteverlauf and back, home offers the ranking', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    expect(title()).toBe('Rangliste');
+    const places = [...screen().querySelectorAll('.podium__place')];
+    expect(places.map(pl => pl.getAttribute('aria-label'))).toEqual(['1. Platz: Anna, 50 Punkte', '2. Platz: Ben, −2 Punkte']);
+    ref('history').click();
+    expect(title()).toBe('Punkte');
+    ref('close').click();
+    expect(title()).toBe('Rangliste');
+    go('game_end');   // everyone is done → straight to the ranking
+    expect(title()).toBe('Rangliste');
+    go('home');
+    expect(screen().querySelector('[data-ref="continueSub"]').textContent).toBe('Rangliste');
+  });
+
+
+  it('unconfirmed Schlusswertung answers never carry over into another game', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const { setGame } = await import('../v2/v2_store.js');
+    const { createGame } = await import('../v2/flow_logic.js');
+    const finished = () => Object.assign(createGame([{ name: 'Anna' }, { name: 'Ben' }]), { finished: true, round: 20 });
+    setGame(finished());
+    go('schlusswertung');
+    ref('no').click();
+    screen().querySelector('.slope-tile--red [data-ref="plus"]').click();   // not confirmed
+    setGame(finished());
+    go('schlusswertung');
+    expect(ref('stepReached').hidden).toBe(false);
+    ref('no').click();
+    expect(screen().querySelector('.slope-tile--red [data-ref="count"]').hidden).toBe(true);
+  });
+
+
+  it('Punkteblock: setup is 3 steps and leaves the app game alone', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const gameBefore = store.game;
+    store.pad = null;
+    go('home');
+    clickLabel('Punkteblock');
+    expect(title()).toBe('Wie viele spielen?');
+    const dots = [...screen().querySelectorAll('.wizard__dots .dot')];
+    expect(dots.filter(d => !d.hidden)).toHaveLength(3);
+    expect(screen().querySelector('.wizard__dots').getAttribute('aria-label')).toBe('Schritt 1 von 3');
+    clickLabel('3');
+    ['Anna', 'Ben', 'Clara'].forEach((name, i) => type(nameInputs()[i], name));
+    clickLabel('Weiter');
+    expect(screen().querySelector('.wizard__dots').getAttribute('aria-label')).toBe('Schritt 3 von 3');
+    clickLabel('Weiter');
+    expect(title()).toBe('Punkteblock');
+    expect(store.pad.players.map(pl => pl.name)).toEqual(['Anna', 'Ben', 'Clara']);
+    expect(store.game).toBe(gameBefore);
+    expect(JSON.parse(localStorage.getItem('abaufdiepiste_v2_punkteblock')).players).toHaveLength(3);
+  });
+
+  it('Punkteblock: the pad mirrors the printed one (20 time rows, lunch and valley rows)', () => {
+    const timeRows = [...screen().querySelectorAll('.pad tbody tr')].filter(tr => /^\d\d:\d\d$/.test(tr.firstElementChild.textContent));
+    expect(timeRows).toHaveLength(20);
+    expect(screen().querySelectorAll('.pad tr.is-lunch')).toHaveLength(4);
+    expect(screen().querySelectorAll('.pad tr.is-valley')).toHaveLength(3);
+    expect(screen().querySelectorAll('.pad__player')).toHaveLength(3);
+  });
+
+  it('Punkteblock: chips add up, Sehenswürdigkeit grows, ± flips, totals and stars follow', () => {
+    const cellBtn = (time, col) => {
+      const tr = [...screen().querySelectorAll('.pad tbody tr')].find(r => r.firstElementChild.textContent === time);
+      return tr.querySelectorAll('.pad__cell')[col];
+    };
+    const chip = label => [...sheet().querySelectorAll('.chip')].find(c => c.textContent.startsWith(label));
+
+    cellBtn('10:00', 0).click();
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Anna · 10:00');
+    chip('+4').click();
+    chip('+4').click();
+    chip('Sehensw.').click();
+    expect(chip('Sehensw.').textContent).toBe('Sehensw. +10');
+    expect(sheet().querySelector('.pad-entry__input').value).toBe('13');
+    sheetButton('Eintragen').click();
+    expect(cellBtn('10:00', 0).textContent).toBe('13');
+    const sightsShown = () => screen().querySelectorAll('.pad__meta')[1].querySelectorAll('.pad__value')[0].textContent;
+    expect(sightsShown()).toBe('1');
+
+    cellBtn('10:30', 0).click();
+    const input = sheet().querySelector('.pad-entry__input');
+    input.value = '6';
+    sheet().querySelector('[data-ref="sign"]').click();
+    expect(input.value).toBe('-6');
+    sheetButton('Eintragen').click();
+    const totals = [...screen().querySelectorAll('[data-ref="totals"] .pad__value')].map(td => td.textContent);
+    expect(totals).toEqual(['7', '0', '0']);
+    expect(cellBtn('10:30', 0).textContent).toBe('−6');
+    expect(screen().querySelector('.pad__stars').textContent).toBe('★☆☆');
+
+    // Schlusswertung row: its own chips; the Endstand includes it
+    screen().querySelector('[data-ref="finalRow"] .pad__cell').click();
+    chip('Talstation nicht erreicht').click();
+    sheetButton('Eintragen').click();
+    expect(screen().querySelector('[data-ref="endRow"] .pad__value').textContent).toBe('−8');
+    expect(totals[0]).toBe('7');   // the running total ignores the Schlusswertung
+
+    // Re-opening the 10:00 cell starts from its own Sehenswürdigkeit; "Löschen" takes it back out
+    cellBtn('10:00', 0).click();
+    expect(chip('Sehensw.').textContent).toBe('Sehensw. +10');
+    sheet().querySelector('[data-ref="clear"]').click();
+    expect(chip('Sehensw.').textContent).toBe('Sehensw. +5');
+    sheetButton('Eintragen').click();
+    expect(cellBtn('10:00', 0).textContent).toBe('');
+    expect(sightsShown()).toBe('0');
+  });
+
+  it('Punkteblock: reopening shows the pad; "Neu" asks and keeps it until the new one starts', () => {
+    ref('home').click();
+    clickLabel('Punkteblock');
+    expect(title()).toBe('Punkteblock');
+    const pad = store.pad;
+    ref('newPad').click();
+    sheetButton('Neuer Block').click();
+    expect(title()).toBe('Wie viele spielen?');
+    expect(store.pad).toBe(pad);
+  });
+
+
+  it('Schlusswertung: "Ja" clears earlier Rückweg answers; a tie for 1st stands equally high', async () => {
+    const { go } = await import('../v2/v2_router.js');
+    const { setGame } = await import('../v2/v2_store.js');
+    const { createGame } = await import('../v2/flow_logic.js');
+    const g = Object.assign(createGame([{ name: 'Anna' }, { name: 'Ben' }]), { finished: true, round: 20 });
+    g.players.forEach(pl => { pl.points = 30; });
+    setGame(g);
+    go('schlusswertung');
+    ref('no').click();
+    screen().querySelector('.slope-tile--red [data-ref="plus"]').click();
+    ref('back').click();
+    ref('yes').click();
+    ref('back').click();
+    ref('no').click();
+    expect(screen().querySelector('.slope-tile--red [data-ref="count"]').hidden).toBe(true);
+    ref('back').click();
+    ref('yes').click();
+    ref('confirm').click();
+    ref('yes').click();
+    ref('confirm').click();
+
+    expect(title()).toBe('Rangliste');
+    const places = [...screen().querySelectorAll('.podium__place')];
+    expect(places.map(pl => pl.querySelector('[data-ref="rank"]').textContent)).toEqual(['1', '1']);
+    expect(places.map(pl => [pl.classList.contains('podium__place--pos-1'), pl.classList.contains('podium__place--pos-2')])).toEqual([[true, false], [false, true]]);
+    expect(places.every(pl => pl.classList.contains('podium__place--1'))).toBe(true);
+  });
+
 });

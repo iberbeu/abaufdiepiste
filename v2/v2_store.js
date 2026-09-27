@@ -6,12 +6,15 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { restoreGame, MIN_PLAYERS } from './flow_logic.js';
+import { restorePad } from './punkteblock_logic.js';
 
 const GAME_KEY = 'abaufdiepiste_v2_game';   // separate from v1's key — no save compatibility
 
 export const store = {
   /** @type {object|null} see createGame() in flow_logic.js */
   game: null,
+  /** @type {object|null} Punkteblock mode, see createPad() in punkteblock_logic.js — independent of `game` */
+  pad: null,
 };
 
 export function loadGame() {
@@ -63,4 +66,32 @@ export function saveLastGroup(players, totalRounds) {
   } catch {
     // Storage blocked: the next setup simply starts empty.
   }
+}
+
+// ── Punkteblock mode (FEAT-24): its own key, never touches the app game ──
+
+const PAD_KEY = 'abaufdiepiste_v2_punkteblock';
+
+export function loadPad() {
+  try {
+    const raw = localStorage.getItem(PAD_KEY);
+    store.pad = raw ? restorePad(JSON.parse(raw)) : null;
+  } catch {
+    store.pad = null;
+  }
+  return store.pad;
+}
+
+export function savePad() {
+  try {
+    if (store.pad) localStorage.setItem(PAD_KEY, JSON.stringify(store.pad));
+    else localStorage.removeItem(PAD_KEY);
+  } catch {
+    // Storage full or blocked: the pad keeps working in memory.
+  }
+}
+
+export function setPad(pad) {
+  store.pad = pad;
+  savePad();
 }

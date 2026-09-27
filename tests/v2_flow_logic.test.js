@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   createGame, advanceTurn, dueRoundEvents, markEventsShown, pauseStatus,
   currentTime, roundsRemaining, restoreGame, addHistory, addSighting, removeLastSighting, spendCoin,
-  rollDice, gainCoin, descentTurn, takePause, setupDraft, assignColor, moveItem, defaultName, endTime, MAX_ROUNDS, MIN_ROUNDS,
+  rollDice, gainCoin, descentTurn, takePause, ranking, scoreRows, roundEntries, adjustPlayer,
+  nextSchlusswertungPlayer, previewSchlusswertung, applySchlusswertung, setupDraft, assignColor, moveItem, defaultName, endTime, MAX_ROUNDS, MIN_ROUNDS,
 } from '../v2/flow_logic.js';
 
 const two = () => createGame([{ name: 'Anna' }, { name: 'Ben', talstation: 'Dorf' }]);
@@ -365,5 +366,109 @@ describe('takePause', () => {
     expect(takePause(g, 'bar')).toBe(0);
     expect(g.players[0]).toMatchObject({ points: 0, pauseDone: false });
     expect(() => takePause(g, 'picknick')).toThrow();
+  });
+});
+
+describe('ranking', () => {
+  it('sorts by points; equal points share a rank; ties keep turn order', () => {
+    const g = createGame([{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }]);
+    [10, 30, 10, 5].forEach((pts, i) => { g.players[i].points = pts; });
+    expect(ranking(g)).toEqual([
+      { playerIdx: 1, points: 30, rank: 1 },
+      { playerIdx: 0, points: 10, rank: 2 },
+      { playerIdx: 2, points: 10, rank: 2 },
+      { playerIdx: 3, points: 5, rank: 4 },
+    ]);
+  });
+});
+
+describe('scoreRows', () => {
+  it('one row per finished round with totals and deltas, plus a live row', () => {
+    const g = two();
+    g.players[0].points = 10;
+    advanceTurn(g);
+    g.players[1].points = 4;
+    advanceTurn(g);            // round 1 done: [10, 4]
+    g.players[0].points = 15;  // Anna played in round 2, Ben not yet
+    advanceTurn(g);
+    expect(scoreRows(g)).toEqual([
+      { round: 1, time: '08:00', live: false, cells: [{ points: 10, delta: 10 }, { points: 4, delta: 4 }] },
+      { round: 2, time: '08:30', live: true, cells: [{ points: 15, delta: 5 }, null] },
+    ]);
+  });
+
+  it('no live row once the game is finished', () => {
+    const g = two();
+    g.finished = true;
+    expect(scoreRows(g)).toEqual([]);
+  });
+});
+
+describe('roundEntries', () => {
+  it('filters the history by round and player', () => {
+    const g = two();
+    addHistory(g, 'A1');
+    advanceTurn(g);
+    addHistory(g, 'B1');
+    expect(roundEntries(g, 1, 0).map(h => h.text)).toEqual(['A1']);
+    expect(roundEntries(g, 1, 1).map(h => h.text)).toEqual(['B1']);
+    expect(roundEntries(g, 2, 0)).toEqual([]);
+  });
+});
+
+describe('adjustPlayer', () => {
+  it('sets points and coins and logs each change for that player', () => {
+    const g = two();
+    expect(adjustPlayer(g, 1, { points: 12, joker: 1, gratis: 0 })).toBe(true);
+    expect(g.players[1]).toMatchObject({ points: 12, joker: 1, gratis: 0 });
+    expect(g.history.map(h => [h.playerIdx, h.text])).toEqual([[1, 'Anpassung: +12 Punkte'], [1, 'Anpassung: Joker 0 → 1']]);
+    expect(adjustPlayer(g, 1, { points: 12, joker: 1, gratis: 0 })).toBe(false);
+  });
+
+  it('keeps the coins below the coin limit and never negative', () => {
+    const g = two();
+    adjustPlayer(g, 0, { points: 0, joker: 2, gratis: 2 });
+    expect(g.players[0]).toMatchObject({ joker: 2, gratis: 0 });
+    adjustPlayer(g, 0, { points: -3, joker: -1, gratis: 1 });
+    expect(g.players[0]).toMatchObject({ points: -3, joker: 0, gratis: 1 });
+    expect(g.history.at(-3).text).toBe('Anpassung: −3 Punkte');
+  });
+});
+
+describe('Schlusswertung', () => {
+  const none = { blue: 0, red: 0, black: 0, yellow: 0 };
+  const finishedGame = () => { const g = two(); g.finished = true; return g; };
+
+  it('Talstation reached: only the coin bonus (+5 per coin), coins returned', () => {
+    const g = finishedGame();
+    Object.assign(g.players[0], { points: 40, joker: 1, gratis: 1 });
+    const r = applySchlusswertung(g, 0, { reached: true, slopes: none, transports: 0, extraTalstationen: 0 });
+    expect(r.netDelta).toBe(10);
+    expect(g.players[0]).toMatchObject({ points: 50, joker: 0, gratis: 0, schlusswertungDone: true });
+    expect(g.history.at(-1)).toMatchObject({ playerIdx: 0, text: 'Schlusswertung: +10 Punkte' });
+  });
+
+  it('not reached: −15, half slope points, −5 per ride and per extra Talstation', () => {
+    const g = finishedGame();
+    g.players[1].points = 30;
+    const answers = { reached: false, slopes: { ...none, red: 1, blue: 1 }, transports: 2, extraTalstationen: 1 };
+    expect(previewSchlusswertung(g, 1, answers).netDelta).toBe(-15 - 2 - 1 - 10 - 5);
+    expect(g.players[1].points).toBe(30);   // preview changes nothing
+    applySchlusswertung(g, 1, answers);
+    expect(g.players[1].points).toBe(30 - 33);
+    expect(g.history.at(-1).text).toBe('Schlusswertung: −33 Punkte');
+  });
+
+  it('only once per player, only for a finished game; tells who is next', () => {
+    const g = two();
+    const answers = { reached: true, slopes: none, transports: 0, extraTalstationen: 0 };
+    expect(applySchlusswertung(g, 0, answers)).toBeNull();   // game still running
+    g.finished = true;
+    expect(nextSchlusswertungPlayer(g)).toBe(0);
+    applySchlusswertung(g, 0, answers);
+    expect(applySchlusswertung(g, 0, answers)).toBeNull();
+    expect(nextSchlusswertungPlayer(g)).toBe(1);
+    applySchlusswertung(g, 1, answers);
+    expect(nextSchlusswertungPlayer(g)).toBe(-1);
   });
 });
