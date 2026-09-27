@@ -7,7 +7,7 @@ import {
   DESCENT_DICE, ALLOWED_SLOPES, SLOPE_PTS, LEVEL_MAX_POINTS, EVENT_SYMBOLS, TRANSPORT_SYMBOLS, TRANSPORT_NAMES,
   PAUSE_POINTS, EXTRA_ACTIVITY_POINTS, COIN_LIMIT, PULVERSCHNEE_BONUS, FREE_RIDE_COUNT, JACKPOT_COUNT, JACKPOT_POINTS,
   getLevel, levelLabel, levelStars,
-} from '../../game_logic.js';
+} from '../game_logic.js';
 import { currentTime, ranking, scoreRows, roundEntries, adjustPlayer } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go, previousScreen } from '../v2_router.js';
@@ -209,7 +209,7 @@ function ruleCards() {
     },
     {
       title: 'Ereigniswürfel',
-      items: EVENT_SYMBOLS.map(sym => ({ img: `../img/event_${sym}.png`, label: eventName[sym], text: eventText[sym] })),
+      items: EVENT_SYMBOLS.map(sym => ({ img: `img/event_${sym}.png`, label: eventName[sym], text: eventText[sym] })),
     },
     {
       title: 'Beförderungswürfel',
@@ -220,7 +220,7 @@ function ruleCards() {
         { label: `${JACKPOT_COUNT} gleiche`, text: `Freie Fahrt und +${JACKPOT_POINTS} Punkte (ohne Joker)` },
         { label: '2 Würfe', text: 'Nach dem 1. Wurf Würfel behalten und nochmal würfeln' },
         { label: 'Joker', text: 'Dreht einen Würfel auf ein beliebiges Symbol' },
-        ...TRANSPORT_SYMBOLS.map((sym, i) => ({ img: `../img/transport_${sym}.png`, label: TRANSPORT_NAMES[i], text: '' })),
+        ...TRANSPORT_SYMBOLS.map((sym, i) => ({ img: `img/transport_${sym}.png`, label: TRANSPORT_NAMES[i], text: '' })),
       ],
     },
     {

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ab auf die Piste – Würfel-App</title>
+<link rel="icon" type="image/png" href="../img/logo_abaufdiepiste.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dice_app.css">
+</head>
+<body class="hints-hidden">
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header>
+  <div>
+    <h1><img src="../img/logo_abaufdiepiste.png" alt="" class="header-logo-img"> Ab auf die Piste</h1>
+    <div class="header-sub-row">
+      <div id="roundLabel" class="header-sub">Runde 1 von 20</div>
+      <button id="btnToggleHints" class="btn-hints-toggle" onclick="toggleHints()">ⓘ</button>
+    </div>
+  </div>
+  <div class="header-player-info">
+    <div class="clock" id="gameClock">08:00</div>
+    <div class="header-player-row">
+      <div id="currentPlayerDot" class="player-color-dot"></div>
+      <span id="currentPlayerHeader" class="header-player-name">—</span>
+      <span id="levelBadge" class="level-badge level-anfaenger">Anfänger ★☆☆</span>
+      <span id="currentPlayerPoints" class="header-player-points">0</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ TABS ═══════════════ -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('tab-turn')">Zug</button>
+  <button class="tab-btn" onclick="showTab('tab-scores')">Punkte</button>
+  <button class="tab-btn" onclick="showTab('tab-setup')">Setup</button>
+</div>
+
+<!-- ═══════════════════════════════════════
+     TAB 1: CURRENT TURN (transport dice)
+════════════════════════════════════════ -->
+<div id="tab-turn" class="panel active">
+
+  <!-- Player selector -->
+  <div id="playerStrip" class="player-strip"></div>
+
+  <!-- Action choice -->
+  <div class="card">
+    <div class="card-title">Aktion wählen</div>
+    <div class="btn-row btn-row--flush">
+      <button class="btn btn-primary btn-action" onclick="setAction('bergauf')" id="actionBergauf">⬆ Bergauf</button>
+      <button class="btn btn-warn btn-action"    onclick="setAction('bergab')"  id="actionBergab">⬇ Bergab</button>
+      <button class="btn btn-neutral btn-action" onclick="setAction('pause')"   id="actionPause">☕ Pause</button>
+    </div>
+  </div>
+
+  <!-- GRATIS FAHRT — shown only when current player has gratis coins -->
+  <div class="card card--mt-8" id="cardGratisFahrt" style="display:none">
+    <div class="card-title">Gratis Fahrt <span id="gratisFahrtDisplay" class="text-muted-sm"></span></div>
+    <p class="section-hint info-hint">Extra Bergauffahrt ohne Würfeln – verbraucht eine Gratisfahrt-Münze.</p>
+    <div class="btn-row btn-row--flush">
+      <button class="btn btn-primary" onclick="useGratisFahrt()">🎟 Gratis Fahrt nutzen</button>
+    </div>
+    <div id="gratisFahrtFeedback"></div>
+  </div>
+
+  <!-- BERGAUF: Transport dice -->
+  <div id="sectionBergauf" style="display:none">
+    <div class="card">
+      <div class="card-title">Beförderungswürfel <span id="rollCountLabel" class="label-sub">(Wurf 1 von 2)</span></div>
+      <div class="held-hint info-hint">Tippe auf einen Würfel, um ihn zu behalten ★</div>
+      <div class="dice-row" id="transportDiceRow"></div>
+      <div class="roll-count-dots">
+        <div class="roll-dot" id="rollDot1"></div>
+        <div class="roll-dot" id="rollDot2"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnRollTransport" onclick="rollTransportDice()">🎲 Würfeln</button>
+        <button class="btn btn-neutral" id="btnResetTransport" onclick="resetTransportDice()">↺ Reset</button>
+      </div>
+      <div id="transportResult" class="result-box info" style="display:none"></div>
+    </div>
+
+  </div>
+
+  <!-- BERGAB: inline descent section -->
+  <div id="sectionBergabShort" style="display:none">
+
+    <!-- Single unified card: roll + result + slope selector -->
+    <div class="card">
+      <div class="card-title">Abfahrts- &amp; Ereigniswürfel <span id="descentDiceLabel" class="label-sub"></span></div>
+      <div class="dice-row">
+        <div class="die-wrapper">
+          <div class="die die-descent" id="descentDie"></div>
+          <div class="die-legend" id="descentDieLegend">Abfahrt</div>
+        </div>
+        <div class="die-wrapper">
+          <div class="die die-event" id="eventDie"></div>
+          <div class="die-legend">Ereignis</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-warn" id="btnRollBothDice" onclick="rollBothDice()">🎿 Würfeln</button>
+      </div>
+      <div id="eventResult" class="result-box info result-box--mt-8" style="display:none"></div>
+
+      <!-- Crossing counter + slope selector — revealed after rolling -->
+      <div id="descentPointsCard" style="display:none">
+        <!-- Prominent crossing counter linking the die result to the selector -->
+        <div id="crossingCounter" class="crossing-counter">
+          <span id="crossingUsed">0</span> / <span id="crossingMax">0</span>
+          <span class="crossing-counter-label"> Kreuzungen genutzt</span>
+        </div>
+        <div id="descentEventBanner"></div>
+
+        <!-- Slope colour selectors -->
+        <div id="slopeSelector">
+          <!-- Blue -->
+          <div class="slope-row" id="slopeRow-blue">
+            <div class="slope-label">
+              <span class="slope-badge slope-blue">🔵 Blau</span>
+              <span class="slope-pts-label">2 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-blue" style="display:none">⚠ Ohne Befugnis</span>
+            </div>
+            <div class="kreuzung-boxes" data-color="blue">
+              <button class="kbox" data-val="1">1</button>
+              <button class="kbox" data-val="2">2</button>
+              <button class="kbox" data-val="3">3</button>
+              <button class="kbox" data-val="4">4</button>
+              <button class="kbox" data-val="5">5</button>
+              <button class="kbox" data-val="6">6</button>
+            </div>
+          </div>
+          <!-- Red -->
+          <div class="slope-row" id="slopeRow-red">
+            <div class="slope-label">
+              <span class="slope-badge slope-red">🔴 Rot</span>
+              <span class="slope-pts-label">4 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-red" style="display:none">⚠ Ohne Befugnis</span>
+            </div>
+            <div class="kreuzung-boxes" data-color="red">
+              <button class="kbox" data-val="1">1</button>
+              <button class="kbox" data-val="2">2</button>
+              <button class="kbox" data-val="3">3</button>
+              <button class="kbox" data-val="4">4</button>
+              <button class="kbox" data-val="5">5</button>
+              <button class="kbox" data-val="6">6</button>
+            </div>
+          </div>
+          <!-- Black -->
+          <div class="slope-row" id="slopeRow-black">
+            <div class="slope-label">
+              <span class="slope-badge slope-black">⚫ Schwarz</span>
+              <span class="slope-pts-label">6 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-black" style="display:none">⚠ Ohne Befugnis</span>
+            </div>
+            <div class="kreuzung-boxes" data-color="black">
+              <button class="kbox" data-val="1">1</button>
+              <button class="kbox" data-val="2">2</button>
+              <button class="kbox" data-val="3">3</button>
+              <button class="kbox" data-val="4">4</button>
+              <button class="kbox" data-val="5">5</button>
+              <button class="kbox" data-val="6">6</button>
+            </div>
+          </div>
+          <!-- Yellow -->
+          <div class="slope-row" id="slopeRow-yellow">
+            <div class="slope-label">
+              <span class="slope-badge slope-yellow">🟡 Gelb</span>
+              <span class="slope-pts-label">8 Pkt/Strecke</span>
+              <span class="slope-forbidden-badge" id="forbiddenBadge-yellow" style="display:none">⚠ Ohne Befugnis</span>
+            </div>
+            <div class="kreuzung-boxes" data-color="yellow">
+              <button class="kbox" data-val="1">1</button>
+              <button class="kbox" data-val="2">2</button>
+              <button class="kbox" data-val="3">3</button>
+              <button class="kbox" data-val="4">4</button>
+              <button class="kbox" data-val="5">5</button>
+              <button class="kbox" data-val="6">6</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="descentPointsPreview" class="descent-points-preview"></div>
+
+        <!-- Ohne Befugnis inline roll area — shown when forbidden slope is selected -->
+        <div id="ohneBefugnisRollArea" style="display:none">
+          <div class="result-box warning result-box--flush-top">
+            ⚠ Du hast eine nicht erlaubte Piste gewählt. Würfle den Entscheidungswürfel:
+            <br><span class="text-muted-sm">🙂 Fröhlicher Smiley = normale Punkte · 🙁 Trauriger Smiley = negative Punkte</span>
+          </div>
+          <div class="ohne-befugnis-roll-row">
+            <div class="die die-decision" id="decisionDieOhneBefugnisInline"></div>
+            <button class="btn btn-warn" id="btnRollOhneBefugnis" onclick="rollOhneBefugnisInline()">🎲 Würfeln</button>
+          </div>
+          <div id="ohneBefugnisInlineResult" style="display:none"></div>
+        </div>
+
+        <!-- btnConfirmDescent kept hidden — used only by updateOhneBefugnisUI() for state tracking -->
+        <button id="btnConfirmDescent" style="display:none" onclick="confirmDescentPoints()">✓ Punkte eintragen</button>
+        <div class="btn-row">
+          <button id="btnClearSlopeSelection" class="btn btn-neutral btn-full" style="display:none" onclick="clearSlopeSelection()">↺ Auswahl zurücksetzen</button>
+        </div>
+      </div><!-- /descentPointsCard -->
+
+      <!-- Confirmation result shown after confirming -->
+      <div id="descentResult" class="result-box info result-box--mt-10" style="display:none"></div>
+    </div>
+
+    <!-- ── EXTRAAKTIVITÄT panel (accordion) ── -->
+    <div class="card accordion-card" id="cardExtraaktivitaet">
+      <button class="accordion-trigger" onclick="toggleAccordion('extraaktivitaet')" id="triggerExtraaktivitaet">
+        <span id="labelExtraaktivitaet"><span id="extraaktivitaetTitle">🏂 Extraaktivität</span><span id="extraaktivitaetHint" class="accordion-trigger-hint" style="display:none"></span></span><span class="accordion-chevron" id="chevronExtraaktivitaet">▸</span>
+      </button>
+      <div class="accordion-body" id="bodyExtraaktivitaet" style="display:none">
+        <p class="section-hint info-hint">
+          Nur für Fortgeschrittene &amp; Profis. 🙂 Fröhlicher Smiley = +12 Punkte · 🙁 Trauriger Smiley = 0 Punkte.
+        </p>
+        <div class="dice-row">
+          <div class="die die-decision" id="decisionDieExtra"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnRollExtraaktivitaet" onclick="rollDecisionInTurn('extraaktivitaet')">🎲 Würfeln</button>
+        </div>
+        <div id="decisionResultExtra" class="result-box info result-box--mt-8" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAUSE -->
+  <div id="sectionPause" style="display:none">
+    <div class="card">
+      <div class="card-title">Mittagspause</div>
+      <p class="section-hint info-hint">
+        Erlaubt zwischen 11:00 und 12:30 Uhr (aktuelle Zeit: <span id="pauseCurrentTime">—</span>).
+        Nur in Restaurant oder Bar.
+      </p>
+      <div id="pauseTimeWarning" class="result-box warning" style="display:none">⚠ Außerhalb des Mittagspausen-Zeitfensters (11:00–12:30)!</div>
+      <div id="pauseDoneWarning" class="result-box warning" style="display:none">✓ Mittagspause bereits eingelegt.</div>
+      <div class="btn-row btn-row--flush btn-row--column">
+        <button id="btnPauseRestaurant" class="btn btn-success btn-full" onclick="selectPause('restaurant')">🍽 Restaurant (+15 Punkte, 1 Zug aussetzen)</button>
+        <button id="btnPauseBar"        class="btn btn-warn   btn-full" onclick="selectPause('bar')">🍺 Bar (+7 Punkte, 1 Zug aussetzen)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sehenswürdigkeit quick-register -->
+  <div class="card card--mt-8">
+    <div class="card-title">Sehenswürdigkeit passiert</div>
+    <p class="section-hint info-hint">Erste: +5 · Zweite: +10 · Dritte: +15 · Danach +5 mehr</p>
+    <div id="sightingsDisplay"></div>
+    <div class="btn-row btn-row--flush">
+      <button class="btn btn-success" onclick="addSighting()">🏔 Sehenswürdigkeit eintragen</button>
+    </div>
+    <div id="sightingsFeedback"></div>
+  </div>
+
+  <!-- Symbolübersicht accordion -->
+  <div class="card accordion-card card--mt-8">
+    <button class="accordion-trigger" onclick="toggleAccordion('symboluebersicht')" id="triggerSymboluebersicht">
+      Symbolübersicht
+      <span class="accordion-chevron" id="chevronSymboluebersicht">▸</span>
+    </button>
+    <div class="accordion-body" id="bodySymboluebersicht" style="display:none">
+      <div class="symbol-grid">
+        <div class="symbol-cell"><img class="sym" src="../img/transport_fussweg.png" alt="Fussweg">Fussweg</div>
+        <div class="symbol-cell"><img class="sym" src="../img/transport_kleingondel.png" alt="Kleingondel">Kleingondel</div>
+        <div class="symbol-cell"><img class="sym" src="../img/transport_skilift.png" alt="Schlepplift">Schlepplift</div>
+        <div class="symbol-cell"><img class="sym" src="../img/transport_sesselbahn.png" alt="Sessellift">Sessellift</div>
+        <div class="symbol-cell"><img class="sym" src="../img/transport_gondel.png" alt="Kabinengondel">Kabinengondel</div>
+        <div class="symbol-cell"><img class="sym" src="../img/transport_zug.png" alt="Zug/Bus">Zug/Bus</div>
+      </div>
+      <div class="text-muted-sm">
+        <b>2 gleiche</b> = gültige Beförderung &nbsp;|&nbsp;
+        <b>1 + 3 andere gleiche</b> = auch gültig &nbsp;|&nbsp;
+        <b>3 gleiche</b> = Tausch gegen ein 1× gewürfeltes Symbol &nbsp;|&nbsp;
+        <b>5 gleiche</b> = freie Fahrt (beliebig weit) &nbsp;|&nbsp;
+        <b>6 gleiche</b> = freie Fahrt + 30 Punkte
+      </div>
+    </div>
+  </div>
+
+  <!-- Turn log -->
+  <div class="card">
+    <div class="card-title">Zugverlauf</div>
+    <div class="history-list" id="turnHistory"></div>
+  </div>
+</div>
+
+
+
+<!-- ═══════════════════════════════════════
+     TAB 4: SCOREBOARD
+════════════════════════════════════════ -->
+<div id="tab-scores" class="panel">
+  <div class="card">
+    <div class="card-title">Spielstand</div>
+    <div class="table-scroll">
+      <table class="score-table" id="scoreTable">
+        <thead>
+          <tr>
+            <th>Spieler</th><th>Niv.</th><th>Pkt.</th><th>Joker / Gr.</th>
+          </tr>
+        </thead>
+        <tbody id="scoreBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="punktverlaufCard">
+    <div class="card-title">Punktverlauf</div>
+    <div id="punktverlaufContainer">
+      <table class="score-table" id="punktverlaufTable">
+        <thead id="punktverlaufHead"></thead>
+        <tbody id="punktverlaufBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="cardSchlusswertung">
+    <div class="card-title">Schlusswertung – Strafpunkte</div>
+    <div id="abschlusswertungTrigger"></div>
+    <div class="penalty-text">
+      • Talstation nicht erreicht: <b>−15 Punkte</b><br>
+      • Jede zusätzliche Piste (zur TS): normale Punkte, halbiert<br>
+      • Jede Beförderung zurück: <b>−5 Punkte</b><br>
+      • Pro zusätzlicher Talstation: <b>−5 Punkte</b><br>
+      • Übrige Münzen: <b>+5 Punkte</b> je Münze
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Spielzeit</div>
+    <div class="stat-row"><span class="stat-label">Runde</span><span id="scoreRound" class="stat-value">1 / 20</span></div>
+    <div class="stat-row"><span class="stat-label">Spielzeit</span><span id="scoreTime" class="stat-value">08:00</span></div>
+    <div class="stat-row"><span class="stat-label">Mittagspause</span><span class="stat-value">11:00–12:30</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Würfel-Referenz</div>
+    <div class="stat-row"><span class="stat-label">Anfänger ★☆☆ (0–20 Pkt)</span><span class="stat-value">2·2·2·4·4·4</span></div>
+    <div class="stat-row"><span class="stat-label">Fortgeschritten ★★☆ (21–70 Pkt)</span><span class="stat-value">2·2·4·4·6·6</span></div>
+    <div class="stat-row"><span class="stat-label">Profi ★★★ (&gt;70 Pkt)</span><span class="stat-value">4·4·4·6·6·6</span></div>
+    <div class="stat-row"><span class="stat-label">❄ Schneesturm</span><span class="stat-value">halbe Fahrt, volle Punkte</span></div>
+    <div class="stat-row"><span class="stat-label">🔵 Blau</span><span class="stat-value">2 Pkt/Strecke</span></div>
+    <div class="stat-row"><span class="stat-label">🔴 Rot</span><span class="stat-value">4 Pkt/Strecke</span></div>
+    <div class="stat-row"><span class="stat-label">⚫ Schwarz</span><span class="stat-value">6 Pkt/Strecke</span></div>
+    <div class="stat-row"><span class="stat-label">🟡 Gelb</span><span class="stat-value">8 Pkt/Strecke</span></div>
+  </div>
+
+  <!-- Manuelle Anpassungen accordion -->
+  <div class="card accordion-card card--mt-8">
+    <button class="accordion-trigger" onclick="openManualAdjustConfirm()" id="triggerManuell">
+      <span>⚙ Anpassungen</span>
+      <span class="accordion-chevron" id="chevronManuell">▸</span>
+    </button>
+    <div class="accordion-body" id="bodyManuell" style="display:none">
+      <p class="section-hint info-hint">Punkte manuell anpassen</p>
+      <div class="input-row">
+        <input type="number" id="manualPoints" class="form-input input-pts" placeholder="±Pts" value="5">
+        <button class="btn btn-success" onclick="adjustPoints(1)">+ Addieren</button>
+        <button class="btn btn-danger"  onclick="adjustPoints(-1)">− Abziehen</button>
+      </div>
+      <div id="manualResult"></div>
+      <hr class="section-hr">
+      <p class="section-hint info-hint">Münzen &amp; Joker (aktueller Spieler)</p>
+      <div class="stat-row">
+        <span class="stat-label">🃏 Joker-Münzen</span>
+        <div class="coin-control">
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',-1)">−</button>
+          <span id="jokerCount" class="stat-value coin-count">0</span>
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('joker',1)">+</button>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">🎟 Gratisfahrt-Münzen</span>
+        <div class="coin-control">
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',-1)">−</button>
+          <span id="gratisCount" class="stat-value coin-count">0</span>
+          <button class="btn btn-neutral btn-coin" onclick="adjustCoins('gratis',1)">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     TAB 5: SETUP
+════════════════════════════════════════ -->
+<div id="tab-setup" class="panel">
+  <div class="card">
+    <div class="card-title">Spieler einrichten</div>
+    <div id="playerSetupList"></div>
+    <div class="btn-row">
+      <button class="btn btn-neutral" onclick="addPlayerField()">+ Spieler hinzufügen</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Spieldauer</div>
+    <div class="form-group">
+      <label class="form-label">Anzahl Runden</label>
+      <input type="number" id="setupRounds" class="form-input" value="20" min="10" max="20">
+    </div>
+    <div class="setup-note info-hint">10–20 Runden möglich. Start immer 08:00 Uhr, je Runde 30 Min.</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary btn-full" onclick="confirmStart()">🎿 Spiel starten</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     RESET MODAL
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h2>Neues Spiel?</h2>
+    <p>Alle Punkte, Spieler und Zugdaten werden gelöscht. Das Spiel beginnt von vorne. Fortfahren?</p>
+    <div class="btn-row">
+      <button class="btn btn-neutral" onclick="closeModal('resetModal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="startGame()">🎿 Ja, Spiel starten</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="manualAdjustModal">
+  <div class="modal">
+    <h2>Anpassungen</h2>
+    <p>Bist du sicher, dass du Punkte oder Münzen manuell ändern willst?</p>
+    <div class="btn-row">
+      <button class="btn btn-neutral" onclick="closeModal('manualAdjustModal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="confirmOpenManualAdjust()">Ja, anpassen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     STICKY PRIMARY ACTION FOOTER
+════════════════════════════════════════ -->
+<div class="sticky-footer" id="stickyFooter" style="display:none">
+  <button class="btn btn-success btn-full" id="btnPrimaryAction" onclick="handlePrimaryAction()" disabled>
+    ✓ Zug beenden → Nächster Spieler
+  </button>
+  <p class="footer-sublabel" id="footerSublabel" style="display:none">2. Wurf noch möglich ↑</p>
+</div>
+
+<script type="module" src="dice_app.js"></script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   beginAction, activeTurn, markRolled, clearTurn, recordJoker, jokerUsed, takeBackJoker, setTurnView, turnView,
-} from '../v2/turn_state.js';
-import { createGame } from '../v2/flow_logic.js';
+} from '../turn_state.js';
+import { createGame } from '../flow_logic.js';
 
 const two = () => createGame([{ name: 'Anna' }, { name: 'Ben' }]);
 

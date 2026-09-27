@@ -9,7 +9,7 @@
 import {
   DESCENT_DICE, ALLOWED_SLOPES, SLOPE_PTS, EVENT_SYMBOLS, JOKER_EVENTS, EXTRA_ACTIVITY_POINTS, PULVERSCHNEE_BONUS,
   getLevel, levelLabel, levelStars,
-} from '../../game_logic.js';
+} from '../game_logic.js';
 import { rollDice, gainCoin, spendCoin, addHistory, currentPlayer, descentTurn } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
@@ -30,7 +30,7 @@ const IMG_SAD = 'img/dice/smiley_sad.svg';
 
 const clone = id => document.getElementById(id).content.firstElementChild.cloneNode(true);
 const filledStars = level => levelStars(level).replace(/☆/g, '');
-const eventImg = sym => `../img/event_${sym}.png`;
+const eventImg = sym => `img/event_${sym}.png`;
 const rollOne = faces => rollDice([null], [false], faces)[0];
 const rollSmiley = () => rollOne([true, false]);   // true = happy smiley
 const signed = n => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');

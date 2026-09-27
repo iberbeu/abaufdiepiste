@@ -5,7 +5,7 @@
 // Tested in tests/v2_punkteblock_logic.test.js.
 // ═══════════════════════════════════════════════════════════════
 
-import { gameTime, gameTimeHour, getLevel, sightseeingBonus } from '../game_logic.js';
+import { gameTime, gameTimeHour, getLevel, sightseeingBonus } from './game_logic.js';
 import {
   START_HOUR, MAX_ROUNDS, MIN_PLAYERS, MAX_PLAYERS, LUNCH_START_H, LUNCH_END_H, defaultName, ranking,
 } from './flow_logic.js';

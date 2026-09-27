@@ -4,7 +4,7 @@
 // With reduced motion there is no confetti; the level-up card still shows.
 // ═══════════════════════════════════════════════════════════════
 
-import { levelLabel, levelStars } from '../game_logic.js';
+import { levelLabel, levelStars } from './game_logic.js';
 import { openSheet } from './v2_sheet.js';
 import { reducedMotion } from './v2_dice.js';
 

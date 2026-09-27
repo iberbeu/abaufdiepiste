@@ -3,7 +3,7 @@
 // half points, rides, extra Talstationen), 3 summary → Bestätigen books it (applySchlusswertung).
 // Answers live in a module-level draft until confirmed; a reload restarts the current player.
 
-import { SLOPE_PTS } from '../../game_logic.js';
+import { SLOPE_PTS } from '../game_logic.js';
 import {
   endTime, ranking, nextSchlusswertungPlayer, previewSchlusswertung, applySchlusswertung,
 } from '../flow_logic.js';

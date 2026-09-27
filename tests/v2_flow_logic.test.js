@@ -4,7 +4,7 @@ import {
   currentTime, roundsRemaining, restoreGame, addHistory, addSighting, removeLastSighting, spendCoin,
   rollDice, gainCoin, descentTurn, refundCoin, passTurn, takePause, ranking, scoreRows, roundEntries, adjustPlayer, levelUp,
   nextSchlusswertungPlayer, previewSchlusswertung, applySchlusswertung, setupDraft, assignColor, moveItem, defaultName, endTime, MAX_ROUNDS, MIN_ROUNDS,
-} from '../v2/flow_logic.js';
+} from '../flow_logic.js';
 
 const two = () => createGame([{ name: 'Anna' }, { name: 'Ben', talstation: 'Dorf' }]);
 

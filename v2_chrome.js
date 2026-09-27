@@ -4,7 +4,7 @@
 // each opens a sheet and acts on the current player. Tapping the score strip opens the scores.
 // ═══════════════════════════════════════════════════════════════
 
-import { sightseeingBonus } from '../game_logic.js';
+import { sightseeingBonus } from './game_logic.js';
 import {
   currentTime, currentPlayer, addSighting, removeLastSighting, spendCoin, refundCoin, levelUp, MAX_PLAYERS,
 } from './flow_logic.js';

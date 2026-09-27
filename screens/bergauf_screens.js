@@ -6,7 +6,7 @@
 
 import {
   TRANSPORT_SYMBOLS, TRANSPORT_NAMES, transportOptions, FREE_RIDE_COUNT, JACKPOT_COUNT, JACKPOT_POINTS,
-} from '../../game_logic.js';
+} from '../game_logic.js';
 import { rollDice, spendCoin, addHistory, currentPlayer } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
@@ -20,7 +20,7 @@ const MAX_ROLLS = 2;
 const IMG_UNKNOWN = 'img/dice/die_question.svg';
 
 const nameOf = sym => TRANSPORT_NAMES[TRANSPORT_SYMBOLS.indexOf(sym)];
-const imgOf = sym => `../img/transport_${sym}.png`;
+const imgOf = sym => `img/transport_${sym}.png`;
 const clone = id => document.getElementById(id).content.firstElementChild.cloneNode(true);
 
 // ── B1: before the first roll ──

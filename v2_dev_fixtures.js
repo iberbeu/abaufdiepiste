@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // DEV ONLY — fixture panel for app v2. Toggle with Ctrl+Shift+D.
-// Remove the two DEV ONLY lines in v2/index.html before shipping.
+// Remove the two DEV ONLY lines in index.html before shipping.
 // Round → time: round n = 08:00 + (n-1)·30 min (round 7 = 11:00, round 20 = 17:30).
 // ═══════════════════════════════════════════════════════════════
 

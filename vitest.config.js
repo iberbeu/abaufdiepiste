@@ -6,7 +6,7 @@ export default defineConfig({
     include: ['tests/**/*.test.js'],
     coverage: {
       provider: 'v8',
-      include: ['game_logic.js', 'v2/flow_logic.js', 'v2/punkteblock_logic.js'],
+      include: ['game_logic.js', 'flow_logic.js', 'punkteblock_logic.js', 'turn_state.js'],
     },
   },
 });

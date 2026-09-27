@@ -2,7 +2,7 @@
 // the primary button confirms → points, pauseDone, turn end. Back is possible until confirmed.
 // The pause is the player's whole turn (spielregeln.md: "setzt einen Spielzug aus").
 
-import { PAUSE_POINTS } from '../../game_logic.js';
+import { PAUSE_POINTS } from '../game_logic.js';
 import { pauseStatus, takePause } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';

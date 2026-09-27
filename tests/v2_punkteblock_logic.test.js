@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createPad, padRows, runningTotal, finalTotal, padLevel, padSightings, nextSightingPoints, cellSightings,
   setCell, setFinal, restorePad, VALLEY_ROUNDS, cellEditable, cellPause, pauseAllowed, nextCell, allFinalsDone, padRanking, padDueEvents, markPadEvents,
-} from '../v2/punkteblock_logic.js';
+} from '../punkteblock_logic.js';
 
 /** Fills every time cell up to `lastRound` with 0 (except one cell, if given). */
 const fillUpTo = (pad, lastRound, except = null) => {

@@ -1,4 +1,4 @@
-/* DEV ONLY — styles for the v2 fixture panel. Remove the <link> in v2/index.html before shipping. */
+/* DEV ONLY — styles for the v2 fixture panel. Remove the <link> in index.html before shipping. */
 .dev-panel {
   position: fixed;
   top: var(--space-2);

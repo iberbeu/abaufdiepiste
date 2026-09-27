@@ -8,7 +8,7 @@
 
 import {
   SLOPE_PTS, SLOPE_PISTE_LABELS, PULVERSCHNEE_BONUS, PAUSE_POINTS, EXTRA_ACTIVITY_POINTS, SCHLUSS, levelStars, levelLabel,
-} from '../../game_logic.js';
+} from '../game_logic.js';
 import { levelUp, MAX_ROUNDS } from '../flow_logic.js';
 import {
   padRows, runningTotal, finalTotal, padLevel, padSightings, nextSightingPoints, cellSightings, setCell, setFinal,

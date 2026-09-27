@@ -6,7 +6,7 @@ import {
   analyzeTransportSymbols, JACKPOT_COUNT,
   calcDescentPoints, effectiveCrossings,
   calcAbschlusswertungResult,
-} from './game_logic.js';
+} from '../game_logic.js';
 
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
 
@@ -14,29 +14,29 @@ const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
 // GAME STATE
 // ═══════════════════════════════════════
 const TRANSPORT_IMGS    = {
-  fussweg:    'img/transport_fussweg.png',
-  kleingondel:'img/transport_kleingondel.png',
-  skilift:    'img/transport_skilift.png',
-  sesselbahn: 'img/transport_sesselbahn.png',
-  gondel:     'img/transport_gondel.png',
-  zug:        'img/transport_zug.png',
+  fussweg:    '../img/transport_fussweg.png',
+  kleingondel:'../img/transport_kleingondel.png',
+  skilift:    '../img/transport_skilift.png',
+  sesselbahn: '../img/transport_sesselbahn.png',
+  gondel:     '../img/transport_gondel.png',
+  zug:        '../img/transport_zug.png',
 };
 const EVENT_FACES = [
-  { sym:'fahrt',       img:'img/event_fahrt.png',       label:'+1 Fahrt',    cls:'success', text:'+1 Fahrt: Du erhältst eine Gratisfahrt-Münze! 🎟' },
-  { sym:'helikopter',  img:'img/event_helikopter.png',  label:'Helikopter',  cls:'warning', text:'Helikopter: Transport ins nächste Tal – neu starten! 🚁' },
-  { sym:'schneesturm', img:'img/event_schneesturm.png', label:'Schneesturm', cls:'danger',  text:'Schneesturm: Schlechte Sicht – nur halb so weit fahren! ❄' },
-  { sym:'pulverschnee',img:'img/event_pulverschnee.png',label:'Pulverschnee',cls:'success', text:'Pulverschnee: +5 Bonuspunkte! 🎉' },
-  { sym:'unfall',      img:'img/event_unfall.png',      label:'Unfall',      cls:'danger',  text:'Unfall: Keine Abfahrt möglich – Zug aussetzen' },
-  { sym:'sonne',       img:'img/event_sonne.png',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
+  { sym:'fahrt',       img:'../img/event_fahrt.png',       label:'+1 Fahrt',    cls:'success', text:'+1 Fahrt: Du erhältst eine Gratisfahrt-Münze! 🎟' },
+  { sym:'helikopter',  img:'../img/event_helikopter.png',  label:'Helikopter',  cls:'warning', text:'Helikopter: Transport ins nächste Tal – neu starten! 🚁' },
+  { sym:'schneesturm', img:'../img/event_schneesturm.png', label:'Schneesturm', cls:'danger',  text:'Schneesturm: Schlechte Sicht – nur halb so weit fahren! ❄' },
+  { sym:'pulverschnee',img:'../img/event_pulverschnee.png',label:'Pulverschnee',cls:'success', text:'Pulverschnee: +5 Bonuspunkte! 🎉' },
+  { sym:'unfall',      img:'../img/event_unfall.png',      label:'Unfall',      cls:'danger',  text:'Unfall: Keine Abfahrt möglich – Zug aussetzen' },
+  { sym:'sonne',       img:'../img/event_sonne.png',       label:'Sonne',       cls:'success', text:'Sonne: 1 Joker erhalten! 🃏' }
 ];
 // Face values come from game_logic.js — only presentation is added here.
 // The three dice share one look (.die-descent); the level is told apart by the stars on the faces.
 const DESCENT_DICE = {
-  anfaenger:      { ...DESCENT_FACES.anfaenger,       label:`${levelLabel('anfaenger')} ${levelStars('anfaenger')}`,             imgPrefix:'img/descent_anfaenger_' },
-  fortgeschritten:{ ...DESCENT_FACES.fortgeschritten, label:`${levelLabel('fortgeschritten')} ${levelStars('fortgeschritten')}`, imgPrefix:'img/descent_fortgeschritten_' },
-  profi:          { ...DESCENT_FACES.profi,           label:`${levelLabel('profi')} ${levelStars('profi')}`,                     imgPrefix:'img/descent_profi_' }
+  anfaenger:      { ...DESCENT_FACES.anfaenger,       label:`${levelLabel('anfaenger')} ${levelStars('anfaenger')}`,             imgPrefix:'../img/descent_anfaenger_' },
+  fortgeschritten:{ ...DESCENT_FACES.fortgeschritten, label:`${levelLabel('fortgeschritten')} ${levelStars('fortgeschritten')}`, imgPrefix:'../img/descent_fortgeschritten_' },
+  profi:          { ...DESCENT_FACES.profi,           label:`${levelLabel('profi')} ${levelStars('profi')}`,                     imgPrefix:'../img/descent_profi_' }
 };
-const IMG_UNKNOWN = 'img/die_unknown.svg';
+const IMG_UNKNOWN = '../img/die_unknown.svg';
 
 function dieImg(src, alt, cover = false) {
   const fit = cover ? 'cover' : 'contain';
@@ -46,8 +46,8 @@ function dieImg(src, alt, cover = false) {
 // Entscheidungswürfel face: happy smiley = success, sad smiley = failure.
 function decisionFaceHTML(happy) {
   return happy
-    ? dieImg('img/entscheidung_froehlich.svg', 'Fröhlicher Smiley')
-    : dieImg('img/entscheidung_traurig.svg', 'Trauriger Smiley');
+    ? dieImg('../img/entscheidung_froehlich.svg', 'Fröhlicher Smiley')
+    : dieImg('../img/entscheidung_traurig.svg', 'Trauriger Smiley');
 }
 
 // 3D die cube helpers — unified roll animation shared by every die in the app.
@@ -1060,7 +1060,7 @@ function updateOhneBefugnisUI() {
     const dieEl = document.getElementById('decisionDieOhneBefugnisInline');
     if (dieEl) {
       dieEl.className = 'die die-decision';
-      dieEl.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
+      dieEl.innerHTML = dieFaceHTML(dieImg('../img/die_unknown.svg', '?'));
     }
     const resEl = document.getElementById('ohneBefugnisInlineResult');
     if (resEl) resEl.style.display = 'none';
@@ -1142,7 +1142,7 @@ function clearSlopeSelection() {
   const dieInline = document.getElementById('decisionDieOhneBefugnisInline');
   if (dieInline) {
     dieInline.className = 'die die-decision';
-    dieInline.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
+    dieInline.innerHTML = dieFaceHTML(dieImg('../img/die_unknown.svg', '?'));
   }
   const resInline = document.getElementById('ohneBefugnisInlineResult');
   if (resInline) resInline.style.display = 'none';
@@ -1287,7 +1287,7 @@ function resetDecisionAccordions() {
   const decisionDieExtra = document.getElementById('decisionDieExtra');
   if (decisionDieExtra) {
     decisionDieExtra.className = 'die die-decision';
-    decisionDieExtra.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
+    decisionDieExtra.innerHTML = dieFaceHTML(dieImg('../img/die_unknown.svg', '?'));
   }
   const decisionResultExtra = document.getElementById('decisionResultExtra');
   if (decisionResultExtra) decisionResultExtra.style.display = 'none';
@@ -1298,7 +1298,7 @@ function resetDecisionAccordions() {
   const dieInline = document.getElementById('decisionDieOhneBefugnisInline');
   if (dieInline) {
     dieInline.className = 'die die-decision';
-    dieInline.innerHTML = dieFaceHTML(dieImg('img/die_unknown.svg', '?'));
+    dieInline.innerHTML = dieFaceHTML(dieImg('../img/die_unknown.svg', '?'));
   }
   const resInline = document.getElementById('ohneBefugnisInlineResult');
   if (resInline) resInline.style.display = 'none';
@@ -1693,7 +1693,7 @@ function showGameEnd() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
   overlay.innerHTML = `<div class="modal">
-    <h2><img src="img/logo_abaufdiepiste.png" alt="" style="height:28px;width:28px;object-fit:contain;border-radius:5px;vertical-align:middle;margin-right:6px;"> Spielende!</h2>
+    <h2><img src="../img/logo_abaufdiepiste.png" alt="" style="height:28px;width:28px;object-fit:contain;border-radius:5px;vertical-align:middle;margin-right:6px;"> Spielende!</h2>
     <p>Der Skitag ist vorbei! Jetzt Schlusswertung durchführen (Tab <b>Punkte</b>).</p>
     <div class="btn-row"><button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();showTab('tab-scores')">Zur Schlusswertung</button></div>
   </div>`;

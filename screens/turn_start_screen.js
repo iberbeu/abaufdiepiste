@@ -2,7 +2,7 @@
 // Pause is always visible; outside the lunch window or once taken it is locked, shows why,
 // and a tap only wiggles it.
 
-import { getLevel, levelLabel, levelStars } from '../../game_logic.js';
+import { getLevel, levelLabel, levelStars } from '../game_logic.js';
 import { currentPlayer, pauseStatus, passTurn } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { openSheet } from '../v2_sheet.js';

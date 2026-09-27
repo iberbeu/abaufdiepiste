@@ -7,7 +7,7 @@
 import {
   gameTime, gameTimeHour, sightseeingBonus, getLevel, TRANSPORT_SYMBOLS,
   COIN_LIMIT, BLOCKING_EVENTS, PAUSE_POINTS, effectiveCrossings, calcDescentPoints, calcAbschlusswertungResult,
-} from '../game_logic.js';
+} from './game_logic.js';
 
 export const START_HOUR = 8;          // fixed since BUG-13
 export const MAX_ROUNDS = 20;         // 08:00–17:30

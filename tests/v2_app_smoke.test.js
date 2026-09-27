@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Smoke test for the v2 shell: loads the real v2/index.html markup, boots v2_main.js
+// Smoke test for the v2 shell: loads the real index.html markup, boots v2_main.js
 // and clicks through the flow (home → test game → turns → round events → game end).
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // Vitest runs from app/ (see vitest.config.js); jsdom replaces the global URL, so no import.meta.url here.
-const html = readFileSync(resolve(process.cwd(), 'v2/index.html'), 'utf8');
+const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
 const body = html.match(/<body>([\s\S]*)<\/body>/)[1].replace(/<script[\s\S]*?<\/script>/g, '');
 
 const screen = () => document.querySelector('#outlet > .screen');
@@ -55,8 +55,8 @@ describe('v2 app shell', () => {
     localStorage.clear();
     window.scrollTo = () => {};
     document.body.innerHTML = body;
-    await import('../v2/v2_main.js');
-    ({ store } = await import('../v2/v2_store.js'));
+    await import('../v2_main.js');
+    ({ store } = await import('../v2_store.js'));
   });
 
   it('boots on the home screen without chrome and without "Weiterspielen"', () => {
@@ -245,7 +245,7 @@ describe('v2 app shell', () => {
   });
 
   it('Pause lock reasons: open at 11:00, "vorbei" after 12:30, "schon gemacht" once taken', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     const round = store.game.round;
     const pauseState = () => [ref('pause').classList.contains('is-locked'), ref('pauseSub').hidden ? '' : ref('pauseReason').textContent];
 
@@ -269,7 +269,7 @@ describe('v2 app shell', () => {
   });
 
   it('Pause: choose Restaurant or Bar (the other dims), confirm → points, pauseDone, turn end', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     const round = store.game.round;
     store.game.round = 8;   // 11:30
     const p = store.game.players[store.game.currentPlayerIndex];
@@ -302,7 +302,7 @@ describe('v2 app shell', () => {
   });
 
   it('the pause step cannot be opened once the pause is taken', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     const p = store.game.players.find(pl => pl.pauseDone);
     const idx = store.game.currentPlayerIndex;
     store.game.currentPlayerIndex = store.game.players.indexOf(p);
@@ -315,7 +315,7 @@ describe('v2 app shell', () => {
   });
 
   it('turn start of a finished game redirects to game end', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     store.game.finished = true;
     go('turn_start');
     expect(title()).toBe('Skitag vorbei!');
@@ -351,7 +351,7 @@ describe('v2 app shell', () => {
   });
 
   it('after rolling, the action is locked: the turn start sends the player back to the dice', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     go('turn_start');
     expect(isTurnStart()).toBe(false);
     expect(title()).toBe('Bergauf');
@@ -359,8 +359,8 @@ describe('v2 app shell', () => {
   });
 
   it('no ride → "Liftschlange" and "Nochmal würfeln" first; held dice keep their face; roll 2 ends', async () => {
-    const { go } = await import('../v2/v2_router.js');
-    const { turn } = await import('../v2/turn_state.js');
+    const { go } = await import('../v2_router.js');
+    const { turn } = await import('../turn_state.js');
     turn.data.dice = ['fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug'];
     turn.data.held = Array(6).fill(false);
     go('bergauf_result');
@@ -383,8 +383,8 @@ describe('v2 app shell', () => {
   });
 
   it('Joker: tap the Joker, tap a die, pick a face → the die turns, 1 Joker is spent', async () => {
-    const { go } = await import('../v2/v2_router.js');
-    const { turn } = await import('../v2/turn_state.js');
+    const { go } = await import('../v2_router.js');
+    const { turn } = await import('../turn_state.js');
     const p = store.game.players[store.game.currentPlayerIndex];
     p.joker = 1;
     turn.data.dice = ['fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug'];
@@ -538,8 +538,8 @@ describe('v2 app shell', () => {
     expect(ref('extra').hidden).toBe(false);
     expect(ref('extra').disabled).toBe(true);
     expect(ref('extraLock').hidden).toBe(false);
-    const { clearTurn } = await import('../v2/turn_state.js');
-    const { go } = await import('../v2/v2_router.js');
+    const { clearTurn } = await import('../turn_state.js');
+    const { go } = await import('../v2_router.js');
     clearTurn();
     go('turn_start');
 
@@ -618,17 +618,17 @@ describe('v2 app shell', () => {
     ref('eventJokerBtn').click();
     sheetButton('Einsetzen').click();
     expect(ref('eventLine').textContent).toBe('Joker: Helikopter abgewendet');
-    expect(Object.values((await import('../v2/turn_state.js')).turn.data.slopes)).toEqual([0, 0, 0, 0]);
+    expect(Object.values((await import('../turn_state.js')).turn.data.slopes)).toEqual([0, 0, 0, 0]);
 
     // Leave the turn open for the next test
-    const { clearTurn } = await import('../v2/turn_state.js');
-    const { go } = await import('../v2/v2_router.js');
+    const { clearTurn } = await import('../turn_state.js');
+    const { go } = await import('../v2_router.js');
     clearTurn();
     go('turn_start');
   });
 
   it('Bergab Sonne as the 3rd coin: all coins are returned, a sheet says so once', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     const p = store.game.players[store.game.currentPlayerIndex];
     p.joker = 1;
     p.gratis = 1;
@@ -795,7 +795,7 @@ describe('v2 app shell', () => {
     expect(ref('time').textContent).toBe('17:30');
     clickLabel('Schlusswertung starten');
     expect(title()).toBe('Anna');
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     go('home');
     const cont = screen().querySelector('[data-ref="continue"]');
     expect(cont.hidden).toBe(false);
@@ -907,8 +907,8 @@ describe('v2 app shell', () => {
   });
 
   it('an in-game screen without a game redirects to home (redirect inside mount)', async () => {
-    const { go } = await import('../v2/v2_router.js');
-    const { setGame } = await import('../v2/v2_store.js');
+    const { go } = await import('../v2_router.js');
+    const { setGame } = await import('../v2_store.js');
     setGame(null);
     go('turn_start');
     expect(screen().classList.contains('home')).toBe(true);
@@ -917,14 +917,14 @@ describe('v2 app shell', () => {
   });
 
   it('registering a screen id twice throws', async () => {
-    const { registerScreen } = await import('../v2/v2_router.js');
+    const { registerScreen } = await import('../v2_router.js');
     expect(() => registerScreen('home', { chrome: false, mount() {} })).toThrow(/twice/);
   });
 
   it('Schlusswertung: Ja → coin bonus; Nein → Rückweg with half slope points, rides, Talstationen', async () => {
-    const { go } = await import('../v2/v2_router.js');
-    const { setGame } = await import('../v2/v2_store.js');
-    const { createGame } = await import('../v2/flow_logic.js');
+    const { go } = await import('../v2_router.js');
+    const { setGame } = await import('../v2_store.js');
+    const { createGame } = await import('../flow_logic.js');
     const g = createGame([{ name: 'Anna', talstation: 'Dorf' }, { name: 'Ben', talstation: 'Bahnhof' }]);
     Object.assign(g, { finished: true, round: 20 });
     Object.assign(g.players[0], { points: 40, joker: 1, gratis: 1 });
@@ -971,7 +971,7 @@ describe('v2 app shell', () => {
   });
 
   it('Rangliste: podium in rank order, Punkteverlauf and back, home offers the ranking', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     expect(title()).toBe('Rangliste');
     const places = [...screen().querySelectorAll('.podium__place')];
     expect(places.map(pl => pl.getAttribute('aria-label'))).toEqual(['1. Platz: Anna, 50 Punkte', '2. Platz: Ben, −2 Punkte']);
@@ -990,9 +990,9 @@ describe('v2 app shell', () => {
 
 
   it('unconfirmed Schlusswertung answers never carry over into another game', async () => {
-    const { go } = await import('../v2/v2_router.js');
-    const { setGame } = await import('../v2/v2_store.js');
-    const { createGame } = await import('../v2/flow_logic.js');
+    const { go } = await import('../v2_router.js');
+    const { setGame } = await import('../v2_store.js');
+    const { createGame } = await import('../flow_logic.js');
     const finished = () => Object.assign(createGame([{ name: 'Anna' }, { name: 'Ben' }]), { finished: true, round: 20 });
     setGame(finished());
     go('schlusswertung');
@@ -1007,7 +1007,7 @@ describe('v2 app shell', () => {
 
 
   it('Punkteblock: setup is 3 steps and leaves the app game alone', async () => {
-    const { go } = await import('../v2/v2_router.js');
+    const { go } = await import('../v2_router.js');
     const gameBefore = store.game;
     store.pad = null;
     go('home');
@@ -1049,7 +1049,7 @@ describe('v2 app shell', () => {
     // Cells after the next one are locked; fill up to 10:00 (except Anna's) so that Anna's 10:00 is next
     expect(padCell('10:00', 0).disabled).toBe(true);
     for (let r = 1; r <= 5; r++) store.pad.players.forEach((_, i) => { if (r < 5 || i > 0) store.pad.cells[r - 1][i] ??= 0; });
-    (await import('../v2/v2_router.js')).go('punkteblock');
+    (await import('../v2_router.js')).go('punkteblock');
     expect(padCell('10:00', 0).disabled).toBe(false);
     cellOpen('10:00', 0);
     expect(sheet().querySelector('.sheet__title').textContent).toBe('Anna · 10:00');
@@ -1099,8 +1099,8 @@ describe('v2 app shell', () => {
   });
 
   it('Punkteblock: the next cell is marked, Meldungen follow the day, the podium ends it', async () => {
-    const { go } = await import('../v2/v2_router.js');
-    const { setCell, setFinal } = await import('../v2/punkteblock_logic.js');
+    const { go } = await import('../v2_router.js');
+    const { setCell, setFinal } = await import('../punkteblock_logic.js');
     const pad = store.pad;
     const n = pad.players.length;
     // Clear the entries of the previous test: a fresh day
@@ -1182,9 +1182,9 @@ describe('v2 app shell', () => {
 
 
   it('Schlusswertung: "Ja" clears earlier Rückweg answers; a tie for 1st stands equally high', async () => {
-    const { go } = await import('../v2/v2_router.js');
-    const { setGame } = await import('../v2/v2_store.js');
-    const { createGame } = await import('../v2/flow_logic.js');
+    const { go } = await import('../v2_router.js');
+    const { setGame } = await import('../v2_store.js');
+    const { createGame } = await import('../flow_logic.js');
     const g = Object.assign(createGame([{ name: 'Anna' }, { name: 'Ben' }]), { finished: true, round: 20 });
     g.players.forEach(pl => { pl.points = 30; });
     setGame(g);
