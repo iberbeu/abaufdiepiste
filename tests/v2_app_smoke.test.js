@@ -357,7 +357,7 @@ describe('v2 app shell', () => {
     expect(ref('primary').textContent).toBe('Nochmal würfeln');
     expect(ref('secondary').textContent).toBe('Fertig');
 
-    screen().querySelectorAll('.die')[4].click();   // hold the Gondel
+    screen().querySelectorAll('.die')[4].click();   // hold the Kabinengondel
     expect(turn.data.held[4]).toBe(true);
     expect(screen().querySelectorAll('.die')[4].getAttribute('aria-pressed')).toBe('true');
     ref('primary').click();
@@ -385,11 +385,11 @@ describe('v2 app shell', () => {
     screen().querySelectorAll('.die')[5].click();   // the Zug die
     const options = sheet().querySelectorAll('.face-option');
     expect(options).toHaveLength(6);
-    options[4].click();   // → Gondel
+    options[4].click();   // → Kabinengondel
     expect(p.joker).toBe(0);
     expect(turn.data.dice[5]).toBe('gondel');
     expect(turn.data.jokered[5]).toBe(true);
-    expect(ref('lines').textContent).toBe('2× Gondel');
+    expect(ref('lines').textContent).toBe('2× Kabinengondel');
     expect(ref('joker').hidden).toBe(true);
     expect(document.getElementById('jokerCount').hidden).toBe(true);
     expect(store.game.history.at(-1).text).toBe('Joker eingesetzt');
@@ -400,7 +400,7 @@ describe('v2 app shell', () => {
     ref('joker').click();
     const turned = screen().querySelectorAll('.die')[5];
     expect(turned.disabled).toBe(true);
-    expect(turned.getAttribute('aria-label')).toBe('Gondel, mit Joker gedreht');
+    expect(turned.getAttribute('aria-label')).toBe('Kabinengondel, mit Joker gedreht');
     turned.click();
     expect(sheet()).toBeNull();
     ref('joker').click();   // leave pick mode
@@ -415,7 +415,7 @@ describe('v2 app shell', () => {
     fertig.click();
     fertig.click();   // double tap: the detached button must not log the ride again
     expect(store.game.history.length).toBe(entries + 1);
-    expect(store.game.history.at(-1).text).toBe('Bergauf: Gondel');
+    expect(store.game.history.at(-1).text).toBe('Bergauf: Kabinengondel');
     expect(ref('check').hidden).toBe(false);
     vi.advanceTimersByTime(800);
     expect(isTurnStart()).toBe(true);

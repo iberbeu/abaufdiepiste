@@ -131,9 +131,9 @@ describe('analyzeTransportSymbols — Joker (wildcard)', () => {
     const results = analyzeTransportSymbols(syms);
     expect(results).toHaveLength(1);
     expect(results[0].type).toBe('wildcard1');
-    expect(results[0].message).toContain('Gondel');
+    expect(results[0].message).toContain('Kabinengondel');
     expect(results[0].message).toContain('Zug/Bus');
-    expect(results[0].message).toContain('Skilift');
+    expect(results[0].message).toContain('Schlepplift');
   });
 
   it('two triplets → two independent wildcard1s, each needing the other as target', () => {
@@ -145,10 +145,10 @@ describe('analyzeTransportSymbols — Joker (wildcard)', () => {
     expect(results.some(r => r.type === 'wildcard2')).toBe(false);
     const wc = results.filter(r => r.type === 'wildcard1');
     expect(wc).toHaveLength(2);
-    const gondelWc = wc.find(r => r.message.includes('Gondel'));
-    expect(gondelWc.message).toContain('Skilift');
-    const skiliftWc = wc.find(r => r.message.includes('Skilift'));
-    expect(skiliftWc.message).toContain('Gondel');
+    const gondelWc = wc.find(r => r.message.includes('Kabinengondel'));
+    expect(gondelWc.message).toContain('Schlepplift');
+    const skiliftWc = wc.find(r => r.message.includes('Schlepplift'));
+    expect(skiliftWc.message).toContain('Kabinengondel');
   });
 
   it('triplet + pair → wildcard1 AND valid pair both reported', () => {
@@ -157,25 +157,25 @@ describe('analyzeTransportSymbols — Joker (wildcard)', () => {
     const results = analyzeTransportSymbols(syms);
     expect(results).toHaveLength(2);
     expect(results[0].type).toBe('wildcard1');
-    expect(results[0].message).toContain('Skilift');
-    expect(results[0].message).toContain('Fußweg');
+    expect(results[0].message).toContain('Schlepplift');
+    expect(results[0].message).toContain('Fussweg');
     expect(results[1].type).toBe('valid');
-    expect(results[1].message).toContain('Skilift');
+    expect(results[1].message).toContain('Schlepplift');
   });
 
   it('4-of-a-kind: wildcard does NOT list its own symbol as a target', () => {
     // 4× gondel + 2× skilift — triplet from gondel, remaining: gondel×1, skilift×2
-    // joker must not list "Gondel" as a combinable target (same symbol as the wildcard)
+    // joker must not list "Kabinengondel" as a combinable target (same symbol as the wildcard)
     const syms = ['gondel', 'gondel', 'gondel', 'gondel', 'skilift', 'skilift'];
     const results = analyzeTransportSymbols(syms);
     expect(results[0].type).toBe('wildcard1');
-    // "Gondel" appears in "3× Gondel – Joker!" but must NOT appear after "Kombinierbar mit:"
+    // "Kabinengondel" appears in "3× Kabinengondel – Joker!" but must NOT appear after "Kombinierbar mit:"
     const targets = results[0].message.split('Kombinierbar mit:')[1] ?? '';
-    expect(targets).not.toContain('Gondel');
-    expect(targets).toContain('Skilift');
+    expect(targets).not.toContain('Kabinengondel');
+    expect(targets).toContain('Schlepplift');
     // regular pair of skilift is also valid
     expect(results[1].type).toBe('valid');
-    expect(results[1].message).toContain('Skilift');
+    expect(results[1].message).toContain('Schlepplift');
   });
 });
 
@@ -184,7 +184,7 @@ describe('analyzeTransportSymbols — valid pair', () => {
     const syms = ['gondel', 'gondel', 'fussweg', 'skilift', 'zug', 'sesselbahn'];
     const [result] = analyzeTransportSymbols(syms);
     expect(result.type).toBe('valid');
-    expect(result.message).toContain('Gondel');
+    expect(result.message).toContain('Kabinengondel');
   });
 
   it('detects multiple pairs and reports all', () => {
@@ -192,8 +192,8 @@ describe('analyzeTransportSymbols — valid pair', () => {
     const syms = ['gondel', 'gondel', 'skilift', 'skilift', 'fussweg', 'zug'];
     const [result] = analyzeTransportSymbols(syms);
     expect(result.type).toBe('valid');
-    expect(result.message).toContain('Gondel');
-    expect(result.message).toContain('Skilift');
+    expect(result.message).toContain('Kabinengondel');
+    expect(result.message).toContain('Schlepplift');
   });
 });
 

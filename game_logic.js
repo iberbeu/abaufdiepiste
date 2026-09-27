@@ -14,8 +14,9 @@ export const TRANSPORT_SYMBOLS = [
   'fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug'
 ];
 
+// Names as in spielregeln.md (decision 27.09.2026). The keys in TRANSPORT_SYMBOLS are internal ids / image names.
 export const TRANSPORT_NAMES = [
-  'Fußweg', 'Kleingondel', 'Skilift', 'Sesselbahn', 'Gondel', 'Zug/Bus'
+  'Fussweg', 'Kleingondel', 'Schlepplift', 'Sessellift', 'Kabinengondel', 'Zug/Bus'
 ];
 
 export const SLOPE_PTS = { blue: 2, red: 4, black: 6, yellow: 8 };
