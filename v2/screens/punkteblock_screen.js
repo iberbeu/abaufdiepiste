@@ -12,7 +12,7 @@ import {
 import { levelUp, MAX_ROUNDS } from '../flow_logic.js';
 import {
   padRows, runningTotal, finalTotal, padLevel, padSightings, nextSightingPoints, cellSightings, setCell, setFinal,
-  nextCell, allFinalsDone, padRanking, padDueEvents, markPadEvents,
+  nextCell, allFinalsDone, padRanking, padDueEvents, markPadEvents, cellEditable, cellPause, pauseAllowed,
 } from '../punkteblock_logic.js';
 import { store, savePad } from '../v2_store.js';
 import { registerScreen, go, previousScreen } from '../v2_router.js';
@@ -122,6 +122,8 @@ registerScreen('punkteblock', {
         timeRows.forEach(({ row, buttons }) => {
           const v = pad.cells[row.round - 1][i];
           fillCell(buttons[i], v === null ? '' : formatPoints(v), `${p.name}, ${row.time}: ${v === null ? 'leer' : `${formatPoints(v)} Punkte`}`);
+          // Empty cells after the next one are locked: nobody writes into a later row by mistake.
+          buttons[i].disabled = !cellEditable(pad, { kind: 'round', round: row.round, playerIdx: i });
         });
         const f = pad.final[i];
         fillCell(finalButtons[i], f === null ? '' : formatDelta(f), `${p.name}, Schlusswertung: ${f === null ? 'leer' : formatDelta(f)}`);
@@ -185,6 +187,14 @@ registerScreen('punkteblock', {
       // A re-opened cell starts with the Sehenswürdigkeiten it already holds.
       let sightingsInCell = isFinal ? 0 : cellSightings(pad, target.round, i);
       let sightingChip = null;
+      // Restaurant / Bar: only in the lunch rows and once per player; a re-opened cell keeps its own break.
+      let pauseInCell = isFinal ? null : cellPause(pad, target.round, i);
+      const pauseChips = [];
+      const renderPauseChips = () => {
+        const open = !isFinal && pauseInCell === null && pauseAllowed(pad, target.round, i);
+        pauseChips.forEach(chip => { chip.disabled = !open; });
+        r('pauseHint').hidden = isFinal || open || pauseInCell !== null;
+      };
       // An empty cell starts at 0: many rounds bring no points, and 0 is a real entry.
       input.value = current ?? 0;
       input.addEventListener('focus', () => input.select());
@@ -207,15 +217,23 @@ registerScreen('punkteblock', {
             sightingsInCell++;
             chip.textContent = sightingLabel();
           } },
-          { label: `Restaurant +${PAUSE_POINTS.restaurant}`, onClick: () => add(PAUSE_POINTS.restaurant) },
-          { label: `Bar +${PAUSE_POINTS.bar}`, onClick: () => add(PAUSE_POINTS.bar) },
+          ...['restaurant', 'bar'].map(kind => ({
+            label: `${kind === 'bar' ? 'Bar' : 'Restaurant'} +${PAUSE_POINTS[kind]}`,
+            pause: true,
+            onClick: () => {
+              add(PAUSE_POINTS[kind]);
+              pauseInCell = kind;
+              renderPauseChips();
+            },
+          })),
           { label: `Pulverschnee +${PULVERSCHNEE_BONUS}`, onClick: () => add(PULVERSCHNEE_BONUS) },
         ];
-      r('chips').append(...chips.map(({ label, cls, sighting, onClick }) => {
+      r('chips').append(...chips.map(({ label, cls, sighting, pause, onClick }) => {
         const chip = clone('tpl-chip');
         chip.textContent = sighting ? sightingLabel() : label;
         if (cls) chip.classList.add(cls);
         if (sighting) sightingChip = chip;
+        if (pause) pauseChips.push(chip);
         chip.addEventListener('click', () => onClick(chip));
         return chip;
       }));
@@ -227,7 +245,10 @@ registerScreen('punkteblock', {
         input.value = '';
         sightingsInCell = 0;
         if (sightingChip) sightingChip.textContent = sightingLabel();
+        pauseInCell = null;
+        renderPauseChips();
       });
+      renderPauseChips();
 
       openSheet({
         title: isFinal ? `${p.name} · Schlusswertung` : `${p.name} · ${target.time}`,
@@ -236,7 +257,7 @@ registerScreen('punkteblock', {
           { label: 'Eintragen', onClick: () => {
             const levelBefore = isFinal ? null : { i, points: runningTotal(pad, i) };
             if (isFinal) setFinal(pad, i, value());
-            else setCell(pad, target.round, i, value(), sightingsInCell);
+            else setCell(pad, target.round, i, value(), sightingsInCell, pauseInCell);
             savePad();
             render();
             afterEntry({ player: p, levelBefore, finalEntered: isFinal });

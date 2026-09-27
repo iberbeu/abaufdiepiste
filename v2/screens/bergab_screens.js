@@ -1,8 +1,9 @@
 // BERGAB — flow_spec.md §5 (D1 bergab_roll, D2 bergab_result), §10.2 (Ohne Befugnis), §10.3 (Extraaktivität).
 // D1: descent die (level stars) + event die, both "?", Würfeln (back possible).
-// D2: event effect, Joker badge on the event die, crossings headline + dots, 2×2 slope tiles
+// D2: event effect, "Joker einsetzen" for Schneesturm / Unfall / Helikopter, crossings headline + dots, 2×2 slope tiles
 // (top half +, bottom half −), Ohne-Befugnis sheet on the first + of a forbidden slope,
-// 🎲 Extraaktivität, one primary button with the turn total → turn end.
+// Extraaktivität pill (locked below ★★), one primary button with the turn total → turn end.
+// A Joker is used via a button and then sits where it acts (event die, smiley); tapping there takes it back.
 // State lives in turn.data (turn_state.js); coins from Sonne / +1 Fahrt are booked at roll time.
 
 import {
@@ -12,9 +13,9 @@ import {
 import { rollDice, gainCoin, spendCoin, addHistory, currentPlayer, descentTurn } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
-import { renderChrome } from '../v2_chrome.js';
+import { renderChrome, offerJokerTakeBack } from '../v2_chrome.js';
 import { openSheet } from '../v2_sheet.js';
-import { beginAction, activeTurn, markRolled, recordJoker, setTurnView } from '../turn_state.js';
+import { beginAction, activeTurn, markRolled, recordJoker, jokerUsed, setTurnView } from '../turn_state.js';
 import { playRoll } from '../v2_dice.js';
 
 const SLOPES = ['blue', 'red', 'black', 'yellow'];
@@ -99,6 +100,7 @@ registerScreen('bergab_result', {
       tile.querySelector('[data-ref="minus"]').setAttribute('aria-label', `${SLOPE_NAMES[color]}: eine Kreuzung weniger`);
       tile.querySelector('[data-ref="plus"]').addEventListener('click', () => add(color));
       tile.querySelector('[data-ref="minus"]').addEventListener('click', () => remove(color));
+      tile.querySelector('[data-ref="flag"]').addEventListener('click', () => tapSmiley('ohne', d.ohneBefugnis === false));
       return [color, tile];
     }));
     ref('tiles').replaceChildren(...SLOPES.map(c => tiles[c]));
@@ -114,7 +116,14 @@ registerScreen('bergab_result', {
         ref('eventImg').src = eventImg(d.event);
         ref('eventImg').alt = EVENT_NAMES[d.event];
       }
-      ref('eventJoker').hidden = !eventJokerPossible();
+      // Joker on the event die: a button while it can help; once used, the Joker sits on the die,
+      // and a tap on the die takes it back.
+      const eventJokered = !rolling && d.jokerOnEvent && jokerUsed(game, 'event');
+      ref('eventJoker').hidden = !eventJokered;
+      ref('event').disabled = !eventJokered;
+      ref('event').setAttribute('aria-label', `Ereigniswürfel: ${EVENT_NAMES[d.event]}${eventJokered ? ', mit Joker – antippen zum Zurücknehmen' : ''}`);
+      ref('eventJokerBtn').hidden = !eventJokerPossible();
+      ref('eventJokerLabel').textContent = `Joker einsetzen (${p.joker})`;
 
       renderEventLine();
 
@@ -131,21 +140,25 @@ registerScreen('bergab_result', {
       ref('tiles').hidden = rolling || state.blocked;
       ref('blocked').hidden = rolling || !state.blocked;
       ref('blockedText').textContent = BLOCKED_TEXT[d.event] ?? '';
-      // The corner badge is easy to miss exactly when the Joker matters most — offer it in words too.
-      ref('blockedJoker').hidden = !eventJokerPossible();
-      ref('blockedJokerLabel').textContent = `Joker einsetzen (${p.joker})`;
       SLOPES.forEach(renderTile);
 
-      // Extraaktivität: from Fortgeschritten on, not while the descent is blocked
+      // Extraaktivität: always shown (not while the descent is blocked), locked below Fortgeschritten (rule).
       const extra = ref('extra');
-      extra.hidden = rolling || d.level === 'anfaenger' || state.blocked;
+      const locked = d.level === 'anfaenger';
+      const extraJokered = jokerUsed(game, 'extra');
+      extra.hidden = rolling || state.blocked;
+      extra.classList.toggle('is-locked', locked);
       extra.classList.toggle('is-done-good', d.extra === EXTRA_ACTIVITY_POINTS);
       extra.classList.toggle('is-done-bad', d.extra === 0);
-      extra.disabled = d.extra !== null;
-      ref('extraIcon').hidden = d.extra !== null;
+      // After the roll: tap takes a Joker back, or offers one on a sad smiley.
+      extra.disabled = locked || (d.extra === EXTRA_ACTIVITY_POINTS && !extraJokered) || (d.extra === 0 && p.joker === 0);
+      ref('extraLock').hidden = !locked;
+      ref('extraJoker').hidden = !extraJokered;
       ref('extraLabel').hidden = d.extra === null;
       ref('extraLabel').textContent = d.extra === null ? '' : signed(d.extra);
-      extra.setAttribute('aria-label', d.extra === null ? 'Extraaktivität würfeln' : `Extraaktivität: ${signed(d.extra)} Punkte`);
+      extra.setAttribute('aria-label', locked ? 'Extraaktivität: erst ab Fortgeschritten'
+        : d.extra === null ? 'Extraaktivität würfeln'
+          : `Extraaktivität: ${signed(d.extra)} Punkte${extraJokered ? ', mit Joker – antippen zum Zurücknehmen' : ''}`);
 
       // Spoken summary for screen readers (the dots and tile badges are visual only)
       ref('live').textContent = rolling || state.blocked ? ''
@@ -194,7 +207,14 @@ registerScreen('bergab_result', {
       badge.hidden = count === 0;
       badge.textContent = count;
       // Flag (top left): ⚠ on forbidden slopes, replaced by the Entscheidungswürfel result once rolled.
-      tile.querySelector('[data-ref="flag"]').hidden = !forbidden;
+      const flag = tile.querySelector('[data-ref="flag"]');
+      const ohneJokered = jokerUsed(game, 'ohne');
+      const tappable = ohneJokered || (d.ohneBefugnis === false && player().joker > 0);
+      flag.hidden = !forbidden;
+      flag.classList.toggle('is-tappable', tappable);
+      flag.disabled = !tappable;   // not tappable → out of the accessibility tree too
+      flag.setAttribute('aria-label', ohneJokered ? 'Ohne Befugnis: Joker zurücknehmen' : tappable ? 'Ohne Befugnis: Joker nutzen' : '');
+      tile.querySelector('[data-ref="flagJoker"]').hidden = !ohneJokered;
       tile.querySelector('[data-ref="warn"]').hidden = d.ohneBefugnis !== null;
       const smiley = tile.querySelector('[data-ref="smiley"]');
       smiley.hidden = d.ohneBefugnis === null;
@@ -243,11 +263,7 @@ registerScreen('bergab_result', {
             d.ohneBefugnis = rollSmiley();
             d.slopes[color]++;
             render();
-            showSmiley(d.ohneBefugnis, {
-              happy: { title: 'Geschafft – volle Punkte' },
-              sad: { title: 'Negative Punkte', text: 'Pisten ohne Befugnis zählen minus.' },
-              joker: { label: 'Ohne Befugnis: fröhlich', apply: () => { d.ohneBefugnis = true; }, undo: () => { d.ohneBefugnis = false; } },
-            });
+            showSmiley(d.ohneBefugnis, 'ohne');
           } },
           { label: 'Abbrechen', kind: 'text' },
         ],
@@ -255,7 +271,8 @@ registerScreen('bergab_result', {
     }
 
     function openExtra() {
-      if (d.extra !== null) return;
+      if (d.extra !== null) return tapSmiley('extra', d.extra === 0);
+      if (d.level === 'anfaenger') return;
       openSheet({
         title: 'Extraaktivität',
         text: `Fröhlicher Smiley: +${EXTRA_ACTIVITY_POINTS} Punkte`,
@@ -264,19 +281,34 @@ registerScreen('bergab_result', {
             const happy = rollSmiley();
             d.extra = happy ? EXTRA_ACTIVITY_POINTS : 0;
             render();
-            showSmiley(happy, {
-              happy: { title: `+${EXTRA_ACTIVITY_POINTS} Punkte` },
-              sad: { title: 'Leider nicht geschafft' },
-              joker: { label: 'Extraaktivität geschafft', apply: () => { d.extra = EXTRA_ACTIVITY_POINTS; }, undo: () => { d.extra = 0; } },
-            });
+            showSmiley(happy, 'extra');
           } },
           { label: 'Abbrechen', kind: 'text' },
         ],
       });
     }
 
+    // The two Entscheidungswürfel rolls of a descent: texts and what a Joker on the sad smiley does.
+    const SMILEYS = {
+      ohne: {
+        happy: { title: 'Geschafft – volle Punkte' },
+        sad: { title: 'Negative Punkte', text: 'Pisten ohne Befugnis zählen minus.' },
+        apply: () => { d.ohneBefugnis = true; },
+        undo: () => { d.ohneBefugnis = false; },
+        takeBackText: 'Der traurige Smiley gilt wieder: Pisten ohne Befugnis zählen minus.',
+      },
+      extra: {
+        happy: { title: `+${EXTRA_ACTIVITY_POINTS} Punkte` },
+        sad: { title: 'Leider nicht geschafft' },
+        apply: () => { d.extra = EXTRA_ACTIVITY_POINTS; },
+        undo: () => { d.extra = 0; },
+        takeBackText: 'Der traurige Smiley gilt wieder: keine Punkte für die Extraaktivität.',
+      },
+    };
+
     /** Result of an Entscheidungswürfel roll; on a sad smiley a Joker can turn it happy (§10.2, §10.3). */
-    function showSmiley(happy, { happy: happyText, sad: sadText, joker }) {
+    function showSmiley(happy, id) {
+      const s = SMILEYS[id];
       const body = clone('tpl-decision-die');
       body.src = happy ? IMG_HAPPY : IMG_SAD;
       body.alt = happy ? 'Fröhlicher Smiley' : 'Trauriger Smiley';
@@ -284,15 +316,24 @@ registerScreen('bergab_result', {
       if (!happy && player().joker > 0) {
         actions.push({ label: 'Joker nutzen', onClick: () => {
           if (!spendCoin(game, 'joker')) return;
-          joker.apply();
-          recordJoker(game, joker.label, joker.undo);
+          s.apply();
+          recordJoker(game, id, s.undo);
           saveGame();
           renderChrome();
           render();
         } });
       }
       actions.push({ label: 'OK', kind: actions.length ? 'text' : 'primary' });
-      openSheet({ ...(happy ? happyText : sadText), body, actions });
+      openSheet({ ...(happy ? s.happy : s.sad), body, actions });
+    }
+
+    /**
+     * Tap on a rolled smiley (tile flag / Extraaktivität): a Joker on it is taken back;
+     * a sad one shows the result again, so a Joker can still be used.
+     */
+    function tapSmiley(id, sad) {
+      if (jokerUsed(game, id)) return offerJokerTakeBack(id, SMILEYS[id].takeBackText);
+      if (sad && player().joker > 0) showSmiley(false, id);
     }
 
     function openEventJoker() {
@@ -312,7 +353,7 @@ registerScreen('bergab_result', {
     function useEventJoker() {
       if (!eventJokerPossible() || !spendCoin(game, 'joker')) return;
       d.jokerOnEvent = true;
-      recordJoker(game, d.event === 'schneesturm' ? 'Schneesturm: volle Fahrt' : `${EVENT_NAMES[d.event]} abgewendet`, () => {
+      recordJoker(game, 'event', () => {
         d.jokerOnEvent = false;
         trimSlopes();
       });
@@ -339,8 +380,13 @@ registerScreen('bergab_result', {
       go('turn_end', { points: state.total });
     }
 
-    ref('eventJoker').addEventListener('click', openEventJoker);
-    ref('blockedJoker').addEventListener('click', openEventJoker);
+    ref('eventJokerBtn').addEventListener('click', openEventJoker);
+    ref('event').addEventListener('click', () => {
+      if (!jokerUsed(game, 'event')) return;
+      offerJokerTakeBack('event', d.event === 'schneesturm'
+        ? 'Der Schneesturm gilt wieder: halbe Strecke.'
+        : `${EVENT_NAMES[d.event]} gilt wieder – keine Abfahrt.`);
+    });
     setTurnView({
       render,
       // The 🃏 in the top bar acts on the event die when that is where a Joker helps right now.

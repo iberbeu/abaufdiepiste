@@ -41,7 +41,7 @@ UI copy is German (as in the app); everything else English.
 | Time | Current in-game time (`gameTime()`) and, small next to it, the round "(6/20)" (review 27.09.2026). |
 | 📷 Sehenswürdigkeit | Sheet: "3. Sehenswürdigkeit · +15" → **Eintragen** / Abbrechen. Small "Letzte entfernen" link in the sheet if `sightings > 0`. Always available during a turn. |
 | 🎟 Gratis Fahrt | Badge = count. Greyed at 0. Sheet: "Gratis Fahrt einsetzen?" → **Einsetzen**. Not blocked by rolled dice. |
-| 🃏 Joker | Badge = count. Greyed at 0 unless a Joker of this turn can be taken back. Sheet "Joker einsetzen?": on a dice screen where a Joker helps right now the action does exactly that (B2: **Würfel drehen** starts the die pick; D2: **Helikopter/Unfall abwenden**, **Schneesturm: volle Fahrt**), elsewhere **Einsetzen** only spends the coin (Joker on the physical board). **Zurücknehmen: …** undoes the last Joker of this turn until the turn ends (§10.7). |
+| 🃏 Joker | Badge = count. Greyed at 0 unless a board Joker of this turn can be taken back. Sheet "Joker einsetzen?": on a dice screen where a Joker helps right now the action does exactly that (B2: **Würfel drehen** starts the die pick; D2: **Helikopter/Unfall abwenden**, **Schneesturm: volle Fahrt**), elsewhere **Einsetzen** only spends the coin (Joker on the physical board), which **Joker zurücknehmen** in the same sheet undoes until the turn ends. Jokers on dice are taken back on the die (§10.7). |
 | Score strip | Circle with initial + points per player; current player = coloured pill. Tap → Punkte screen (§8). |
 | Primary button | Big, bottom. Label is the result of the step, e.g. `+10 →`, `Weiter →`. |
 
@@ -131,7 +131,7 @@ Suggested screen ids for the router: `home`, `setup_players`, `setup_names`, `se
 - After roll 2: only **Fertig →**.
 - Fertig → TURN END (no points).
 - 5× same symbol: result line `5× … – freie Fahrt, beliebig weit`. 6× same symbol: same line plus `Jackpot: +30 Punkte`; the 30 points are booked on Fertig (decision 27.09.2026). Dice turned with a Joker never count towards 5 or 6 of a kind.
-- Joker > 0: a 🃏 badge on the result line. Tap it, then tap a die → face picker (6 symbols) → the die changes, the result line recalculates, 1 Joker is deducted (§10.1).
+- Joker > 0: button **Joker einsetzen (n)**. Tap it, then tap a die → face picker (6 symbols) → the die changes and carries a 🃏 corner, the result line recalculates, 1 Joker is deducted (§10.1). Tapping that die later → "Joker zurücknehmen?" (§10.7).
 
 ### BERGAB — mockup screen 2
 
@@ -146,8 +146,8 @@ Suggested screen ids for the router: `home`, `setup_players`, `setup_names`, `se
 | Sonne | `+1 🃏` flies into the top-bar Joker icon. Tiles as normal. |
 | +1 Fahrt | `+1 🎟` flies into the Gratis-Fahrt icon. Tiles as normal. |
 | Pulverschnee | Tiles as normal; `+5` is included in the primary button total once ≥1 crossing is chosen (existing rule in `calcDescentPoints`). |
-| Schneesturm | Headline shows the halved number ("2 Kreuzungen"). **🃏 badge on the event die**; tap → sheet "Joker einsetzen? Volle Fahrt: 4 Kreuzungen" → headline and dots update. |
-| Unfall / Helikopter | **No tiles.** Big icon + one line ("Unfall – diese Runde keine Abfahrt" / "Helikopter – ab ins nächste Tal"). 🃏 badge on the event die → sheet → tiles appear. Primary: **Weiter →** (0 points). Extraaktivität hidden. |
+| Schneesturm | Headline shows the halved number ("2 Kreuzungen"). Button **Joker einsetzen (n)** under the event line; tap → sheet "Joker einsetzen? Volle Fahrt: 4 Kreuzungen" → headline and dots update, the 🃏 now sits on the event die (tap the die → take it back). |
+| Unfall / Helikopter | **No tiles.** Big icon + one line ("Unfall – diese Runde keine Abfahrt" / "Helikopter – ab ins nächste Tal"). Button **Joker einsetzen (n)** → sheet → tiles appear, the 🃏 sits on the event die (tap → take it back). Primary: **Weiter →** (0 points). Extraaktivität hidden. |
 
 Coin-limit rule (3 coins → all returned) is checked after Sonne / +1 Fahrt; if it triggers, a sheet explains it once ("3 Münzen – alle zurückgeben").
 
@@ -166,10 +166,10 @@ Coin-limit rule (3 coins → all returned) is checked after Sonne / +1 Fahrt; if
   - No Joker before rolling: rolling first is always better for the player, since the Joker is only needed on ☹ (decision §10.2).
   - One roll per descent (as v1). The result shows as a smiley badge on every forbidden tile; later + taps on forbidden tiles do not ask again.
 
-**🎲 Extraaktivität** (small icon above the button):
-- Hidden for Anfänger and during Unfall/Helikopter without Joker.
-- Tap → sheet → **🎲 Würfeln** → 😀 `+12` / ☹ `0` (+ **🃏 Joker nutzen** on ☹, see §10.3).
-- Once per turn. Afterwards the icon shows the result (😀+12 / ☹).
+**Extraaktivität** (pill above the button):
+- A labelled pill (snowboarder + "Extraaktivität"), always shown; locked with "🔒 ab ★★" for Anfänger (rule: from Fortgeschritten). Hidden during Unfall/Helikopter without Joker.
+- Tap → sheet → **Würfeln** → 😀 `+12` / ☹ `0` (+ **🃏 Joker nutzen** on ☹, see §10.3). The pill then shows the result; a Joker on it shows as 🃏 on the pill — tap → take it back; a tap on a sad result offers the Joker again. Same on the Ohne-Befugnis smiley flag of a forbidden tile.
+- Once per turn.
 
 **Primary button:** total of the turn: `+10 →`, `−8 →` (warning colour), or `Weiter →` for 0. Always enabled (unused crossings simply lapse — rule). Tap → TURN END.
 
@@ -212,8 +212,8 @@ For groups rolling the physical dice who only need the score pad.
 - Setup: reuse W1 + W2 (+ W3 optional). No game length step — the pad always shows 08:00–17:30.
 - Screen mirrors the printed pad (`brettspiel/punkteblock.pdf`): columns = players, rows = time slots 08:00–17:30; lunch window tinted teal, last 3 rounds orange; header rows for Fahrniveau stars and Sehenswürdigkeiten; totals row pinned at the top.
 - Level stars and Sehenswürdigkeiten (one count per player, derived from the cells) are head rows that stay pinned with the totals while scrolling (landscape: only names + totals pinned).
-- The cell to fill in next (turn order, row by row; after the first Schlusswertung: the Schlusswertung row) is framed orange with a grey "nächste"; the pad opens scrolled to it.
-- Tap a cell → sheet with a number field **starting at 0** plus quick chips: `+2 +4 +6 +8` in the piste colours (blue, red, black, yellow), `Extra +12` in orange, `Sehensw.` (next progressive value), `Restaurant +15`, `Bar +7`, `Pulverschnee +5`. **Eintragen**.
+- The cell to fill in next (turn order, row by row; after the first Schlusswertung: the Schlusswertung row) is framed orange with a grey "nächste"; the pad opens scrolled to it. Empty cells after it are locked (filled cells stay editable; the Schlusswertung row is always open, a short game can end any time).
+- Tap a cell → sheet with a number field **starting at 0** plus quick chips: `+2 +4 +6 +8` in the piste colours (blue, red, black, yellow), `Extra +12` in orange, `Sehensw.` (next progressive value), `Restaurant +15`, `Bar +7` (only in the lunch rows 11:00–12:30 and once per player — each cell remembers its break; otherwise disabled with a hint), `Pulverschnee +5`. **Eintragen**.
 - Stars update automatically from the total; a level-up is celebrated like in the app.
 - Meldungen as in the app (lunch open / over, "ab ins Tal", last round), shown as cards once the next cell reaches that round; the pad is always the full day, so they follow 08:00–17:30.
 - Last row: Schlusswertung (penalty/bonus) cell per player, then final total. Once every Schlusswertung is in: **Endstand** screen with podium + confetti, **Fertig** / **Zurück & bearbeiten**.
@@ -255,7 +255,7 @@ Applies to phones on their side (landscape, at most 540 px high). Built in UI-12
 4. **Hints toggle (FEAT-20) is dropped in v2.** Look-ups go through "Würfel & Regeln" in the menu.
 5. **Starting player = first in the list.** The order entered in setup W2 is the turn order.
 6. **Unused crossings lapse.** The player may confirm with fewer crossings than allowed (as in v1 and the rules).
-7. **A Joker can be taken back until the turn ends** (review 27.09.2026). Every Joker use of the turn is recorded (`recordJoker()` in `turn_state.js`) with its undo; the 🃏 sheet offers "Zurücknehmen: …" for the last one. The coin comes back and its "Joker eingesetzt" history line is removed. Taking back the event Joker drops crossings that no longer fit.
+7. **A Joker can be taken back until the turn ends** (reviews 27.09.2026). A Joker is used through a button ("Joker einsetzen" / "Joker nutzen"); afterwards the 🃏 sits where it acts (transport die, event die, Ohne-Befugnis smiley, Extraaktivität) and a tap there asks "Joker zurücknehmen?". A board Joker from the top bar is taken back in the 🃏 sheet. Every use is recorded per place (`recordJoker(game, id, undo)` in `turn_state.js`); the coin comes back and its "Joker eingesetzt" history line is removed. Taking back the event Joker drops crossings that no longer fit.
 
 ---
 

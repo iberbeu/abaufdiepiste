@@ -31,6 +31,8 @@ export function createPad(players) {
     // How many Sehenswürdigkeiten each cell's value contains. The count per player is derived from this,
     // so clearing or re-entering a cell also corrects the progressive bonus of later ones.
     cellSightings: Array.from({ length: MAX_ROUNDS }, () => players.map(() => 0)),
+    // Lunch break booked in a cell: 'restaurant' | 'bar' | null — once per player, only in the lunch rows.
+    cellPauses: Array.from({ length: MAX_ROUNDS }, () => players.map(() => null)),
     final: players.map(() => null),   // Schlusswertung (penalties and coin bonus), null = not entered
     eventsShown: [],                  // Meldungen already shown (ids as in padDueEvents)
   };
@@ -139,11 +141,40 @@ export function cellSightings(pad, round, playerIdx) {
  * Writes one cell, replacing what was there. value null clears it; 0 is kept (a round with 0 points).
  * Mutates `pad`.
  * @param {number} sightings — Sehenswürdigkeiten contained in this value
+ * @param {'restaurant'|'bar'|null} pause — lunch break contained in this value
  */
-export function setCell(pad, round, playerIdx, value, sightings = 0) {
+export function setCell(pad, round, playerIdx, value, sightings = 0, pause = null) {
   const empty = value === null;
   pad.cells[round - 1][playerIdx] = empty ? null : Math.round(value);
   pad.cellSightings[round - 1][playerIdx] = empty ? 0 : Math.max(0, Math.round(sightings));
+  pad.cellPauses[round - 1][playerIdx] = empty ? null : pause;
+}
+
+/** The lunch break stored in one cell, or null. */
+export function cellPause(pad, round, playerIdx) {
+  return pad.cellPauses[round - 1][playerIdx];
+}
+
+/**
+ * Whether Restaurant / Bar may be booked in this cell: only in the lunch rows (11:00–12:30) and
+ * only once per player — a break stored in another cell of the player blocks it.
+ */
+export function pauseAllowed(pad, round, playerIdx) {
+  if (!padRows()[round - 1].lunch) return false;
+  return pad.cellPauses.every((row, i) => i + 1 === round || row[playerIdx] === null);
+}
+
+/**
+ * Whether a cell may be tapped: everything already filled (to correct it), the next cell, and the
+ * Schlusswertung row (a short game may end any time). Empty cells after the next one stay locked,
+ * so nobody writes into the wrong row by mistake.
+ * @param {{ kind: 'round', round: number, playerIdx: number } | { kind: 'final', playerIdx: number }} cell
+ */
+export function cellEditable(pad, cell) {
+  if (cell.kind === 'final') return true;
+  if (pad.cells[cell.round - 1][cell.playerIdx] !== null) return true;
+  const next = nextCell(pad);
+  return next?.kind === 'round' && next.round === cell.round && next.playerIdx === cell.playerIdx;
 }
 
 /** Writes the Schlusswertung cell. value null clears it (0 is a real result). Mutates `pad`. */
@@ -164,6 +195,13 @@ export function restorePad(raw) {
     && raw.cellSightings.every(row => Array.isArray(row) && row.length === n && row.every(Number.isInteger))
     && Array.isArray(raw.final) && raw.final.length === n && raw.final.every(numOrNull);
   if (!ok) return null;
+  if (!Array.isArray(raw.cellPauses)) {
+    // A pad saved before pauses were tracked: nothing known, so no cell holds a break.
+    raw.cellPauses = Array.from({ length: MAX_ROUNDS }, () => raw.players.map(() => null));
+  }
+  const pauseOk = raw.cellPauses.length === MAX_ROUNDS
+    && raw.cellPauses.every(row => Array.isArray(row) && row.length === n && row.every(v => v === null || v === 'restaurant' || v === 'bar'));
+  if (!pauseOk) return null;
   if (!Array.isArray(raw.eventsShown)) {
     // A pad saved before the Meldungen existed: what is due now already lies behind the group.
     raw.eventsShown = [];

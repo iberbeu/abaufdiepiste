@@ -398,6 +398,11 @@ button.die:disabled { cursor: default; }
 }
 /* Top left, so it never collides with the count badge (top right). */
 .slope-tile__flag { position: absolute; top: var(--space-2); left: var(--space-2); display: flex; pointer-events: none; }
+/* Rolled smiley: the flag takes taps above the + half (take a Joker back, or use one on the sad smiley). */
+.slope-tile__flag.is-tappable { z-index: 2; pointer-events: auto; }
+.slope-tile__flag.is-tappable::after { content: ''; position: absolute; inset: -11px; }   /* 48px touch target around the 26px smiley */
+.slope-tile__joker { top: -12px; right: -14px; width: 22px; height: 22px; }
+.slope-tile__joker .icon { --icon: 14px; }
 .slope-tile__smiley { width: 26px; height: 26px; border-radius: 6px; background: #fff; }
 .slope-tile__minus:disabled { cursor: default; }
 .slope-tile.is-selected { box-shadow: inset 0 0 0 3px #fff; }
@@ -625,6 +630,8 @@ button.die:disabled { cursor: default; }
   font-variant-numeric: tabular-nums;
 }
 .chip:active { transform: scale(0.95); }
+.chip:disabled { opacity: 0.35; transform: none; cursor: default; }
+.pad-entry__hint { color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
 /* Punkteblock quick chips in the colours of what they stand for (pistes; Extraaktivität = orange on the map). */
 .chip--blue   { background: var(--piste-blue);   color: #fff; }
 .chip--red    { background: var(--piste-red);    color: #fff; }
@@ -745,6 +752,30 @@ button.die:disabled { cursor: default; }
 .round-option.is-done-good { border-style: solid; border-color: var(--positive); color: var(--positive); }
 .round-option.is-done-bad  { border-style: solid; border-color: var(--negative); color: var(--negative); }
 .round-option__label { font-weight: var(--fw-number); font-variant-numeric: tabular-nums; }
+
+/* Extraaktivität on the Bergab screen: a labelled pill, locked below ★★ (rule: from Fortgeschritten). */
+.btn-extra {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 2px var(--extra-activity);
+  color: var(--text);
+  font-weight: var(--fw-label);
+}
+.btn-extra .icon { color: var(--extra-activity); }
+.btn-extra__result { font-weight: var(--fw-number); font-variant-numeric: tabular-nums; }
+.btn-extra__lock { display: inline-flex; align-items: center; gap: 2px; color: var(--text-muted); font-size: var(--fs-sm); }
+.btn-extra.is-locked { box-shadow: inset 0 0 0 2px var(--line); color: var(--text-muted); }
+.btn-extra.is-locked .icon { color: var(--text-muted); }
+.btn-extra.is-done-good { box-shadow: inset 0 0 0 2px var(--positive); }
+.btn-extra.is-done-good .btn-extra__result { color: var(--positive); }
+.btn-extra.is-done-bad  { box-shadow: inset 0 0 0 2px var(--negative); }
+.btn-extra.is-done-bad .btn-extra__result { color: var(--negative); }
+.btn-extra:disabled { cursor: default; }
 
 /* ── BLOCKED STEP (e.g. Unfall: no descent this turn) ── */
 .blocked { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-6) 0; color: var(--negative); text-align: center; }

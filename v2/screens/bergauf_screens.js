@@ -10,7 +10,7 @@ import {
 import { rollDice, spendCoin, addHistory, currentPlayer } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
-import { renderChrome } from '../v2_chrome.js';
+import { renderChrome, offerJokerTakeBack } from '../v2_chrome.js';
 import { openSheet, closeSheet } from '../v2_sheet.js';
 import { beginAction, activeTurn, markRolled, recordJoker, setTurnView } from '../turn_state.js';
 import { playRoll } from '../v2_dice.js';
@@ -46,6 +46,7 @@ registerScreen('bergauf_roll', {
         dice: rollDice(Array(DICE).fill(null), Array(DICE).fill(false)),
         held: Array(DICE).fill(false),
         jokered: Array(DICE).fill(false),
+        jokerFrom: Array(DICE).fill(null),   // face before a Joker turned the die (to take it back)
         rolls: 1,
         pendingRoll: Array(DICE).fill(true),   // played once by B2, then cleared
       });
@@ -89,10 +90,10 @@ registerScreen('bergauf_result', {
         die.querySelector('[data-ref="held"]').hidden = !d.held[i] || d.jokered[i];
         die.querySelector('[data-ref="jokered"]').hidden = !d.jokered[i];
         die.setAttribute('aria-pressed', String(d.held[i]));
-        const state = d.jokered[i] ? ', mit Joker gedreht' : d.held[i] ? ', behalten' : pickingJoker ? ', antippen zum Drehen' : '';
+        const state = d.jokered[i] ? ', mit Joker gedreht – antippen zum Zurücknehmen' : d.held[i] ? ', behalten' : pickingJoker ? ', antippen zum Drehen' : '';
         die.setAttribute('aria-label', nameOf(d.dice[i]) + state);
-        // A die turned with a Joker is final: never held/unheld, rolled or turned again.
-        die.disabled = rolling || d.jokered[i] || (!pickingJoker && !canHold);
+        // A die turned with a Joker is never held/unheld, rolled or turned again — a tap takes the Joker back.
+        die.disabled = rolling || (d.jokered[i] ? pickingJoker : !pickingJoker && !canHold);
       });
 
       ref('dots').querySelectorAll('.dot').forEach((dot, i) => dot.classList.toggle('is-used', i < d.rolls));
@@ -130,7 +131,10 @@ registerScreen('bergauf_result', {
 
     function onDieTap(i) {
       if (rolling) return;
-      if (d.jokered[i]) return;
+      if (d.jokered[i]) {
+        if (!pickingJoker) offerJokerTakeBack(`die-${i}`, `Der Würfel zeigt wieder ${nameOf(d.jokerFrom[i])}.`);
+        return;
+      }
       if (pickingJoker) return openFacePicker(i);
       if (d.rolls >= MAX_ROLLS) return;
       d.held[i] = !d.held[i];
@@ -182,7 +186,8 @@ registerScreen('bergauf_result', {
           closeSheet();
           if (!spendCoin(game, 'joker')) return;
           const before = { face: d.dice[i], held: d.held[i] };
-          recordJoker(game, `${nameOf(sym)} gedreht`, () => {
+          d.jokerFrom[i] = before.face;
+          recordJoker(game, `die-${i}`, () => {
             d.dice[i] = before.face;
             d.held[i] = before.held;
             d.jokered[i] = false;

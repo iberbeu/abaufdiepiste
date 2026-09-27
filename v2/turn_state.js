@@ -41,9 +41,11 @@ export function clearTurn() {
   Object.assign(turn, { game: null, round: 0, playerIdx: -1, action: null, rolled: false, resume: null, data: {} });
 }
 
-// ── Joker uses of this turn (undo) ──
-// Every Joker the current player spends is recorded with a way to undo it, until the turn ends.
-// Kept apart from `turn`, because a Joker from the top bar can be spent before any action began.
+// ── Joker uses of this turn (take back) ──
+// Every Joker the current player spends is recorded under the place it acts on (`id`), with a way
+// to undo it, until the turn ends. The player takes it back by tapping that place (the die, the
+// smiley, the Extraaktivität); a Joker spent on the physical board (id 'board') from the 🃏 sheet.
+// Kept apart from `turn`, because a board Joker can be spent before any action began.
 
 const jokers = { game: null, round: 0, playerIdx: -1, uses: [] };
 
@@ -56,21 +58,29 @@ function jokerUses(game) {
 
 /**
  * Records a Joker the current player has just spent.
- * @param {string} label — what it did, e.g. "Helikopter abgewendet" (shown in the undo button)
+ * @param {string} id — where it acts: 'die-0' … 'die-5' (Bergauf), 'event', 'ohne', 'extra', 'board'
  * @param {() => void} undo — reverts the effect on the turn (the coin itself is refunded by the caller)
  */
-export function recordJoker(game, label, undo) {
-  jokerUses(game).push({ label, undo });
+export function recordJoker(game, id, undo) {
+  jokerUses(game).push({ id, undo });
 }
 
-/** The last Joker use of this turn that can still be undone, or null. */
-export function lastJoker(game) {
-  return jokerUses(game).at(-1) ?? null;
+/** Whether a Joker of this turn acts on `id` (and can be taken back). */
+export function jokerUsed(game, id) {
+  return jokerUses(game).some(u => u.id === id);
 }
 
-/** Removes and returns the last Joker use (the caller refunds the coin), or null. */
-export function popJoker(game) {
-  return jokerUses(game).pop() ?? null;
+/**
+ * Takes back the (last) Joker on `id`: removes it and runs its undo. The caller refunds the coin.
+ * @returns {boolean} false if there was none
+ */
+export function takeBackJoker(game, id) {
+  const uses = jokerUses(game);
+  const i = uses.findLastIndex(u => u.id === id);
+  if (i === -1) return false;
+  const [use] = uses.splice(i, 1);
+  use.undo();
+  return true;
 }
 
 // ── The screen that shows the turn ──

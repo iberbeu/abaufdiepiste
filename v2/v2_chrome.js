@@ -12,7 +12,7 @@ import { store, saveGame } from './v2_store.js';
 import { go } from './v2_router.js';
 import { openSheet } from './v2_sheet.js';
 import { celebrateLevelUp } from './v2_fx.js';
-import { recordJoker, lastJoker, popJoker, turnView } from './turn_state.js';
+import { recordJoker, jokerUsed, takeBackJoker, turnView } from './turn_state.js';
 
 const $ = id => document.getElementById(id);
 
@@ -58,8 +58,8 @@ export function renderChrome({ bump = false, pending = 0 } = {}) {
   $('topbarRound').setAttribute('aria-label', `Runde ${game.round} von ${game.totalRounds}`);
   setBadge('btnGratis', 'gratisCount', p.gratis);
   setBadge('btnJoker', 'jokerCount', p.joker);
-  // A Joker spent this turn can be taken back, so the button stays usable at 0.
-  $('btnJoker').classList.toggle('is-empty', p.joker === 0 && !lastJoker(game));
+  // A board Joker of this turn can be taken back here, so the button stays usable at 0.
+  $('btnJoker').classList.toggle('is-empty', p.joker === 0 && !jokerUsed(game, 'board'));
 
   const strip = $('scoreStrip');
   let chips = [...strip.children];
@@ -174,39 +174,59 @@ function openGratisSheet(p) {
 
 /**
  * Joker sheet. On a dice screen that has a use for a Joker right now (e.g. averting the Helikopter),
- * "Einsetzen" does exactly that; elsewhere it only spends the coin (Joker on the physical board).
- * The last Joker of this turn can be taken back until the turn ends.
+ * the action does exactly that; elsewhere "Einsetzen" only spends the coin (Joker on the physical
+ * board), which can be taken back here until the turn ends. Jokers on the dice are taken back by
+ * tapping the die (offerJokerTakeBack).
  */
 function openJokerSheet(p) {
   const game = store.game;
-  const last = lastJoker(game);
-  if (p.joker === 0 && !last) return;
-  const view = turnView();
-  const target = p.joker > 0 ? view?.joker?.() ?? null : null;
+  const boardJoker = jokerUsed(game, 'board');
+  if (p.joker === 0 && !boardJoker) return;
+  const target = p.joker > 0 ? turnView()?.joker?.() ?? null : null;
   const actions = [];
   if (target) {
     actions.push({ label: target.label, onClick: target.run });
   } else if (p.joker > 0) {
     actions.push({ label: 'Einsetzen', onClick: () => {
       if (!spendCoin(game, 'joker')) return;
-      recordJoker(game, 'Joker', () => {});
+      recordJoker(game, 'board', () => {});
       commit(false);
     } });
   }
-  if (last) {
-    actions.push({ label: `Zurücknehmen: ${last.label}`, kind: actions.length ? 'text' : 'primary', onClick: () => {
-      popJoker(game).undo();
-      refundCoin(game, 'joker');
-      commit(false);
-      turnView()?.render();
-    } });
+  if (boardJoker) {
+    actions.push({ label: 'Joker zurücknehmen', kind: actions.length ? 'text' : 'primary', onClick: () => takeBack('board') });
   }
   actions.push({ label: 'Abbrechen', kind: 'text' });
   openSheet({
     title: p.joker > 0 ? 'Joker einsetzen?' : 'Joker zurücknehmen?',
     text: p.joker > 0
-      ? `Noch ${p.joker} übrig.${target ? '' : ' Beim Würfeln erscheint der Joker direkt am Würfel.'}`
-      : 'Bis zum Ende deines Zugs kannst du ihn zurücknehmen.',
+      ? `Noch ${p.joker} übrig.${target ? '' : ' Beim Würfeln gibt es den Joker direkt bei den Würfeln.'}`
+      : 'Den Joker auf dem Spielbrett kannst du bis zum Ende deines Zugs zurücknehmen.',
     actions,
   });
+}
+
+/**
+ * Asks whether to take back the Joker on `id` (the die / smiley the player tapped) and does it:
+ * effect undone, coin back, screen redrawn.
+ * @param {string} id — as in recordJoker()
+ * @param {string} text — what happens, e.g. "Der Helikopter gilt wieder."
+ */
+export function offerJokerTakeBack(id, text) {
+  openSheet({
+    title: 'Joker zurücknehmen?',
+    text,
+    actions: [
+      { label: 'Zurücknehmen', onClick: () => takeBack(id) },
+      { label: 'Abbrechen', kind: 'text' },
+    ],
+  });
+}
+
+function takeBack(id) {
+  const game = store.game;
+  if (!takeBackJoker(game, id)) return;
+  refundCoin(game, 'joker');
+  commit(false);
+  turnView()?.render();
 }

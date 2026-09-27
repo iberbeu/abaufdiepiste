@@ -287,12 +287,13 @@
     <div class="step__aside bergab__top">
       <div class="dice-row bergab__dice">
         <div class="die" role="img" data-ref="descent"><div class="die__face"><span class="die__value" data-ref="value"></span><span class="die__stars" data-ref="stars"></span></div></div>
-        <div class="die die--event" data-ref="event">
+        <button class="die die--event" data-ref="event" disabled>
           <img class="die__img" data-ref="eventImg" alt="">
-          <button class="die__corner die__corner--joker" data-ref="eventJoker" aria-label="Joker einsetzen" hidden><span class="icon icon--sm icon--joker"></span></button>
-        </div>
+          <span class="die__corner die__corner--joker" data-ref="eventJoker" hidden><span class="icon icon--sm icon--joker"></span></span>
+        </button>
       </div>
       <p class="result-line" data-ref="eventLine" aria-live="polite" hidden></p>
+      <button class="btn-joker" data-ref="eventJokerBtn" hidden><span class="icon icon--sm icon--joker"></span><span data-ref="eventJokerLabel"></span></button>
       <p class="visually-hidden" aria-live="polite" data-ref="live"></p>
       <div class="crossings" data-ref="crossings">
         <span class="crossings__label" data-ref="crossLabel"></span>
@@ -304,12 +305,14 @@
       <div class="blocked" data-ref="blocked" hidden>
         <span class="icon icon--lg icon--warning"></span>
         <p class="blocked__text" data-ref="blockedText"></p>
-        <button class="btn-joker" data-ref="blockedJoker" hidden><span class="icon icon--sm icon--joker"></span><span data-ref="blockedJokerLabel"></span></button>
       </div>
     </div>
-    <button class="round-option bergab__extra" data-ref="extra" aria-label="Extraaktivität" hidden>
-      <span class="icon icon--snowboard" data-ref="extraIcon"></span>
-      <span class="round-option__label" data-ref="extraLabel" hidden></span>
+    <button class="btn-extra bergab__extra" data-ref="extra" hidden>
+      <span class="icon icon--snowboard"></span>
+      <span>Extraaktivität</span>
+      <span class="btn-extra__result" data-ref="extraLabel" hidden></span>
+      <span class="die__corner die__corner--joker btn-extra__joker" data-ref="extraJoker" hidden><span class="icon icon--sm icon--joker"></span></span>
+      <span class="btn-extra__lock" data-ref="extraLock" hidden><span class="icon icon--sm icon--lock"></span>ab ★★</span>
     </button>
     <div class="step-cta step__cta"><button class="btn-primary" data-ref="primary"></button></div>
   </section>
@@ -322,10 +325,11 @@
     <span class="slope-tile__pts" data-ref="pts"></span>
     <button class="slope-tile__minus" data-ref="minus"><span class="icon icon--minus"></span></button>
     <span class="slope-tile__count" data-ref="count" hidden></span>
-    <span class="slope-tile__flag" data-ref="flag" hidden>
+    <button class="slope-tile__flag" data-ref="flag" disabled hidden>
       <span class="icon icon--sm icon--warning" data-ref="warn"></span>
       <img class="slope-tile__smiley" data-ref="smiley" alt="" hidden>
-    </span>
+      <span class="die__corner die__corner--joker slope-tile__joker" data-ref="flagJoker" hidden><span class="icon icon--sm icon--joker"></span></span>
+    </button>
   </div>
 </template>
 
@@ -662,6 +666,7 @@
       <button class="btn-text" data-ref="clear">Löschen</button>
     </div>
     <div class="chip-grid" data-ref="chips"></div>
+    <p class="pad-entry__hint" data-ref="pauseHint" hidden>Restaurant und Bar: nur 11:00–12:30 und einmal pro Person.</p>
   </div>
 </template>
 

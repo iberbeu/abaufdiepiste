@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createPad, padRows, runningTotal, finalTotal, padLevel, padSightings, nextSightingPoints, cellSightings,
-  setCell, setFinal, restorePad, VALLEY_ROUNDS, nextCell, allFinalsDone, padRanking, padDueEvents, markPadEvents,
+  setCell, setFinal, restorePad, VALLEY_ROUNDS, cellEditable, cellPause, pauseAllowed, nextCell, allFinalsDone, padRanking, padDueEvents, markPadEvents,
 } from '../v2/punkteblock_logic.js';
 
 /** Fills every time cell up to `lastRound` with 0 (except one cell, if given). */
@@ -132,6 +132,39 @@ describe('nextCell', () => {
   });
 });
 
+describe('cellEditable', () => {
+  it('filled cells, the next cell and the Schlusswertung row; later empty cells are locked', () => {
+    const pad = pad2();
+    const cell = (round, playerIdx) => ({ kind: 'round', round, playerIdx });
+    expect(cellEditable(pad, cell(1, 0))).toBe(true);
+    expect(cellEditable(pad, cell(1, 1))).toBe(false);
+    expect(cellEditable(pad, cell(5, 0))).toBe(false);
+    expect(cellEditable(pad, { kind: 'final', playerIdx: 1 })).toBe(true);
+    setCell(pad, 1, 0, 4);
+    expect(cellEditable(pad, cell(1, 0))).toBe(true);   // filled: can be corrected
+    expect(cellEditable(pad, cell(1, 1))).toBe(true);   // now next
+    setFinal(pad, 0, -15);                                // short game ended: the time rows are done
+    expect(cellEditable(pad, cell(1, 1))).toBe(false);
+  });
+});
+
+describe('lunch break (Restaurant / Bar)', () => {
+  it('only in the lunch rows, once per player; the cell holding it may change it', () => {
+    const pad = pad2();
+    expect(pauseAllowed(pad, 6, 0)).toBe(false);    // 10:30
+    expect(pauseAllowed(pad, 7, 0)).toBe(true);     // 11:00
+    expect(pauseAllowed(pad, 10, 0)).toBe(true);    // 12:30
+    expect(pauseAllowed(pad, 11, 0)).toBe(false);   // 13:00
+    setCell(pad, 8, 0, 15, 0, 'restaurant');
+    expect(cellPause(pad, 8, 0)).toBe('restaurant');
+    expect(pauseAllowed(pad, 9, 0)).toBe(false);    // already taken
+    expect(pauseAllowed(pad, 8, 0)).toBe(true);     // its own cell (re-opened)
+    expect(pauseAllowed(pad, 9, 1)).toBe(true);     // other player
+    setCell(pad, 8, 0, null);                       // cleared → free again
+    expect(pauseAllowed(pad, 9, 0)).toBe(true);
+  });
+});
+
 describe('padRanking', () => {
   it('ranks by the final total including the Schlusswertung; ties share a rank', () => {
     const pad = createPad([{ name: 'A' }, { name: 'B' }, { name: 'C' }]);
@@ -188,6 +221,15 @@ describe('restorePad', () => {
     const r = restorePad(old);
     expect(r.eventsShown).toEqual(['lunch_open']);
     expect(padDueEvents(r)).toEqual([]);
+  });
+
+  it('a pad saved before pauses were tracked gets empty cellPauses; broken ones are rejected', () => {
+    const old = JSON.parse(JSON.stringify(pad2()));
+    delete old.cellPauses;
+    expect(restorePad(old).cellPauses[7]).toEqual([null, null]);
+    const bad = JSON.parse(JSON.stringify(pad2()));
+    bad.cellPauses[7][0] = 'picknick';
+    expect(restorePad(bad)).toBeNull();
   });
 
   it('rejects more than 4 players and colours outside the 4 game pieces', () => {

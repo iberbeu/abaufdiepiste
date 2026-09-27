@@ -405,9 +405,11 @@ describe('v2 app shell', () => {
     expect(document.getElementById('jokerCount').hidden).toBe(true);
     expect(store.game.history.at(-1).text).toBe('Joker eingesetzt');
 
-    // Until the turn ends, the 🃏 in the top bar takes the last Joker back.
+    // Until the turn ends, tapping the turned die takes the Joker back (after a question).
     const logged = store.game.history.length;
-    document.getElementById('btnJoker').click();
+    screen().querySelectorAll('.die')[5].click();
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Joker zurücknehmen?');
+    expect(sheet().textContent).toContain('Der Würfel zeigt wieder Zug/Bus.');
     sheetButton('Zurücknehmen').click();
     expect(p.joker).toBe(1);
     expect(turn.data.dice[5]).toBe('zug');
@@ -423,16 +425,18 @@ describe('v2 app shell', () => {
     expect(turn.data.dice[5]).toBe('gondel');
     expect(p.joker).toBe(0);
 
-    // A die turned with a Joker is final: it cannot be turned again (no second Joker on it).
+    // A die turned with a Joker cannot be turned again (no second Joker on it) …
     p.joker = 1;
     go('bergauf_result');
     ref('joker').click();
     const turned = screen().querySelectorAll('.die')[5];
     expect(turned.disabled).toBe(true);
-    expect(turned.getAttribute('aria-label')).toBe('Kabinengondel, mit Joker gedreht');
     turned.click();
     expect(sheet()).toBeNull();
     ref('joker').click();   // leave pick mode
+    // … but outside the pick mode it is tappable, to take the Joker back.
+    expect(turned.disabled).toBe(false);
+    expect(turned.getAttribute('aria-label')).toBe('Kabinengondel, mit Joker gedreht – antippen zum Zurücknehmen');
     p.joker = 0;
     go('bergauf_result');
   });
@@ -497,6 +501,19 @@ describe('v2 app shell', () => {
     expect(p.joker).toBe(0);
     expect(ref('primary').textContent).toBe('+25 →');   // 12 + 8 + 5
     expect(tile('yellow').querySelector('[data-ref="smiley"]').src).toContain('smiley_happy');
+    // The Joker sits on the smiley flag; a tap there takes it back, a tap on the sad smiley offers it again.
+    const flag = tile('yellow').querySelector('[data-ref="flag"]');
+    expect(flag.querySelector('[data-ref="flagJoker"]').hidden).toBe(false);
+    flag.click();
+    expect(sheet().querySelector('.sheet__title').textContent).toBe('Joker zurücknehmen?');
+    sheetButton('Zurücknehmen').click();
+    expect(p.joker).toBe(1);
+    expect(ref('primary').textContent).toBe('+9 →');
+    expect(flag.querySelector('[data-ref="flagJoker"]').hidden).toBe(true);
+    flag.click();
+    sheetButton('Joker nutzen').click();
+    expect(p.joker).toBe(0);
+    expect(ref('primary').textContent).toBe('+25 →');
 
     // Extraaktivität: happy smiley → +12, then the icon shows the result and is done.
     ref('extra').click();
@@ -514,6 +531,40 @@ describe('v2 app shell', () => {
     vi.advanceTimersByTime(800);
   });
 
+  it('Extraaktivität: shown locked for Anfänger; a Joker on the sad smiley is taken back by tapping it', async () => {
+    const p = store.game.players[store.game.currentPlayerIndex];
+    p.points = 0;
+    rollBergab(0.55);
+    expect(ref('extra').hidden).toBe(false);
+    expect(ref('extra').disabled).toBe(true);
+    expect(ref('extraLock').hidden).toBe(false);
+    const { clearTurn } = await import('../v2/turn_state.js');
+    const { go } = await import('../v2/v2_router.js');
+    clearTurn();
+    go('turn_start');
+
+    p.points = 30;
+    p.joker = 1;
+    p.gratis = 0;
+    rollBergab(0.55);
+    expect(ref('extraLock').hidden).toBe(true);
+    ref('extra').click();
+    withRandom(0.9, () => sheetButton('Würfeln').click());   // sad
+    sheetButton('Joker nutzen').click();
+    expect(ref('extraLabel').textContent).toBe('+12');
+    expect(ref('extraJoker').hidden).toBe(false);
+    expect(ref('extra').disabled).toBe(false);
+    ref('extra').click();
+    sheetButton('Zurücknehmen').click();
+    expect(p.joker).toBe(1);
+    expect(ref('extraLabel').textContent).toBe('0');
+    ref('extra').click();   // sad smiley again → the Joker can be used once more
+    expect(sheetButton('Joker nutzen')).toBeTruthy();
+    sheetButton('OK').click();
+    clearTurn();
+    go('turn_start');
+  });
+
   it('Bergab Unfall: no tiles, "Weiter →"; the Joker on the event die averts it', () => {
     const p = store.game.players[store.game.currentPlayerIndex];
     p.points = 0;
@@ -524,24 +575,27 @@ describe('v2 app shell', () => {
     expect(ref('blockedText').textContent).toBe('Unfall – diese Runde keine Abfahrt');
     expect(ref('extra').hidden).toBe(true);
     expect(ref('primary').textContent).toBe('Weiter →');
-    ref('eventJoker').click();
+    expect(ref('eventJoker').hidden).toBe(true);   // no Joker on the die before it is used
+    ref('eventJokerBtn').click();
     sheetButton('Einsetzen').click();
     expect(p.joker).toBe(0);
     expect(ref('tiles').hidden).toBe(false);
     expect(ref('eventLine').textContent).toBe('Joker: Unfall abgewendet');
-    expect(ref('eventJoker').hidden).toBe(true);
+    expect(ref('eventJokerBtn').hidden).toBe(true);
+    expect(ref('eventJoker').hidden).toBe(false);   // now it sits on the die
     ref('primary').click();
     vi.advanceTimersByTime(800);
   });
 
-  it('Bergab Helikopter: the Joker works from the panel or the 🃏 and can be taken back until the turn ends', async () => {
+  it('Bergab Helikopter: the Joker works from the button or the 🃏; tapping the die takes it back', async () => {
     const p = store.game.players[store.game.currentPlayerIndex];
     p.points = 0;
     p.joker = 1;
     p.gratis = 0;
     rollBergab(0.2);   // Helikopter
     expect(ref('blockedText').textContent).toBe('Helikopter – ab ins nächste Tal');
-    expect(ref('blockedJoker').hidden).toBe(false);
+    expect(ref('eventJokerBtn').hidden).toBe(false);
+    expect(ref('event').disabled).toBe(true);
 
     // The 🃏 in the top bar acts on the event die here
     document.getElementById('btnJoker').click();
@@ -551,15 +605,17 @@ describe('v2 app shell', () => {
     plus('blue');
     expect(ref('primary').textContent).toBe('+2 →');
 
-    // Taken back: blocked again, the chosen crossing is gone, the Joker is back
-    document.getElementById('btnJoker').click();
+    // Tap the die → question → taken back: blocked again, the chosen crossing is gone, the Joker is back
+    expect(ref('eventJoker').hidden).toBe(false);
+    ref('event').click();
+    expect(sheet().textContent).toContain('Helikopter gilt wieder');
     sheetButton('Zurücknehmen').click();
     expect(p.joker).toBe(1);
     expect(ref('tiles').hidden).toBe(true);
     expect(ref('primary').textContent).toBe('Weiter →');
 
-    // The button in the blocked panel does the same as the badge on the die
-    ref('blockedJoker').click();
+    // The button offers it again
+    ref('eventJokerBtn').click();
     sheetButton('Einsetzen').click();
     expect(ref('eventLine').textContent).toBe('Joker: Helikopter abgewendet');
     expect(Object.values((await import('../v2/turn_state.js')).turn.data.slopes)).toEqual([0, 0, 0, 0]);
@@ -985,13 +1041,22 @@ describe('v2 app shell', () => {
   };
   const padChip = label => [...sheet().querySelectorAll('.chip')].find(c => c.textContent.startsWith(label));
 
-  it('Punkteblock: chips add up, Sehenswürdigkeit grows, ± flips, totals and stars follow', () => {
+  it('Punkteblock: chips add up, Sehenswürdigkeit grows, ± flips, totals and stars follow', async () => {
     const cellBtn = (time, col) => padCell(time, col).querySelector('[data-ref="value"]');
     const cellOpen = (time, col) => padCell(time, col).click();
     const chip = padChip;
 
+    // Cells after the next one are locked; fill up to 10:00 (except Anna's) so that Anna's 10:00 is next
+    expect(padCell('10:00', 0).disabled).toBe(true);
+    for (let r = 1; r <= 5; r++) store.pad.players.forEach((_, i) => { if (r < 5 || i > 0) store.pad.cells[r - 1][i] ??= 0; });
+    (await import('../v2/v2_router.js')).go('punkteblock');
+    expect(padCell('10:00', 0).disabled).toBe(false);
     cellOpen('10:00', 0);
     expect(sheet().querySelector('.sheet__title').textContent).toBe('Anna · 10:00');
+    // Restaurant / Bar only 11:00–12:30
+    expect(padChip('Restaurant').disabled).toBe(true);
+    expect(padChip('Bar').disabled).toBe(true);
+    expect(sheet().querySelector('[data-ref="pauseHint"]').hidden).toBe(false);
     expect(sheet().querySelector('.pad-entry__input').value).toBe('0');   // an empty cell starts at 0
     chip('+4').click();
     chip('+4').click();
@@ -1068,6 +1133,16 @@ describe('v2 app shell', () => {
     sheetButton('Eintragen').click();
     expect(sheet().querySelector('.sheet__title').textContent).toBe('Mittagspause offen!');
     sheetButton('OK').click();
+    // At 11:00 the break can be booked, once: after Restaurant both chips lock
+    padCell('11:00', 0).click();
+    expect(padChip('Restaurant').disabled).toBe(false);
+    padChip('Restaurant').click();
+    expect(padChip('Bar').disabled).toBe(true);
+    expect(sheet().querySelector('.pad-entry__input').value).toBe('15');
+    sheetButton('Eintragen').click();
+    padCell('11:00', 1).click();   // the next player still can
+    expect(padChip('Bar').disabled).toBe(false);
+    sheetButton('Abbrechen').click();
     expect(sheet()).toBeNull();
     expect(pad.eventsShown).toEqual(['lunch_open']);
 
