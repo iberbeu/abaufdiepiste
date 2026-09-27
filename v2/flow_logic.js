@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import {
-  gameTime, gameTimeHour, sightseeingBonus, TRANSPORT_SYMBOLS,
+  gameTime, gameTimeHour, sightseeingBonus, getLevel, TRANSPORT_SYMBOLS,
   COIN_LIMIT, BLOCKING_EVENTS, PAUSE_POINTS, effectiveCrossings, calcDescentPoints, calcAbschlusswertungResult,
 } from '../game_logic.js';
 
@@ -331,6 +331,19 @@ export function adjustPlayer(game, playerIdx, values) {
   Object.assign(p, { points, joker, gratis });
   changes.forEach(text => addHistory(game, text, playerIdx));
   return changes.length > 0;
+}
+
+const LEVEL_ORDER = ['anfaenger', 'fortgeschritten', 'profi'];
+
+/**
+ * The level a player has just reached if a change in points moved them up (FEAT-17 celebration).
+ * Going down or staying on the same level → null.
+ * @returns {'fortgeschritten'|'profi'|null}
+ */
+export function levelUp(pointsBefore, pointsAfter) {
+  const before = getLevel(pointsBefore);
+  const after = getLevel(pointsAfter);
+  return LEVEL_ORDER.indexOf(after) > LEVEL_ORDER.indexOf(before) ? after : null;
 }
 
 /**

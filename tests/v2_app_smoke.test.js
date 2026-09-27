@@ -18,6 +18,9 @@ const rows = () => [...screen().querySelectorAll('.player-row')];
 const nameInputs = () => rows().map(r => r.querySelector('input'));
 const type = (input, value) => { input.value = value; input.dispatchEvent(new Event('input', { bubbles: true })); };
 const sheet = () => document.querySelector('#sheetHost .sheet');
+const chip = i => document.querySelectorAll('#scoreStrip .score-chip')[i];
+const chipPoints = i => chip(i).querySelector('.score-chip__points').textContent;
+const confettiShown = () => document.querySelector('#fxHost .confetti') !== null;
 const sheetButton = label => [...(sheet()?.querySelectorAll('button') ?? [])].find(b => b.textContent.startsWith(label));
 const ROLL_MS = 480;
 const playBergauf = () => {
@@ -210,9 +213,13 @@ describe('v2 app shell', () => {
     ref('primary').click();
     expect(screen().querySelector('.points-burst').textContent).toBe('+13');
     expect(store.game.players[0].points).toBe(13);
+    expect(chipPoints(0)).toBe('0');   // the points are still flying in
     document.getElementById('btnSight').click();   // quick actions are inert between turns
     expect(sheet()).toBeNull();
-    vi.advanceTimersByTime(800);
+    vi.advanceTimersByTime(700);
+    expect(chipPoints(0)).toBe('13');
+    expect(chip(0).classList.contains('is-bumped')).toBe(true);
+    vi.advanceTimersByTime(100);
     expect(isTurnStart()).toBe(true);
     expect(store.game.currentPlayerIndex).toBe(1);
     expect(document.querySelectorAll('#scoreStrip .score-chip')[1].classList.contains('is-current')).toBe(true);
@@ -701,6 +708,46 @@ describe('v2 app shell', () => {
     expect(isTurnStart()).toBe(true);
   });
 
+  it('a level-up at turn end: points land, then the celebration card waits for a tap', () => {
+    const idx = store.game.currentPlayerIndex;
+    const p = store.game.players[idx];
+    const saved = p.points;
+    p.points = 18;
+    rollBergab(0.55);   // Anfänger: descent 4, Pulverschnee
+    plus('red');
+    plus('red');
+    ref('primary').click();   // +13 → 31 = Fortgeschritten
+    vi.advanceTimersByTime(800);
+    expect(sheet().querySelector('.sheet__title').textContent).toBe(`${p.name} steigt auf!`);
+    expect(sheet().querySelector('.sheet__text').textContent).toBe('Neues Fahrniveau: Fortgeschritten');
+    expect(document.querySelector('.sheet-layer--celebrate')).not.toBeNull();
+    const stars = [...sheet().querySelectorAll('.level-up__star')];
+    expect(stars.map(s => s.textContent).join('')).toBe('★★☆');
+    expect(stars.map(s => s.classList.contains('is-new'))).toEqual([false, true, false]);
+    expect(confettiShown()).toBe(true);
+    vi.advanceTimersByTime(5000);   // no auto-advance while the card is open
+    expect(screen().classList.contains('turn-end')).toBe(true);
+    expect(store.game.currentPlayerIndex).toBe(idx);
+    sheetButton('Weiter').click();
+    expect(isTurnStart()).toBe(true);
+    expect(confettiShown()).toBe(false);
+    p.points = saved;
+  });
+
+  it('a Sehenswürdigkeit that lifts the level is celebrated right away; Escape closes it', () => {
+    const p = store.game.players[store.game.currentPlayerIndex];
+    const saved = { points: p.points, sightings: p.sightings };
+    Object.assign(p, { points: 17, sightings: 0 });
+    document.getElementById('btnSight').click();
+    sheetButton('Eintragen').click();   // +5 → 22
+    expect(sheet().querySelector('.sheet__title').textContent).toBe(`${p.name} steigt auf!`);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(sheet()).toBeNull();
+    expect(confettiShown()).toBe(false);
+    expect(isTurnStart()).toBe(true);
+    Object.assign(p, saved);
+  });
+
   it('home has no chrome rows; in-game screens do', () => {
     const app = document.querySelector('.app');
     expect(app.classList.contains('app--no-chrome')).toBe(false);
@@ -778,10 +825,13 @@ describe('v2 app shell', () => {
     expect(title()).toBe('Rangliste');
     const places = [...screen().querySelectorAll('.podium__place')];
     expect(places.map(pl => pl.getAttribute('aria-label'))).toEqual(['1. Platz: Anna, 50 Punkte', '2. Platz: Ben, −2 Punkte']);
+    expect(confettiShown()).toBe(true);   // right after the last Schlusswertung
     ref('history').click();
+    expect(confettiShown()).toBe(false);
     expect(title()).toBe('Punkte');
     ref('close').click();
     expect(title()).toBe('Rangliste');
+    expect(confettiShown()).toBe(false);   // only once
     go('game_end');   // everyone is done → straight to the ranking
     expect(title()).toBe('Rangliste');
     go('home');

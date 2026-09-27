@@ -5,10 +5,11 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { sightseeingBonus } from '../game_logic.js';
-import { currentTime, currentPlayer, addSighting, removeLastSighting, spendCoin } from './flow_logic.js';
+import { currentTime, currentPlayer, addSighting, removeLastSighting, spendCoin, levelUp } from './flow_logic.js';
 import { store, saveGame } from './v2_store.js';
 import { go } from './v2_router.js';
 import { openSheet } from './v2_sheet.js';
+import { celebrateLevelUp } from './v2_fx.js';
 
 const $ = id => document.getElementById(id);
 
@@ -35,11 +36,16 @@ export function showChrome(visible, quickActions = true) {
   $('quickActions').inert = !quickActions;
 }
 
+const PLAYER_CLASSES = [1, 2, 3, 4, 5, 6].map(n => `player-${n}`);
+
 /**
  * Re-renders time, coin badges and the score strip from store.game.
- * @param {{ bump?: boolean }} [opts] — bump: the current player's chip pops (points changed)
+ * The chips are updated in place, so a running pop carries on across a screen change.
+ * @param {{ bump?: boolean, pending?: number }} [opts]
+ *   bump: the current player's chip pops (points changed)
+ *   pending: points the current player's chip does not show yet (turn end: they are still flying in)
  */
-export function renderChrome({ bump = false } = {}) {
+export function renderChrome({ bump = false, pending = 0 } = {}) {
   const game = store.game;
   if (!game) return;
   const p = currentPlayer(game);
@@ -48,19 +54,34 @@ export function renderChrome({ bump = false } = {}) {
   setBadge('btnGratis', 'gratisCount', p.gratis);
   setBadge('btnJoker', 'jokerCount', p.joker);
 
-  const tpl = $('tpl-score-chip');
-  const chips = game.players.map((player, i) => {
-    const chip = tpl.content.firstElementChild.cloneNode(true);
+  const strip = $('scoreStrip');
+  let chips = [...strip.children];
+  if (chips.length !== game.players.length) {
+    const tpl = $('tpl-score-chip');
+    chips = game.players.map(() => tpl.content.firstElementChild.cloneNode(true));
+    strip.replaceChildren(...chips);
+  }
+  game.players.forEach((player, i) => {
+    const chip = chips[i];
     const isCurrent = i === game.currentPlayerIndex;
+    const points = isCurrent ? player.points - pending : player.points;
+    chip.classList.remove(...PLAYER_CLASSES);
     chip.classList.add(`player-${player.colorIndex}`);
     chip.classList.toggle('is-current', isCurrent);
-    chip.classList.toggle('is-bumped', isCurrent && bump);
+    if (isCurrent && bump) {
+      chip.classList.remove('is-bumped');
+      void chip.offsetWidth;   // restart the pop (see the MOTION note in v2_components.css)
+      chip.classList.add('is-bumped');
+    }
     chip.querySelector('.avatar').textContent = initial(player.name);
-    chip.querySelector('.score-chip__points').textContent = formatPoints(player.points);
-    chip.setAttribute('aria-label', `${player.name}: ${formatPoints(player.points)} Punkte`);
-    return chip;
+    chip.querySelector('.score-chip__points').textContent = formatPoints(points);
+    chip.setAttribute('aria-label', `${player.name}: ${formatPoints(points)} Punkte`);
   });
-  $('scoreStrip').replaceChildren(...chips);
+}
+
+/** The current player's chip in the score strip (turn end flies the points into it). */
+export function currentChip() {
+  return $('scoreStrip').querySelector('.score-chip.is-current');
 }
 
 function setBadge(btnId, badgeId, count) {
@@ -100,7 +121,16 @@ function commit(bump) {
 function openSightSheet(p) {
   const next = p.sightings + 1;
   const actions = [
-    { label: 'Eintragen', onClick: () => { addSighting(store.game); commit(true); } },
+    {
+      label: 'Eintragen',
+      onClick: () => {
+        const before = p.points;
+        addSighting(store.game);
+        commit(true);
+        const level = levelUp(before, p.points);
+        if (level) celebrateLevelUp(p, level);
+      },
+    },
   ];
   if (p.sightings > 0) {
     actions.push({

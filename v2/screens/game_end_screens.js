@@ -8,8 +8,9 @@ import {
   endTime, ranking, nextSchlusswertungPlayer, previewSchlusswertung, applySchlusswertung,
 } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
-import { registerScreen, go } from '../v2_router.js';
+import { registerScreen, go, previousScreen } from '../v2_router.js';
 import { initial, formatPoints, formatDelta } from '../v2_chrome.js';
+import { confetti } from '../v2_fx.js';
 
 const SLOPES = ['blue', 'red', 'black', 'yellow'];
 const SLOPE_NAMES = { blue: 'Blau', red: 'Rot', black: 'Schwarz', yellow: 'Gelb' };
@@ -205,5 +206,8 @@ registerScreen('ranking', {
 
     ref('newGame').addEventListener('click', () => go('setup_players', { fresh: true }));
     ref('history').addEventListener('click', () => go('menu_scores'));
+
+    // Confetti only right after the last Schlusswertung — not on every return from the Punkteverlauf.
+    if (previousScreen()?.id === 'schlusswertung') return confetti();
   },
 });

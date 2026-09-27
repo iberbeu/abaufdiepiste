@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createGame, advanceTurn, dueRoundEvents, markEventsShown, pauseStatus,
   currentTime, roundsRemaining, restoreGame, addHistory, addSighting, removeLastSighting, spendCoin,
-  rollDice, gainCoin, descentTurn, takePause, ranking, scoreRows, roundEntries, adjustPlayer,
+  rollDice, gainCoin, descentTurn, takePause, ranking, scoreRows, roundEntries, adjustPlayer, levelUp,
   nextSchlusswertungPlayer, previewSchlusswertung, applySchlusswertung, setupDraft, assignColor, moveItem, defaultName, endTime, MAX_ROUNDS, MIN_ROUNDS,
 } from '../v2/flow_logic.js';
 
@@ -470,5 +470,16 @@ describe('Schlusswertung', () => {
     expect(nextSchlusswertungPlayer(g)).toBe(1);
     applySchlusswertung(g, 1, answers);
     expect(nextSchlusswertungPlayer(g)).toBe(-1);
+  });
+});
+
+describe('levelUp', () => {
+  it('names the new level only when the points cross a level boundary upwards', () => {
+    expect(levelUp(20, 21)).toBe('fortgeschritten');   // 20 is still Anfänger
+    expect(levelUp(15, 80)).toBe('profi');              // skipping a level names the highest
+    expect(levelUp(70, 71)).toBe('profi');
+    expect(levelUp(21, 70)).toBeNull();                 // same level
+    expect(levelUp(30, 10)).toBeNull();                 // going down is never celebrated
+    expect(levelUp(5, 5)).toBeNull();
   });
 });

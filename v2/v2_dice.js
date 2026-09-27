@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
-// App v2 — shared dice roll animation: the dice shake and flicker through
-// random faces, then the caller shows the real result. Skipped with reduced motion.
-// (The richer 3D roll is UI-12.11.)
+// App v2 — shared dice roll animation: the dice tumble and flicker through
+// random faces, then land with a small bounce (.is-landed) and the caller shows
+// the real result. Skipped with reduced motion.
 // ═══════════════════════════════════════════════════════════════
 
 export const ROLL_MS = 480;
@@ -20,11 +20,14 @@ export function playRoll(dice, flicker, onDone) {
     onDone();
     return () => {};
   }
-  dice.forEach(die => die.classList.add('is-rolling'));
+  dice.forEach(die => {
+    die.classList.remove('is-landed');
+    die.classList.add('is-rolling');
+  });
   const interval = setInterval(() => dice.forEach(flicker), FLICKER_MS);
   const timeout = setTimeout(() => {
     clearInterval(interval);
-    dice.forEach(die => die.classList.remove('is-rolling'));
+    dice.forEach(die => die.classList.replace('is-rolling', 'is-landed'));
     onDone();
   }, ROLL_MS);
   return () => {

@@ -265,7 +265,8 @@ button.avatar:active { transform: scale(0.92); }
 .die__img { width: 70%; height: 70%; object-fit: contain; }
 button.die { transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 button.die:disabled { cursor: default; }
-.die.is-rolling { animation: die-shake var(--dur-slow) linear; }
+.die.is-rolling { animation: die-tumble var(--dur-slow) linear infinite; }
+.die.is-landed  { animation: die-land var(--dur-slow) var(--ease-spring); }
 .die.is-pickable { box-shadow: 0 0 0 3px var(--joker), 0 4px 0 rgba(0, 0, 0, 0.35); }
 .die.is-held { transform: translateY(-8px); box-shadow: 0 0 0 3px var(--secondary), 0 12px 0 rgba(0, 0, 0, 0.35); }
 .die__corner {
@@ -763,6 +764,64 @@ button.die:disabled { cursor: default; }
 .points-burst { font-size: var(--fs-display); font-weight: var(--fw-display); color: var(--positive); animation: burst var(--dur-slow) var(--ease-spring); }
 .points-burst--negative { color: var(--negative); }
 
+/* ── CELEBRATION CARD (openSheet variant 'celebrate' — level-up) ── */
+.sheet-layer--celebrate { display: grid; place-items: center; padding: var(--space-4); }
+.sheet-layer--celebrate .sheet {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  transform: none;
+  animation: celebrate-in var(--dur-slow) var(--ease-spring);
+}
+.sheet-layer--celebrate .sheet::before { display: none; }
+.sheet-layer--celebrate .sheet__title { font-size: var(--fs-xl); }
+.level-up { display: flex; gap: var(--space-2); color: var(--level-star); font-size: 56px; line-height: 1; }
+.level-up__star.is-new { animation: star-in calc(var(--dur-slow) * 2) var(--ease-spring) var(--dur-slow) backwards; }
+
+/* ── CONFETTI (v2_fx.js) — 24 pieces; nth-child rules vary place, colour, size and timing ── */
+.fx-host { position: fixed; inset: 0; z-index: 11; pointer-events: none; }
+.fx-host:empty { display: none; }
+.confetti { position: absolute; inset: 0; overflow: hidden; }
+.confetti > span {
+  --x: 50; --c: var(--level-star); --t: 2.4s; --d: 0s; --drift: 30px;
+  position: absolute;
+  top: -20px;
+  left: calc(var(--x) * 1%);
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--c);
+  animation: confetti-fall var(--t) cubic-bezier(0.35, 0, 0.65, 1) var(--d) both;
+}
+.confetti > span:nth-child(1)  { --x: 3; }   .confetti > span:nth-child(2)  { --x: 91; }
+.confetti > span:nth-child(3)  { --x: 17; }  .confetti > span:nth-child(4)  { --x: 62; }
+.confetti > span:nth-child(5)  { --x: 34; }  .confetti > span:nth-child(6)  { --x: 79; }
+.confetti > span:nth-child(7)  { --x: 8; }   .confetti > span:nth-child(8)  { --x: 49; }
+.confetti > span:nth-child(9)  { --x: 71; }  .confetti > span:nth-child(10) { --x: 25; }
+.confetti > span:nth-child(11) { --x: 96; }  .confetti > span:nth-child(12) { --x: 41; }
+.confetti > span:nth-child(13) { --x: 13; }  .confetti > span:nth-child(14) { --x: 57; }
+.confetti > span:nth-child(15) { --x: 86; }  .confetti > span:nth-child(16) { --x: 30; }
+.confetti > span:nth-child(17) { --x: 67; }  .confetti > span:nth-child(18) { --x: 21; }
+.confetti > span:nth-child(19) { --x: 75; }  .confetti > span:nth-child(20) { --x: 45; }
+.confetti > span:nth-child(21) { --x: 0; }   .confetti > span:nth-child(22) { --x: 83; }
+.confetti > span:nth-child(23) { --x: 53; }  .confetti > span:nth-child(24) { --x: 37; }
+.confetti > span:nth-child(6n+1) { --c: var(--player-1); }
+.confetti > span:nth-child(6n+2) { --c: var(--player-2); }
+.confetti > span:nth-child(6n+3) { --c: var(--level-star); }
+.confetti > span:nth-child(6n+4) { --c: var(--player-3); }
+.confetti > span:nth-child(6n+5) { --c: var(--summit-white); }
+.confetti > span:nth-child(6n+6) { --c: var(--player-5); }
+.confetti > span:nth-child(3n+1) { --t: 2.1s; width: 6px; height: 10px; }
+.confetti > span:nth-child(3n+2) { --t: 2.7s; }
+.confetti > span:nth-child(3n)   { --t: 3.2s; width: 10px; height: 10px; border-radius: 50%; }
+.confetti > span:nth-child(4n+1) { --d: 0s; }
+.confetti > span:nth-child(4n+2) { --d: 0.15s; }
+.confetti > span:nth-child(4n+3) { --d: 0.35s; }
+.confetti > span:nth-child(4n)   { --d: 0.55s; }
+.confetti > span:nth-child(even) { --drift: -30px; }
+
 /* ── LANDSCAPE: two columns for the main step on short screens ── */
 @media (orientation: landscape) and (max-height: 540px) {
   .app { max-width: 900px; }
@@ -785,7 +844,13 @@ button.die:disabled { cursor: default; }
 /* ── MOTION ──
    Note for the JS: a CSS animation only replays when its class is newly added.
    To replay .is-bumped / .is-full, remove the class, force a reflow (el.offsetWidth), then add it again. */
-@keyframes die-shake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-10deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
+@keyframes die-tumble {
+  0%, 100% { transform: none; }
+  25% { transform: translateY(-14px) rotate(-14deg) scale(1.06); }
+  50% { transform: translateY(-4px) rotate(10deg); }
+  75% { transform: translateY(-10px) rotate(-6deg) scale(1.03); }
+}
+@keyframes die-land { 0% { transform: translateY(-6px) scale(1.12); } 60% { transform: translateY(0) scale(0.96); } 100% { transform: none; } }
 @keyframes wiggle { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @keyframes pop    { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } }
 @keyframes burst  { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -793,3 +858,8 @@ button.die:disabled { cursor: default; }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes screen-in      { from { opacity: 0; transform: translateX(24px); }  to { opacity: 1; transform: none; } }
 @keyframes screen-in-back { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+@keyframes celebrate-in  { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes star-in       { 0% { transform: scale(0) rotate(-180deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes confetti-fall { from { transform: translate(0, 0) rotate(0); } to { transform: translate(var(--drift), 110vh) rotate(720deg); } }
+@keyframes rise-in       { from { transform: translateY(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes swing         { 0%, 100% { transform: none; } 25% { transform: rotate(-12deg) scale(1.1); } 60% { transform: rotate(8deg); } }

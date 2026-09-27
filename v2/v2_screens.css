@@ -10,6 +10,7 @@
 /* ── TURN START: player on top, the three actions at the bottom (thumb reach) ── */
 .turn-start { padding-bottom: var(--space-4); }
 .turn-start > .action-list { margin-top: auto; }
+.turn-start .avatar--lg { animation: burst var(--dur-slow) var(--ease-spring); }   /* the next player pops in */
 
 /* ── BERGAUF: dice centred, buttons at the bottom ── */
 .bergauf { padding-bottom: var(--space-4); }
@@ -49,6 +50,10 @@
 .ranking { padding-bottom: var(--space-4); }
 .ranking__title { font-size: var(--fs-xl); font-weight: var(--fw-display); margin-top: var(--space-3); }
 .ranking .podium { margin-top: var(--space-5); }
+/* The podium builds up: 3rd, then 2nd, then the winner. Delays scale with --dur, so reduced motion shows all at once. */
+.ranking .podium__place { animation: rise-in var(--dur-slow) var(--ease-spring) backwards; }
+.ranking .podium__place--pos-2 { animation-delay: calc(var(--dur) * 1.5); }
+.ranking .podium__place--pos-1 { animation-delay: calc(var(--dur) * 3); }
 
 /* ── PUNKTEBLOCK ── */
 .punkteblock { gap: var(--space-3); padding-bottom: var(--space-3); }
@@ -57,7 +62,14 @@
 .turn-end { display: grid; place-items: center; }
 .turn-end__check { color: var(--positive); --icon: 72px; animation: burst var(--dur-slow) var(--ease-spring); }
 
-/* ── ROUND EVENT: Talstation list ── */
+/* ── ROUND EVENT: the icon swings, the Talstation rows slide in one by one ── */
+.event-card > .icon:first-child { animation: swing calc(var(--dur-slow) * 2) var(--ease-out) var(--dur) backwards; }
+.talstation-list__row { animation: rise-in var(--dur) var(--ease-out) backwards; }
+.talstation-list__row:nth-child(2) { animation-delay: calc(var(--dur-fast) * 1); }
+.talstation-list__row:nth-child(3) { animation-delay: calc(var(--dur-fast) * 2); }
+.talstation-list__row:nth-child(4) { animation-delay: calc(var(--dur-fast) * 3); }
+.talstation-list__row:nth-child(5) { animation-delay: calc(var(--dur-fast) * 4); }
+.talstation-list__row:nth-child(6) { animation-delay: calc(var(--dur-fast) * 5); }
 .talstation-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
 .talstation-list__row {
   display: grid;
