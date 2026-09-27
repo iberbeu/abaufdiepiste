@@ -34,6 +34,11 @@ export const BLOCKING_EVENTS = ['unfall', 'helikopter'];
 export const COIN_LIMIT = 3;
 export const EXTRA_ACTIVITY_POINTS = 12;   // Extraaktivität, happy smiley
 export const PAUSE_POINTS = { restaurant: 15, bar: 7 };   // Mittagspause (11:00–12:30, once per game)
+// Transport dice (decision 27.09.2026): 5 identical = free ride, any distance; 6 identical = free ride
+// + JACKPOT_POINTS. Both only by dice luck — a die turned with a Joker never counts towards them.
+export const FREE_RIDE_COUNT = 5;
+export const JACKPOT_COUNT = 6;
+export const JACKPOT_POINTS = 30;
 
 // Schlusswertung (spielregeln.md, "Schlusswertung"): penalties when the Talstation is not reached,
 // bonus per remaining coin. Pistes on the way back cost half their normal points (SLOPE_PTS / 2).
@@ -130,18 +135,24 @@ export function gameTimeHour(startHour, round) {
  *
  * @param {string[]} syms  — array of 6 symbol strings (from TRANSPORT_SYMBOLS)
  * @returns {Array<{ type: string, message: string }>}
- *   Each entry: type 'helicopter' | 'wildcard1' | 'valid' | 'invalid'
+ *   Each entry: type 'freeRide' | 'wildcard1' | 'valid' | 'invalid'
+ *   freeRide (5+ identical) also carries `points` (JACKPOT_POINTS for 6 identical, else 0).
  *   Triplet + non-triplet pair → two entries (wildcard1 first, then valid).
  */
 export function analyzeTransportSymbols(syms) {
   const counts = {};
   syms.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
 
-  // 6× same → helicopter
-  if (Object.values(counts).some(c => c >= 6)) {
+  // 5× same → free ride, 6× same → free ride + jackpot (v1 has no Joker on transport dice)
+  const most = Math.max(...Object.values(counts));
+  if (most >= FREE_RIDE_COUNT) {
+    const jackpot = most >= JACKPOT_COUNT;
     return [{
-      type: 'helicopter',
-      message: '6 gleiche – Helikopterflug! Du kannst beliebig weit fliegen!',
+      type: 'freeRide',
+      points: jackpot ? JACKPOT_POINTS : 0,
+      message: jackpot
+        ? `${JACKPOT_COUNT} gleiche – freie Fahrt, beliebig weit, und +${JACKPOT_POINTS} Punkte!`
+        : `${FREE_RIDE_COUNT} gleiche – freie Fahrt, beliebig weit!`,
     }];
   }
 
@@ -212,24 +223,32 @@ export function analyzeTransportSymbols(syms) {
  *  - two identical symbols = a ride with that transport (three or more identical include a pair);
  *  - three identical symbols can be swapped for ONE missing symbol that was rolled once,
  *    making a pair of it (listed only for symbols that do not already have a pair);
- *  - six identical symbols = free ride, any distance.
+ *  - five identical symbols = free ride, any distance; six identical = free ride + JACKPOT_POINTS.
+ *    Only rolled dice count here: a die turned with a Joker never completes five or six of a kind
+ *    (it still counts for pairs and swaps).
  * Several pairs may be combined in one turn ("Lifte kombinieren").
  *
  * @param {string[]} syms — the 6 rolled symbols (from TRANSPORT_SYMBOLS)
- * @returns {{ helicopter: string|null, pairs: string[], exchanges: Array<{ from: string, targets: string[] }> }}
+ * @param {boolean[]} [jokered] — per die: turned with a Joker
+ * @returns {{ freeRide: string|null, jackpot: boolean, pairs: string[], exchanges: Array<{ from: string, targets: string[] }> }}
  *   Symbols are keys of TRANSPORT_SYMBOLS, in TRANSPORT_SYMBOLS order. Nothing valid = all empty.
  */
-export function transportOptions(syms) {
+export function transportOptions(syms, jokered = []) {
   const counts = {};
-  syms.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
+  const rolled = {};
+  syms.forEach((s, i) => {
+    counts[s] = (counts[s] || 0) + 1;
+    if (!jokered[i]) rolled[s] = (rolled[s] || 0) + 1;
+  });
   const present = TRANSPORT_SYMBOLS.filter(s => counts[s]);
 
-  const helicopter = present.find(s => counts[s] >= 6) ?? null;
-  if (helicopter) return { helicopter, pairs: [], exchanges: [] };
+  const freeRide = present.find(s => rolled[s] >= FREE_RIDE_COUNT) ?? null;
+  if (freeRide) return { freeRide, jackpot: rolled[freeRide] >= JACKPOT_COUNT, pairs: [], exchanges: [] };
 
   const singles = present.filter(s => counts[s] === 1);
   return {
-    helicopter: null,
+    freeRide: null,
+    jackpot: false,
     pairs: present.filter(s => counts[s] >= 2),
     exchanges: singles.length === 0 ? [] : present
       .filter(s => counts[s] >= 3)

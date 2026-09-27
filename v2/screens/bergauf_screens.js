@@ -1,9 +1,12 @@
 // BERGAUF — flow_spec.md §5 (B1 bergauf_roll, B2 bergauf_result) and §10.1 (Joker on a die).
 // B1: six "?" dice + Würfeln (back possible). B2: faces, hold after roll 1, second roll,
-// one result line per ride, Joker turns one die to any face. Fertig → turn end (no points).
+// one result line per ride, Joker turns one die to any face. Fertig → turn end (points only for
+// six of a kind, the jackpot).
 // Dice state lives in the shared turn state (turn_state.js), so the menu / back remount B2 as it was.
 
-import { TRANSPORT_SYMBOLS, TRANSPORT_NAMES, transportOptions } from '../../game_logic.js';
+import {
+  TRANSPORT_SYMBOLS, TRANSPORT_NAMES, transportOptions, FREE_RIDE_COUNT, JACKPOT_COUNT, JACKPOT_POINTS,
+} from '../../game_logic.js';
 import { rollDice, spendCoin, addHistory, currentPlayer } from '../flow_logic.js';
 import { store, saveGame } from '../v2_store.js';
 import { registerScreen, go } from '../v2_router.js';
@@ -99,8 +102,8 @@ registerScreen('bergauf_result', {
       hint.textContent = pickingJoker ? 'Welchen Würfel drehen?' : canHold ? 'Antippen = behalten' : '';
       hint.hidden = !hint.textContent;
 
-      const opts = transportOptions(d.dice);
-      const valid = Boolean(opts.helicopter || opts.pairs.length || opts.exchanges.length);
+      const opts = transportOptions(d.dice, d.jokered);
+      const valid = Boolean(opts.freeRide || opts.pairs.length || opts.exchanges.length);
       ref('lines').replaceChildren(...(rolling ? [] : resultLines(opts)));
 
       const joker = ref('joker');
@@ -138,9 +141,12 @@ registerScreen('bergauf_result', {
       if (action === 'reroll') return reroll();
       if (finished) return;
       finished = true;
-      addHistory(game, `Bergauf: ${historyText(transportOptions(d.dice))}`);
+      const opts = transportOptions(d.dice, d.jokered);
+      const points = opts.jackpot ? JACKPOT_POINTS : 0;
+      currentPlayer(game).points += points;
+      addHistory(game, `Bergauf: ${historyText(opts)}`);
       saveGame();
-      go('turn_end', { points: 0 });
+      go('turn_end', { points });
     }
 
     function reroll() {
@@ -214,7 +220,11 @@ function resultLines(opts) {
     li.querySelector('[data-ref="text"]').textContent = text;
     return li;
   };
-  if (opts.helicopter) return [line('good', 'check', `6× ${nameOf(opts.helicopter)} – freie Fahrt, beliebig weit`)];
+  if (opts.freeRide) {
+    const count = opts.jackpot ? JACKPOT_COUNT : FREE_RIDE_COUNT;
+    const ride = line('good', 'check', `${count}× ${nameOf(opts.freeRide)} – freie Fahrt, beliebig weit`);
+    return opts.jackpot ? [ride, line('good', 'check', `Jackpot: +${JACKPOT_POINTS} Punkte`)] : [ride];
+  }
   const lines = [
     ...opts.pairs.map(sym => line('good', 'check', `2× ${nameOf(sym)}`)),
     ...opts.exchanges.map(({ from, targets }) =>
@@ -224,7 +234,8 @@ function resultLines(opts) {
 }
 
 function historyText(opts) {
-  if (opts.helicopter) return `6× ${nameOf(opts.helicopter)} (freie Fahrt)`;
+  if (opts.jackpot) return `${JACKPOT_COUNT}× ${nameOf(opts.freeRide)} (freie Fahrt) → +${JACKPOT_POINTS} Punkte`;
+  if (opts.freeRide) return `${FREE_RIDE_COUNT}× ${nameOf(opts.freeRide)} (freie Fahrt)`;
   const rides = [
     ...opts.pairs.map(nameOf),
     ...opts.exchanges.map(({ from }) => `Tausch 3× ${nameOf(from)}`),

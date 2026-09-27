@@ -116,11 +116,19 @@ describe('gameTimeHour', () => {
 
 // ─── Transport dice analysis ──────────────────────────────────────────────────
 
-describe('analyzeTransportSymbols — helicopter', () => {
-  it('detects 6 identical symbols as helicopter', () => {
-    const syms = Array(6).fill('gondel');
-    const [result] = analyzeTransportSymbols(syms);
-    expect(result.type).toBe('helicopter');
+describe('analyzeTransportSymbols — free ride (5/6 identical)', () => {
+  it('5 identical symbols = free ride without points', () => {
+    const results = analyzeTransportSymbols(['gondel', 'gondel', 'gondel', 'gondel', 'gondel', 'zug']);
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ type: 'freeRide', points: 0 });
+  });
+  it('6 identical symbols = free ride + 30 points', () => {
+    const [result] = analyzeTransportSymbols(Array(6).fill('gondel'));
+    expect(result).toMatchObject({ type: 'freeRide', points: 30 });
+  });
+  it('4 identical symbols are no free ride', () => {
+    const [result] = analyzeTransportSymbols(['gondel', 'gondel', 'gondel', 'gondel', 'zug', 'skilift']);
+    expect(result.type).not.toBe('freeRide');
   });
 });
 
@@ -548,27 +556,45 @@ describe('transportOptions (app v2)', () => {
 
   it('two identical symbols are a ride; several pairs combine', () => {
     expect(opts('gondel', 'gondel', 'skilift', 'skilift', 'zug', 'fussweg'))
-      .toEqual({ helicopter: null, pairs: ['skilift', 'gondel'], exchanges: [] });
+      .toEqual({ freeRide: null, jackpot: false, pairs: ['skilift', 'gondel'], exchanges: [] });
   });
 
   it('three identical symbols include a pair AND can be swapped for a symbol rolled once', () => {
     expect(opts('gondel', 'gondel', 'gondel', 'sesselbahn', 'sesselbahn', 'zug'))
-      .toEqual({ helicopter: null, pairs: ['sesselbahn', 'gondel'], exchanges: [{ from: 'gondel', targets: ['zug'] }] });
+      .toEqual({ freeRide: null, jackpot: false, pairs: ['sesselbahn', 'gondel'], exchanges: [{ from: 'gondel', targets: ['zug'] }] });
   });
 
   it('a swap is only offered for symbols without a pair; 3+3 needs no swap', () => {
     expect(opts('gondel', 'gondel', 'gondel', 'zug', 'zug', 'zug'))
-      .toEqual({ helicopter: null, pairs: ['gondel', 'zug'], exchanges: [] });
+      .toEqual({ freeRide: null, jackpot: false, pairs: ['gondel', 'zug'], exchanges: [] });
     expect(opts('gondel', 'gondel', 'gondel', 'gondel', 'skilift', 'zug').exchanges)
       .toEqual([{ from: 'gondel', targets: ['skilift', 'zug'] }]);
   });
 
-  it('six identical symbols = free ride', () => {
-    expect(opts('zug', 'zug', 'zug', 'zug', 'zug', 'zug')).toEqual({ helicopter: 'zug', pairs: [], exchanges: [] });
+  it('five identical symbols = free ride, no jackpot', () => {
+    expect(opts('zug', 'zug', 'zug', 'zug', 'zug', 'gondel'))
+      .toEqual({ freeRide: 'zug', jackpot: false, pairs: [], exchanges: [] });
+  });
+
+  it('six identical symbols = free ride + jackpot', () => {
+    expect(opts('zug', 'zug', 'zug', 'zug', 'zug', 'zug'))
+      .toEqual({ freeRide: 'zug', jackpot: true, pairs: [], exchanges: [] });
+  });
+
+  it('a die turned with a Joker never completes 5 or 6 of a kind', () => {
+    const six = Array(6).fill('zug');
+    // 5 rolled + 1 turned: free ride from the rolled five, but no jackpot
+    expect(transportOptions(six, [false, false, false, false, false, true]))
+      .toEqual({ freeRide: 'zug', jackpot: false, pairs: [], exchanges: [] });
+    // 4 rolled + 1 turned: no free ride, but still a normal pair
+    const five = ['zug', 'zug', 'zug', 'zug', 'zug', 'gondel'];
+    const r = transportOptions(five, [true, false, false, false, false, false]);
+    expect(r.freeRide).toBeNull();
+    expect(r.pairs).toEqual(['zug']);
   });
 
   it('six different symbols = nothing valid (Liftschlange)', () => {
     expect(opts('fussweg', 'kleingondel', 'skilift', 'sesselbahn', 'gondel', 'zug'))
-      .toEqual({ helicopter: null, pairs: [], exchanges: [] });
+      .toEqual({ freeRide: null, jackpot: false, pairs: [], exchanges: [] });
   });
 });

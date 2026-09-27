@@ -129,7 +129,7 @@ Suggested screen ids for the router: `home`, `setup_players`, `setup_names`, `se
   - Secondary (text button): the other one.
 - After roll 2: only **Fertig →**.
 - Fertig → TURN END (no points).
-- 6× same symbol: result line `🚁 Freie Fahrt – beliebig weit`.
+- 5× same symbol: result line `5× … – freie Fahrt, beliebig weit`. 6× same symbol: same line plus `Jackpot: +30 Punkte`; the 30 points are booked on Fertig (decision 27.09.2026). Dice turned with a Joker never count towards 5 or 6 of a kind.
 - Joker > 0: a 🃏 badge on the result line. Tap it, then tap a die → face picker (6 symbols) → the die changes, the result line recalculates, 1 Joker is deducted (§10.1).
 
 ### BERGAB — mockup screen 2

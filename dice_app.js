@@ -3,7 +3,7 @@ import {
   DESCENT_DICE as DESCENT_FACES,
   getLevel, levelLabel, levelStars,
   gameTime as _gameTime, gameTimeHour as _gameTimeHour,
-  analyzeTransportSymbols,
+  analyzeTransportSymbols, JACKPOT_COUNT,
   calcDescentPoints, effectiveCrossings,
   calcAbschlusswertungResult,
 } from './game_logic.js';
@@ -621,7 +621,23 @@ function handlePrimaryAction() {
     return;
   }
 
+  if (a === 'bergauf' && state.diceRolled) {
+    if (btn) btn.disabled = true;
+    confirmTransportJackpot();
+  }
   endTurn();
+}
+
+// JACKPOT_COUNT identical transport dice = free ride + jackpot points, booked once when the turn ends.
+function confirmTransportJackpot() {
+  const p = currentPlayer();
+  const result = analyzeTransportSymbols(state.transportDice.map(d => d.sym))[0];
+  if (!p || result.type !== 'freeRide' || result.points === 0) return;
+  const prevLevel = getLevel(p.points);
+  p.points += result.points;
+  checkLevelUp(p, prevLevel);
+  addHistory(`${p.name}: Bergauf ${JACKPOT_COUNT} gleiche (freie Fahrt) → +${result.points} Punkte`);
+  saveState();
 }
 
 // Disables the three action-choice buttons (Bergauf / Bergab / Pause) so
@@ -721,9 +737,9 @@ function analyzeTransport() {
 
   const results = analyzeTransportSymbols(syms);
 
-  if (results[0].type === 'helicopter') {
+  if (results[0].type === 'freeRide') {
     resultBox.className = 'result-box success';
-    resultBox.textContent = '🚁 ' + results[0].message;
+    resultBox.textContent = '🎉 ' + results[0].message;
     return;
   }
 
